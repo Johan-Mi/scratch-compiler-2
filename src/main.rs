@@ -5,15 +5,9 @@
 mod parser;
 
 fn main() {
-    let source_code = r"
-        sprite Stage {
-
-        }
-
-        sprite Main {
-
-        }
-    ";
-    let document = parser::parse(source_code);
+    let source_file = std::env::args().nth(1).expect("no source file provided");
+    let source_code = std::fs::read_to_string(source_file)
+        .expect("failed to read source code");
+    let document = parser::parse(&source_code);
     parser::print(0, document.into());
 }
