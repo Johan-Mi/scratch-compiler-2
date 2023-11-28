@@ -9,5 +9,5 @@ fn main() {
     let source_code = std::fs::read_to_string(source_file)
         .expect("failed to read source code");
     let document = parser::parse(&source_code);
-    parser::print(0, document.into());
+    eprintln!("{document:#?}");
 }

@@ -1,7 +1,7 @@
 #![allow(clippy::enum_glob_use)]
 
 use logos::Logos;
-use rowan::{GreenNodeBuilder, NodeOrToken};
+use rowan::GreenNodeBuilder;
 use std::iter::Peekable;
 
 pub fn parse(source_code: &str) -> SyntaxNode {
@@ -13,20 +13,6 @@ pub fn parse(source_code: &str) -> SyntaxNode {
             .peekable(),
     }
     .parse()
-}
-
-pub fn print(indent: usize, element: SyntaxElement) {
-    let kind = element.kind();
-    eprint!("{:indent$}", "");
-    match element {
-        NodeOrToken::Node(node) => {
-            eprintln!("- {kind:?}");
-            for child in node.children_with_tokens() {
-                print(indent + 2, child);
-            }
-        }
-        NodeOrToken::Token(token) => eprintln!("- {:?} {kind:?}", token.text()),
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Logos)]
@@ -80,7 +66,6 @@ impl rowan::Language for Lang {
 }
 
 type SyntaxNode = rowan::SyntaxNode<Lang>;
-type SyntaxElement = rowan::SyntaxElement<Lang>;
 
 type Token<'src> = (SyntaxKind, &'src str);
 
