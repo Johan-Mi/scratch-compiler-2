@@ -19,7 +19,7 @@ pub fn parse(file: &codemap::File) -> SyntaxNode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Logos)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[repr(u16)]
-#[logos(skip r"\p{Whitespace}")]
+#[logos(skip r"\p{Whitespace}|(#.*)")]
 pub enum SyntaxKind {
     EOF = 0,
 
