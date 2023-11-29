@@ -4,7 +4,8 @@ use logos::Logos;
 use rowan::GreenNodeBuilder;
 use std::iter::Peekable;
 
-pub fn parse(source_code: &str) -> SyntaxNode {
+pub fn parse(file: &codemap::File) -> SyntaxNode {
+    let source_code = file.source();
     Parser {
         builder: GreenNodeBuilder::new(),
         iter: SyntaxKind::lexer(source_code)

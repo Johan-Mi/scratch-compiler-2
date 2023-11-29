@@ -4,9 +4,9 @@ use codemap_diagnostic::{ColorConfig, Diagnostic, Emitter, Level, SpanLabel};
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
-    pub fn show(self) {
+    pub fn show(self, code_map: &codemap::CodeMap) {
         if !self.0.is_empty() {
-            Emitter::stderr(ColorConfig::Auto, None).emit(&self.0);
+            Emitter::stderr(ColorConfig::Auto, Some(code_map)).emit(&self.0);
         }
     }
 
