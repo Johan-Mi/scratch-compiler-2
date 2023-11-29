@@ -25,6 +25,7 @@ pub enum SyntaxKind {
 
     DOCUMENT,
     SPRITE,
+    FN,
 
     #[token("{")]
     LBRACE,
@@ -33,6 +34,8 @@ pub enum SyntaxKind {
 
     #[token("sprite")]
     KW_SPRITE,
+    #[token("fn")]
+    KW_FN,
 
     #[regex(r"\p{XID_Start}[\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -120,9 +123,9 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
-    fn parse_sprite(&mut self) {
-        self.builder.start_node(SPRITE.into());
-        self.bump(); // KW_SPRITE
+    fn parse_function(&mut self) {
+        self.builder.start_node(FN.into());
+        self.bump(); // KW_FN
         self.expect(IDENTIFIER);
         self.expect(LBRACE);
         while !self.at(EOF) && !self.eat(RBRACE) {
@@ -131,6 +134,21 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             }
 
             self.error();
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_sprite(&mut self) {
+        self.builder.start_node(SPRITE.into());
+        self.bump(); // KW_SPRITE
+        self.expect(IDENTIFIER);
+        self.expect(LBRACE);
+        while !self.at(EOF) && !self.eat(RBRACE) {
+            match self.peek() {
+                KW_FN => self.parse_function(),
+                KW_SPRITE => break,
+                _ => self.error(),
+            }
         }
         self.builder.finish_node();
     }
