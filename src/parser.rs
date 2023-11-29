@@ -90,6 +90,15 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
+    fn eat(&mut self, kind: SyntaxKind) -> bool {
+        if self.at(kind) {
+            self.bump();
+            true
+        } else {
+            false
+        }
+    }
+
     fn parse_anything(&mut self) {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
@@ -103,22 +112,26 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
-    fn expect(&mut self, kind: SyntaxKind) -> bool {
+    fn expect(&mut self, kind: SyntaxKind) {
         if self.at(kind) {
             self.bump();
-            true
         } else {
             self.error();
-            false
         }
     }
 
     fn parse_sprite(&mut self) {
         self.builder.start_node(SPRITE.into());
         self.bump(); // KW_SPRITE
-        let _ = self.expect(IDENTIFIER)
-            && self.expect(LBRACE)
-            && self.expect(RBRACE);
+        self.expect(IDENTIFIER);
+        self.expect(LBRACE);
+        while !self.at(EOF) && !self.eat(RBRACE) {
+            if self.at(KW_SPRITE) {
+                break;
+            }
+
+            self.error();
+        }
         self.builder.finish_node();
     }
 
