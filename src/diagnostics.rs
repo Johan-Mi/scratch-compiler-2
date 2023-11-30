@@ -1,4 +1,7 @@
-use codemap_diagnostic::{ColorConfig, Diagnostic, Emitter, Level, SpanLabel};
+use codemap::Span;
+use codemap_diagnostic::{
+    ColorConfig, Diagnostic, Emitter, Level, SpanLabel, SpanStyle,
+};
 
 #[derive(Default)]
 pub struct Diagnostics(Vec<Diagnostic>);
@@ -34,5 +37,13 @@ impl Diagnostics {
             code: None,
             spans: labels.into(),
         });
+    }
+}
+
+pub fn primary(span: Span, text: impl Into<String>) -> SpanLabel {
+    SpanLabel {
+        span,
+        label: Some(text.into()),
+        style: SpanStyle::Primary,
     }
 }

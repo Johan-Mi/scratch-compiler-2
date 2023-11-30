@@ -27,7 +27,7 @@ fn real_main(
         diagnostics.note(err.to_string(), []);
     })?;
     let file = code_map.add_file(source_file, source_code);
-    let document = parser::parse(&file);
+    let document = parser::parse(&file, diagnostics);
     eprintln!("{document:#?}");
 
     Ok(())

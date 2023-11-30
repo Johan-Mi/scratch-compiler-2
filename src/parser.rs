@@ -1,17 +1,28 @@
 #![allow(clippy::enum_glob_use)]
 
+use crate::diagnostics::{primary, Diagnostics};
+use codemap::Span;
 use logos::Logos;
 use rowan::GreenNodeBuilder;
 use std::iter::Peekable;
 
-pub fn parse(file: &codemap::File) -> SyntaxNode {
+pub fn parse(
+    file: &codemap::File,
+    diagnostics: &mut Diagnostics,
+) -> SyntaxNode {
     let source_code = file.source();
     Parser {
         builder: GreenNodeBuilder::new(),
         iter: SyntaxKind::lexer(source_code)
             .spanned()
-            .map(|(token, span)| (token.unwrap_or(ERROR), &source_code[span]))
+            .map(|(token, span)| Token {
+                kind: token.unwrap_or(ERROR),
+                text: &source_code[span.clone()],
+                span: file.span.subspan(span.start as u64, span.end as u64),
+            })
             .peekable(),
+        span: file.span,
+        diagnostics,
     }
     .parse()
 }
@@ -70,21 +81,42 @@ impl rowan::Language for Lang {
     }
 }
 
-type SyntaxNode = rowan::SyntaxNode<Lang>;
+pub type SyntaxNode = rowan::SyntaxNode<Lang>;
 
-type Token<'src> = (SyntaxKind, &'src str);
+struct Token<'src> {
+    kind: SyntaxKind,
+    text: &'src str,
+    span: Span,
+}
 
 struct Parser<'src, I: Iterator<Item = Token<'src>>> {
     builder: GreenNodeBuilder<'static>,
     iter: Peekable<I>,
+    span: Span,
+    diagnostics: &'src mut Diagnostics,
 }
 
 impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
-    fn peek(&mut self) -> SyntaxKind {
-        while self.iter.peek().is_some_and(|&(t, _)| t == TRIVIA) {
+    fn skip_trivia(&mut self) {
+        while self.iter.peek().is_some_and(|token| token.kind == TRIVIA) {
             self.bump();
         }
-        self.iter.peek().map_or(EOF, |(t, _)| *t)
+    }
+
+    fn peek(&mut self) -> SyntaxKind {
+        self.skip_trivia();
+        self.iter.peek().map_or(EOF, |token| token.kind)
+    }
+
+    fn peek_span(&mut self) -> Span {
+        self.skip_trivia();
+        self.iter.peek().map_or_else(
+            || {
+                let len = self.span.len();
+                self.span.subspan(len, len)
+            },
+            |token| token.span,
+        )
     }
 
     fn at(&mut self, kind: SyntaxKind) -> bool {
@@ -92,8 +124,8 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 
     fn bump(&mut self) {
-        if let Some((token, text)) = self.iter.next() {
-            self.builder.token(token.into(), text);
+        if let Some(token) = self.iter.next() {
+            self.builder.token(token.kind.into(), token.text);
         }
     }
 
@@ -119,11 +151,14 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
-    fn expect(&mut self, kind: SyntaxKind) {
+    fn expect(&mut self, kind: SyntaxKind) -> Option<Span> {
         if self.at(kind) {
+            let span = self.peek_span();
             self.bump();
+            Some(span)
         } else {
             self.error();
+            None
         }
     }
 
@@ -144,13 +179,22 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
 
     fn parse_sprite(&mut self) {
         self.builder.start_node(SPRITE.into());
+        let kw_sprite_span = self.peek_span();
         self.bump(); // KW_SPRITE
         self.expect(IDENTIFIER);
-        self.expect(LBRACE);
-        while !self.at(EOF) && !self.eat(RBRACE) {
+        let lbrace_span = self.expect(LBRACE);
+        while !self.eat(RBRACE) {
             match self.peek() {
                 KW_FN => self.parse_function(),
-                KW_SPRITE => break,
+                EOF | KW_SPRITE => {
+                    let mut labels = vec![primary(kw_sprite_span, "")];
+                    if let Some(lbrace_span) = lbrace_span {
+                        labels.push(primary(lbrace_span, "unclosed brace"));
+                    }
+                    self.diagnostics
+                        .error("unfinished sprite definition", labels);
+                    break;
+                }
                 _ => self.error(),
             }
         }
