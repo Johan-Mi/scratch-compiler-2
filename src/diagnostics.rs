@@ -47,3 +47,11 @@ pub fn primary(span: Span, text: impl Into<String>) -> SpanLabel {
         style: SpanStyle::Primary,
     }
 }
+
+pub fn secondary(span: Span, text: impl Into<String>) -> SpanLabel {
+    SpanLabel {
+        span,
+        label: Some(text.into()),
+        style: SpanStyle::Secondary,
+    }
+}

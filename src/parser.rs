@@ -1,6 +1,6 @@
 #![allow(clippy::enum_glob_use)]
 
-use crate::diagnostics::{primary, Diagnostics};
+use crate::diagnostics::{primary, secondary, Diagnostics};
 use codemap::Span;
 use logos::Logos;
 use rowan::GreenNodeBuilder;
@@ -191,6 +191,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                     if let Some(lbrace_span) = lbrace_span {
                         labels.push(primary(lbrace_span, "unclosed brace"));
                     }
+                    labels.push(secondary(self.peek_span(), "expected `}`"));
                     self.diagnostics
                         .error("unfinished sprite definition", labels);
                     break;
