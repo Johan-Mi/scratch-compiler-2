@@ -181,7 +181,9 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.start_node(SPRITE.into());
         let kw_sprite_span = self.peek_span();
         self.bump(); // KW_SPRITE
-        self.expect(IDENTIFIER);
+        if !self.at(LBRACE) {
+            self.expect(IDENTIFIER);
+        }
         let lbrace_span = self.expect(LBRACE);
         while !self.eat(RBRACE) {
             match self.peek() {
