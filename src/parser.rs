@@ -19,9 +19,10 @@ pub fn parse(file: &codemap::File) -> SyntaxNode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Logos)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[repr(u16)]
-#[logos(skip r"\p{Whitespace}|(#.*)")]
 pub enum SyntaxKind {
     EOF = 0,
+    #[regex(r"(\p{Whitespace}|#.*)+")]
+    TRIVIA,
 
     DOCUMENT,
     SPRITE,
@@ -80,6 +81,9 @@ struct Parser<'src, I: Iterator<Item = Token<'src>>> {
 
 impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn peek(&mut self) -> SyntaxKind {
+        while self.iter.peek().is_some_and(|&(t, _)| t == TRIVIA) {
+            self.bump();
+        }
         self.iter.peek().map_or(EOF, |(t, _)| *t)
     }
 
