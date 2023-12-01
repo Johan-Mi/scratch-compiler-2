@@ -141,6 +141,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_anything(&mut self) {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
+            KW_FN => self.parse_function(),
             _ => self.bump(),
         }
     }
