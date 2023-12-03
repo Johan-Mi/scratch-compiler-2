@@ -140,6 +140,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
             KW_FN => self.parse_function(),
+            LBRACE => {
+                self.bump();
+                while !self.at(EOF) && !self.eat(RBRACE) {
+                    self.parse_anything();
+                }
+            }
             _ => self.bump(),
         }
     }
