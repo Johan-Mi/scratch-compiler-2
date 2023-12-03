@@ -36,11 +36,14 @@ pub enum SyntaxKind {
     DOCUMENT,
     SPRITE,
     FN,
+    VARIABLE,
 
     #[token("{")]
     LBRACE,
     #[token("}")]
     RBRACE,
+    #[token("->")]
+    ARROW,
 
     #[token("sprite")]
     KW_SPRITE,
@@ -167,10 +170,24 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
+    fn parse_expression(&mut self) {
+        match self.peek() {
+            IDENTIFIER => {
+                self.builder.start_node(VARIABLE.into());
+                self.bump();
+                self.builder.finish_node();
+            }
+            _ => self.error(),
+        }
+    }
+
     fn parse_function(&mut self) {
         self.builder.start_node(FN.into());
         self.bump(); // KW_FN
         self.expect(IDENTIFIER);
+        if self.eat(ARROW) {
+            self.parse_expression();
+        }
         self.expect(LBRACE);
         while !self.at(EOF) && !self.eat(RBRACE) {
             if self.at(KW_SPRITE) {
