@@ -2,6 +2,7 @@
 #![warn(clippy::nursery, clippy::pedantic)]
 #![allow(clippy::enum_glob_use)]
 
+mod ast;
 mod diagnostics;
 #[allow(unsafe_code)]
 mod parser;
