@@ -1,5 +1,3 @@
-#![allow(clippy::enum_glob_use)]
-
 use crate::diagnostics::{primary, secondary, Diagnostics};
 use codemap::Span;
 use logos::Logos;

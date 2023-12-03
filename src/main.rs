@@ -1,9 +1,11 @@
 #![deny(unsafe_code)]
 #![warn(clippy::nursery, clippy::pedantic)]
+#![allow(clippy::enum_glob_use)]
 
 mod diagnostics;
 #[allow(unsafe_code)]
 mod parser;
+mod syntax_errors;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
@@ -28,6 +30,7 @@ fn real_main(
     })?;
     let file = code_map.add_file(source_file, source_code);
     let document = parser::parse(&file, diagnostics);
+    syntax_errors::check(&document, &file, diagnostics);
     eprintln!("{document:#?}");
 
     Ok(())
