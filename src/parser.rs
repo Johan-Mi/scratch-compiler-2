@@ -36,6 +36,8 @@ pub enum SyntaxKind {
     DOCUMENT,
     SPRITE,
     FN,
+    FUNCTION_PARAMETERS,
+    PARAMETER,
     VARIABLE,
 
     #[token("(")]
@@ -48,6 +50,10 @@ pub enum SyntaxKind {
     RBRACE,
     #[token("->")]
     ARROW,
+    #[token(":")]
+    COLON,
+    #[token(",")]
+    COMMA,
 
     #[token("sprite")]
     KW_SPRITE,
@@ -191,10 +197,34 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
+    fn parse_function_parameters(&mut self) {
+        self.builder.start_node(FUNCTION_PARAMETERS.into());
+        self.bump(); // LPAREN
+        while !self.at(EOF) && !self.eat(RPAREN) {
+            if self.at(IDENTIFIER) {
+                self.builder.start_node(PARAMETER.into());
+                self.bump();
+                if !self.at(COLON) {
+                    self.expect(IDENTIFIER);
+                }
+                self.expect(COLON);
+                self.parse_expression();
+                self.eat(COMMA);
+                self.builder.finish_node();
+            } else {
+                self.error();
+            }
+        }
+        self.builder.finish_node();
+    }
+
     fn parse_function(&mut self) {
         self.builder.start_node(FN.into());
         self.bump(); // KW_FN
         self.expect(IDENTIFIER);
+        if self.at(LPAREN) {
+            self.parse_function_parameters();
+        }
         if self.eat(ARROW) {
             self.parse_expression();
         }
