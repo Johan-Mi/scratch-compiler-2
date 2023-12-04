@@ -38,6 +38,10 @@ pub enum SyntaxKind {
     FN,
     VARIABLE,
 
+    #[token("(")]
+    LPAREN,
+    #[token(")")]
+    RPAREN,
     #[token("{")]
     LBRACE,
     #[token("}")]
@@ -143,6 +147,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
             KW_FN => self.parse_function(),
+            LPAREN => {
+                self.bump();
+                while !self.at(EOF) && !self.eat(RPAREN) {
+                    self.parse_anything();
+                }
+            }
             LBRACE => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RBRACE) {
