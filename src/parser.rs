@@ -54,7 +54,7 @@ pub enum SyntaxKind {
     #[token("fn")]
     KW_FN,
 
-    #[regex(r"\p{XID_Start}[\p{XID_Continue}-]*")]
+    #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
 
     ERROR,
