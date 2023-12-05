@@ -1,6 +1,6 @@
 use crate::parser::{
     SyntaxKind::{self, *},
-    SyntaxNode,
+    SyntaxNode, SyntaxToken,
 };
 use rowan::ast::AstNode;
 
@@ -43,9 +43,19 @@ impl Document {
 ast_node!(Sprite: SPRITE);
 
 impl Sprite {
+    pub fn name(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+
     pub fn functions(&self) -> impl Iterator<Item = Function> {
         rowan::ast::support::children(&self.syntax)
     }
 }
 
 ast_node!(Function: FN);
+
+impl Function {
+    pub fn name(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+}

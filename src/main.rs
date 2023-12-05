@@ -4,6 +4,7 @@
 
 mod ast;
 mod diagnostics;
+mod name;
 #[allow(unsafe_code)]
 mod parser;
 mod syntax_errors;

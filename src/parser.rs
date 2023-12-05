@@ -94,6 +94,8 @@ impl rowan::Language for Lang {
 
 pub type SyntaxNode = rowan::SyntaxNode<Lang>;
 
+pub type SyntaxToken = rowan::SyntaxToken<Lang>;
+
 struct Token<'src> {
     kind: SyntaxKind,
     text: &'src str,
