@@ -39,6 +39,7 @@ pub enum SyntaxKind {
     FUNCTION_PARAMETERS,
     PARAMETER,
     VARIABLE,
+    FUNCTION_CALL,
 
     #[token("(")]
     LPAREN,
@@ -191,8 +192,15 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_expression(&mut self) {
         match self.peek() {
             IDENTIFIER => {
-                self.builder.start_node(VARIABLE.into());
+                let checkpoint = self.builder.checkpoint();
                 self.bump();
+                if self.eat(LPAREN) {
+                    self.builder
+                        .start_node_at(checkpoint, FUNCTION_CALL.into());
+                    self.expect(RPAREN);
+                } else {
+                    self.builder.start_node_at(checkpoint, VARIABLE.into());
+                }
                 self.builder.finish_node();
             }
             _ => self.error(),
