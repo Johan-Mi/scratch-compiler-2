@@ -40,6 +40,7 @@ pub enum SyntaxKind {
     PARAMETER,
     VARIABLE,
     FUNCTION_CALL,
+    LET,
 
     #[token("(")]
     LPAREN,
@@ -55,11 +56,15 @@ pub enum SyntaxKind {
     COLON,
     #[token(",")]
     COMMA,
+    #[token("=")]
+    EQ,
 
     #[token("sprite")]
     KW_SPRITE,
     #[token("fn")]
     KW_FN,
+    #[token("let")]
+    KW_LET,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -228,6 +233,22 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
+    fn parse_let(&mut self) {
+        self.builder.start_node(LET.into());
+        self.bump(); // KW_LET
+        self.expect(IDENTIFIER);
+        self.expect(EQ);
+        self.parse_expression();
+        self.builder.finish_node();
+    }
+
+    fn parse_statement(&mut self) {
+        match self.peek() {
+            KW_LET => self.parse_let(),
+            _ => self.parse_expression(),
+        }
+    }
+
     fn parse_function(&mut self) {
         self.builder.start_node(FN.into());
         self.bump(); // KW_FN
@@ -244,7 +265,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 break;
             }
 
-            self.error();
+            self.parse_statement();
         }
         self.builder.finish_node();
     }
