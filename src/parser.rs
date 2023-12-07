@@ -143,6 +143,10 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.peek() == kind
     }
 
+    fn immediately_at(&mut self, kind: SyntaxKind) -> bool {
+        self.iter.peek().is_some_and(|token| token.kind == kind)
+    }
+
     fn bump(&mut self) {
         if let Some(token) = self.iter.next() {
             self.builder.token(token.kind.into(), token.text);
@@ -200,7 +204,8 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             IDENTIFIER => {
                 let checkpoint = self.builder.checkpoint();
                 self.bump();
-                if self.eat(LPAREN) {
+                if self.immediately_at(LPAREN) {
+                    self.bump();
                     self.builder
                         .start_node_at(checkpoint, FUNCTION_CALL.into());
                     self.expect(RPAREN);
