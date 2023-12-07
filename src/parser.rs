@@ -38,6 +38,7 @@ pub enum SyntaxKind {
     FN,
     FUNCTION_PARAMETERS,
     PARAMETER,
+    BLOCK,
     VARIABLE,
     FUNCTION_CALL,
     LET,
@@ -249,6 +250,19 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
+    fn parse_block(&mut self) {
+        self.builder.start_node(BLOCK.into());
+        self.expect(LBRACE);
+        while !self.at(EOF) && !self.eat(RBRACE) {
+            if self.at(KW_SPRITE) {
+                break;
+            }
+
+            self.parse_statement();
+        }
+        self.builder.finish_node();
+    }
+
     fn parse_function(&mut self) {
         self.builder.start_node(FN.into());
         self.bump(); // KW_FN
@@ -259,14 +273,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         if self.eat(ARROW) {
             self.parse_expression();
         }
-        self.expect(LBRACE);
-        while !self.at(EOF) && !self.eat(RBRACE) {
-            if self.at(KW_SPRITE) {
-                break;
-            }
-
-            self.parse_statement();
-        }
+        self.parse_block();
         self.builder.finish_node();
     }
 
