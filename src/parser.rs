@@ -237,7 +237,9 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_let(&mut self) {
         self.builder.start_node(LET.into());
         self.bump(); // KW_LET
-        self.expect(IDENTIFIER);
+        if !self.at(EQ) {
+            self.expect(IDENTIFIER);
+        }
         self.expect(EQ);
         self.parse_expression();
         self.builder.finish_node();
