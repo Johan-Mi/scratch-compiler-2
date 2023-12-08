@@ -118,7 +118,7 @@ struct Parser<'src, I: Iterator<Item = Token<'src>>> {
 
 impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn skip_trivia(&mut self) {
-        while self.iter.peek().is_some_and(|token| token.kind == TRIVIA) {
+        if self.iter.peek().is_some_and(|token| token.kind == TRIVIA) {
             self.bump();
         }
     }
