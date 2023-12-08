@@ -60,6 +60,14 @@ pub enum SyntaxKind {
     COMMA,
     #[token("=")]
     EQ,
+    #[token("+")]
+    PLUS,
+    #[token("-")]
+    MINUS,
+    #[token("*")]
+    STAR,
+    #[token("/")]
+    SLASH,
 
     #[token("sprite")]
     KW_SPRITE,
