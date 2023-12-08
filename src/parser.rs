@@ -42,6 +42,7 @@ pub enum SyntaxKind {
     VARIABLE,
     FUNCTION_CALL,
     LET,
+    PARENTHESIZED_EXPRESSION,
 
     #[token("(")]
     LPAREN,
@@ -212,6 +213,13 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 } else {
                     self.builder.start_node_at(checkpoint, VARIABLE.into());
                 }
+                self.builder.finish_node();
+            }
+            LPAREN => {
+                self.builder.start_node(PARENTHESIZED_EXPRESSION.into());
+                self.bump();
+                self.parse_expression();
+                self.expect(RPAREN);
                 self.builder.finish_node();
             }
             _ => self.error(),
