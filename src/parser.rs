@@ -69,6 +69,8 @@ pub enum SyntaxKind {
     STAR,
     #[token("/")]
     SLASH,
+    #[token("%")]
+    PERCENT,
 
     #[token("sprite")]
     KW_SPRITE,
@@ -366,7 +368,8 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 }
 
-const PRECEDENCE_TABLE: &[&[SyntaxKind]] = &[&[PLUS, MINUS], &[STAR, SLASH]];
+const PRECEDENCE_TABLE: &[&[SyntaxKind]] =
+    &[&[PLUS, MINUS], &[STAR, SLASH, PERCENT]];
 
 fn binding_power(kind: SyntaxKind) -> Option<usize> {
     PRECEDENCE_TABLE
