@@ -43,6 +43,7 @@ pub enum SyntaxKind {
     FUNCTION_CALL,
     LET,
     PARENTHESIZED_EXPRESSION,
+    BINARY_EXPRESSION,
 
     #[token("(")]
     LPAREN,
@@ -208,7 +209,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
-    fn parse_expression(&mut self) {
+    fn parse_atom(&mut self) {
         match self.peek() {
             IDENTIFIER => {
                 let checkpoint = self.builder.checkpoint();
@@ -231,6 +232,27 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.builder.finish_node();
             }
             _ => self.error(),
+        }
+    }
+
+    fn parse_expression(&mut self) {
+        self.parse_recursive_expression(EOF);
+    }
+
+    fn parse_recursive_expression(&mut self, left: SyntaxKind) {
+        let checkpoint = self.builder.checkpoint();
+        self.parse_atom();
+
+        loop {
+            let right = self.peek();
+            if binding_power(right) <= binding_power(left) {
+                break;
+            }
+            self.builder
+                .start_node_at(checkpoint, BINARY_EXPRESSION.into());
+            self.bump(); // operator
+            self.parse_recursive_expression(right);
+            self.builder.finish_node();
         }
     }
 
@@ -342,4 +364,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
         SyntaxNode::new_root(self.builder.finish())
     }
+}
+
+const PRECEDENCE_TABLE: &[&[SyntaxKind]] = &[&[PLUS, MINUS], &[STAR, SLASH]];
+
+fn binding_power(kind: SyntaxKind) -> Option<usize> {
+    PRECEDENCE_TABLE
+        .iter()
+        .position(|level| level.contains(&kind))
 }
