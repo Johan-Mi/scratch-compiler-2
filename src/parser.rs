@@ -41,6 +41,7 @@ pub enum SyntaxKind {
     BLOCK,
     VARIABLE,
     FUNCTION_CALL,
+    ARGUMENTS,
     LET,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
@@ -211,16 +212,25 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
     }
 
+    fn parse_arguments(&mut self) {
+        self.builder.start_node(ARGUMENTS.into());
+        self.bump(); // LPAREN
+        while !self.at(EOF) && !self.eat(RPAREN) {
+            self.parse_expression();
+            self.eat(COMMA);
+        }
+        self.builder.finish_node();
+    }
+
     fn parse_atom(&mut self) {
         match self.peek() {
             IDENTIFIER => {
                 let checkpoint = self.builder.checkpoint();
                 self.bump();
                 if self.immediately_at(LPAREN) {
-                    self.bump();
                     self.builder
                         .start_node_at(checkpoint, FUNCTION_CALL.into());
-                    self.expect(RPAREN);
+                    self.parse_arguments();
                 } else {
                     self.builder.start_node_at(checkpoint, VARIABLE.into());
                 }
