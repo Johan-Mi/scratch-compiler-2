@@ -42,6 +42,7 @@ pub enum SyntaxKind {
     VARIABLE,
     FUNCTION_CALL,
     ARGUMENTS,
+    NAMED_ARGUMENT,
     LET,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
@@ -231,6 +232,11 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                     self.builder
                         .start_node_at(checkpoint, FUNCTION_CALL.into());
                     self.parse_arguments();
+                } else if self.immediately_at(COLON) {
+                    self.builder
+                        .start_node_at(checkpoint, NAMED_ARGUMENT.into());
+                    self.bump();
+                    self.parse_expression();
                 } else {
                     self.builder.start_node_at(checkpoint, VARIABLE.into());
                 }
