@@ -4,6 +4,7 @@
 
 mod ast;
 mod diagnostics;
+mod hir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
@@ -33,6 +34,8 @@ fn real_main(
     let file = code_map.add_file(source_file, source_code);
     let document = parser::parse(&file, diagnostics);
     syntax_errors::check(&document, &file, diagnostics);
+    eprintln!("{document:#?}");
+    let document = hir::lower(document, &file, diagnostics)?;
     eprintln!("{document:#?}");
 
     Ok(())
