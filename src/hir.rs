@@ -17,7 +17,7 @@ pub fn lower(
     document: SyntaxNode,
     file: &File,
     diagnostics: &mut Diagnostics,
-) -> Result<Document> {
+) -> Document {
     Document::lower(&ast::Document::cast(document).unwrap(), file, diagnostics)
 }
 
@@ -31,11 +31,14 @@ impl Document {
         ast: &ast::Document,
         file: &File,
         diagnostics: &mut Diagnostics,
-    ) -> Result<Self> {
+    ) -> Self {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
-            let (name, sprite) = Sprite::lower(&sprite, file, diagnostics)?;
+            let Ok((name, sprite)) = Sprite::lower(&sprite, file, diagnostics)
+            else {
+                continue;
+            };
 
             if let Some(prev_sprite) = sprites.get(&*name) {
                 diagnostics.error(
@@ -53,9 +56,9 @@ impl Document {
             }
         }
 
-        Ok(Self {
+        Self {
             sprites: sprites.into_values().collect(),
-        })
+        }
     }
 }
 

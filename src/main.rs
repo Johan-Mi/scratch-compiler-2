@@ -35,7 +35,7 @@ fn real_main(
     let document = parser::parse(&file, diagnostics);
     syntax_errors::check(&document, &file, diagnostics);
     eprintln!("{document:#?}");
-    let document = hir::lower(document, &file, diagnostics)?;
+    let document = hir::lower(document, &file, diagnostics);
     eprintln!("{document:#?}");
 
     Ok(())
