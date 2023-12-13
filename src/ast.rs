@@ -60,6 +60,39 @@ impl Function {
     }
 }
 
+pub enum Statement {
+    Let(Let),
+}
+
+impl AstNode for Statement {
+    type Language = crate::parser::Lang;
+
+    fn can_cast(kind: SyntaxKind) -> bool {
+        Let::can_cast(kind)
+    }
+
+    fn cast(node: SyntaxNode) -> Option<Self> {
+        match node.kind() {
+            LET => AstNode::cast(node).map(Self::Let),
+            _ => None,
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Let(inner) => &inner.syntax,
+        }
+    }
+}
+
+ast_node!(Let: LET);
+
+impl Let {
+    pub fn variable(&self) -> Option<Variable> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
 ast_node!(Variable: VARIABLE);
 
 impl Variable {
