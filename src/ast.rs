@@ -60,6 +60,14 @@ impl Function {
     }
 }
 
+ast_node!(Block: BLOCK);
+
+impl Block {
+    pub fn statements(&self) -> impl Iterator<Item = Statement> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}
+
 pub enum Statement {
     Let(Let),
 }
