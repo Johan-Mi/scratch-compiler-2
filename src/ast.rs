@@ -59,3 +59,11 @@ impl Function {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
 }
+
+ast_node!(Variable: VARIABLE);
+
+impl Variable {
+    pub fn identifier(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
+}
