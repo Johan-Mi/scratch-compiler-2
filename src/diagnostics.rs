@@ -2,6 +2,7 @@ use codemap::Span;
 use codemap_diagnostic::{
     ColorConfig, Diagnostic, Emitter, Level, SpanLabel, SpanStyle,
 };
+use rowan::TextRange;
 
 #[derive(Default)]
 pub struct Diagnostics(Vec<Diagnostic>);
@@ -54,4 +55,9 @@ pub fn secondary(span: Span, text: impl Into<String>) -> SpanLabel {
         label: Some(text.into()),
         style: SpanStyle::Secondary,
     }
+}
+
+pub fn span(file: &codemap::File, text_range: TextRange) -> Span {
+    let range = std::ops::Range::<u32>::from(text_range);
+    file.span.subspan(range.start.into(), range.end.into())
 }

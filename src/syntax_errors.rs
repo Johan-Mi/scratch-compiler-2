@@ -1,14 +1,8 @@
 use crate::{
-    diagnostics::{primary, Diagnostics},
+    diagnostics::{primary, span, Diagnostics},
     parser::{SyntaxKind::*, SyntaxNode},
 };
-use codemap::{File, Span};
-use rowan::TextRange;
-
-fn span(file: &File, text_range: TextRange) -> Span {
-    let range = std::ops::Range::<u32>::from(text_range);
-    file.span.subspan(range.start.into(), range.end.into())
-}
+use codemap::File;
 
 pub fn check(
     document: &SyntaxNode,
