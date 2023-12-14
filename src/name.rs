@@ -49,6 +49,11 @@ fn resolve_in_scope(
             .functions()
             .filter_map(|func| func.name())
             .find(|name| name.text() == identifier),
+        FN => ast::Function::cast(scope)?
+            .parameters()?
+            .parameters()
+            .filter_map(|parameter| parameter.internal_name())
+            .find(|name| name.text() == identifier),
         BLOCK => ast::Block::cast(scope)?
             .statements()
             .take_while(|statement| {
