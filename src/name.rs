@@ -4,11 +4,13 @@ use crate::{
 };
 use rowan::ast::AstNode;
 
+#[derive(Debug)]
 pub enum Name {
     User(SyntaxToken),
     Builtin(Builtin),
 }
 
+#[derive(Debug)]
 pub enum Builtin {
     Num,
 }

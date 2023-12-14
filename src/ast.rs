@@ -58,6 +58,42 @@ impl Function {
     pub fn name(&self) -> Option<SyntaxToken> {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
+
+    pub fn parameters(&self) -> Option<FunctionParameters> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(FunctionParameters: FUNCTION_PARAMETERS);
+
+impl FunctionParameters {
+    pub fn parameters(&self) -> impl Iterator<Item = Parameter> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(Parameter: PARAMETER);
+
+impl Parameter {
+    pub fn external_name(&self) -> Option<ExternalParameterName> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn internal_name(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+
+    pub fn ty(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(ExternalParameterName: EXTERNAL_PARAMETER_NAME);
+
+impl ExternalParameterName {
+    pub fn identifier(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
 }
 
 ast_node!(Block: BLOCK);
@@ -98,6 +134,31 @@ ast_node!(Let: LET);
 impl Let {
     pub fn variable(&self) -> Option<SyntaxToken> {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+}
+
+pub enum Expression {
+    Variable(Variable),
+}
+
+impl AstNode for Expression {
+    type Language = crate::parser::Lang;
+
+    fn can_cast(kind: SyntaxKind) -> bool {
+        Variable::can_cast(kind)
+    }
+
+    fn cast(node: SyntaxNode) -> Option<Self> {
+        match node.kind() {
+            VARIABLE => AstNode::cast(node).map(Self::Variable),
+            _ => None,
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            Self::Variable(inner) => &inner.syntax,
+        }
     }
 }
 

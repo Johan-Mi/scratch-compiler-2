@@ -38,6 +38,7 @@ pub enum SyntaxKind {
     FN,
     FUNCTION_PARAMETERS,
     PARAMETER,
+    EXTERNAL_PARAMETER_NAME,
     BLOCK,
     VARIABLE,
     FUNCTION_CALL,
@@ -278,19 +279,22 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.start_node(FUNCTION_PARAMETERS.into());
         self.bump(); // LPAREN
         while !self.at(EOF) && !self.eat(RPAREN) {
-            if self.at(IDENTIFIER) {
-                self.builder.start_node(PARAMETER.into());
-                self.bump();
-                if !self.at(COLON) {
-                    self.expect(IDENTIFIER);
-                }
-                self.expect(COLON);
-                self.parse_expression();
-                self.eat(COMMA);
-                self.builder.finish_node();
-            } else {
+            if !self.at(IDENTIFIER) {
                 self.error();
+                continue;
             }
+
+            self.builder.start_node(PARAMETER.into());
+            self.builder.start_node(EXTERNAL_PARAMETER_NAME.into());
+            self.bump();
+            self.builder.finish_node();
+            if !self.at(COLON) {
+                self.expect(IDENTIFIER);
+            }
+            self.expect(COLON);
+            self.parse_expression();
+            self.eat(COMMA);
+            self.builder.finish_node();
         }
         self.builder.finish_node();
     }
