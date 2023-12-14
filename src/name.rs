@@ -54,9 +54,7 @@ fn resolve_in_scope(
                 statement.syntax().text_range().end() <= start
             })
             .find_map(|statement| match statement {
-                ast::Statement::Let(let_) => {
-                    Some(let_.variable()?.identifier())
-                }
+                ast::Statement::Let(let_) => Some(let_.variable()?),
                 _ => None,
             }),
         _ => None,

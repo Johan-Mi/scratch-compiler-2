@@ -96,8 +96,8 @@ impl AstNode for Statement {
 ast_node!(Let: LET);
 
 impl Let {
-    pub fn variable(&self) -> Option<Variable> {
-        rowan::ast::support::child(&self.syntax)
+    pub fn variable(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
 }
 
