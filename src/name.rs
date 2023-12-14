@@ -60,10 +60,11 @@ fn resolve_in_scope(
                 // You can't refer to a variable before its definition.
                 statement.syntax().text_range().end() <= start
             })
-            .find_map(|statement| match statement {
+            .filter_map(|statement| match statement {
                 ast::Statement::Let(let_) => Some(let_.variable()?),
                 _ => None,
-            }),
+            })
+            .find(|name| name.text() == identifier),
         _ => None,
     }
 }
