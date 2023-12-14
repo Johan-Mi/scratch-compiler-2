@@ -107,6 +107,7 @@ impl Sprite {
 pub struct Function {
     name: String,
     parameters: Vec<Parameter>,
+    return_ty: Expression,
 }
 
 impl Function {
@@ -166,7 +167,13 @@ impl Function {
             })
             .collect::<Result<_>>()?;
 
-        Ok(Self { name, parameters })
+        Ok(Self {
+            name,
+            parameters,
+            return_ty: ast.return_ty().map_or(Expression::UnitType, |ty| {
+                Expression::lower(&ty, file, diagnostics)
+            }),
+        })
     }
 }
 
@@ -180,6 +187,7 @@ pub struct Parameter {
 #[derive(Debug)]
 pub enum Expression {
     Variable(Name),
+    UnitType,
     Error,
 }
 

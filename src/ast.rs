@@ -62,6 +62,10 @@ impl Function {
     pub fn parameters(&self) -> Option<FunctionParameters> {
         rowan::ast::support::child(&self.syntax)
     }
+
+    pub fn return_ty(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
 }
 
 ast_node!(FunctionParameters: FUNCTION_PARAMETERS);
