@@ -66,6 +66,10 @@ impl Function {
     pub fn return_ty(&self) -> Option<Expression> {
         rowan::ast::support::child(&self.syntax)
     }
+
+    pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
 }
 
 ast_node!(FunctionParameters: FUNCTION_PARAMETERS);
@@ -110,25 +114,27 @@ impl Block {
 
 pub enum Statement {
     Let(Let),
+    Expr(Expression),
 }
 
 impl AstNode for Statement {
     type Language = crate::parser::Lang;
 
     fn can_cast(kind: SyntaxKind) -> bool {
-        Let::can_cast(kind)
+        Let::can_cast(kind) || Expression::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
             LET => AstNode::cast(node).map(Self::Let),
-            _ => None,
+            _ => Expression::cast(node).map(Self::Expr),
         }
     }
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::Let(inner) => &inner.syntax,
+            Self::Expr(inner) => inner.syntax(),
         }
     }
 }
@@ -139,22 +145,40 @@ impl Let {
     pub fn variable(&self) -> Option<SyntaxToken> {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
+
+    pub fn value(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
 }
 
 pub enum Expression {
+    Parenthesized(ParenthesizedExpression),
     Variable(Variable),
+    FunctionCall(FunctionCall),
+    BinaryOperation(BinaryOperation),
+    NamedArgument(NamedArgument),
 }
 
 impl AstNode for Expression {
     type Language = crate::parser::Lang;
 
     fn can_cast(kind: SyntaxKind) -> bool {
-        Variable::can_cast(kind)
+        ParenthesizedExpression::can_cast(kind)
+            || Variable::can_cast(kind)
+            || FunctionCall::can_cast(kind)
+            || BinaryOperation::can_cast(kind)
+            || NamedArgument::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
+            PARENTHESIZED_EXPRESSION => {
+                AstNode::cast(node).map(Self::Parenthesized)
+            }
             VARIABLE => AstNode::cast(node).map(Self::Variable),
+            FUNCTION_CALL => AstNode::cast(node).map(Self::FunctionCall),
+            BINARY_EXPRESSION => AstNode::cast(node).map(Self::BinaryOperation),
+            NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
             _ => None,
         }
     }
@@ -162,7 +186,19 @@ impl AstNode for Expression {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::Variable(inner) => &inner.syntax,
+            Self::FunctionCall(inner) => &inner.syntax,
+            Self::BinaryOperation(inner) => &inner.syntax,
+            Self::Parenthesized(inner) => &inner.syntax,
+            Self::NamedArgument(inner) => &inner.syntax,
         }
+    }
+}
+
+ast_node!(ParenthesizedExpression: PARENTHESIZED_EXPRESSION);
+
+impl ParenthesizedExpression {
+    pub fn inner(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
     }
 }
 
@@ -171,5 +207,57 @@ ast_node!(Variable: VARIABLE);
 impl Variable {
     pub fn identifier(&self) -> SyntaxToken {
         rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
+}
+
+ast_node!(FunctionCall: FUNCTION_CALL);
+
+impl FunctionCall {
+    pub fn name(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
+
+    pub fn args(&self) -> impl Iterator<Item = Expression> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(BinaryOperation: BINARY_EXPRESSION);
+
+impl BinaryOperation {
+    pub fn operator(&self) -> SyntaxToken {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|token| token.kind().is_binary_operator())
+            .unwrap()
+    }
+
+    pub fn lhs(&self) -> Option<Expression> {
+        let operator = self.operator().text_range().start();
+        self.syntax
+            .children()
+            .take_while(|child| child.text_range().end() <= operator)
+            .find_map(AstNode::cast)
+    }
+
+    pub fn rhs(&self) -> Option<Expression> {
+        let operator = self.operator().text_range().end();
+        self.syntax
+            .children()
+            .skip_while(|child| child.text_range().start() < operator)
+            .find_map(AstNode::cast)
+    }
+}
+
+ast_node!(NamedArgument: NAMED_ARGUMENT);
+
+impl NamedArgument {
+    pub fn name(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
+
+    pub fn value(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
     }
 }

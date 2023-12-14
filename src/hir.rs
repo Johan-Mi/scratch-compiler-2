@@ -2,7 +2,7 @@ use crate::{
     ast,
     diagnostics::{primary, secondary, span, Diagnostics},
     name::Name,
-    parser::SyntaxNode,
+    parser::{SyntaxKind, SyntaxNode},
 };
 use codemap::{File, Span};
 use rowan::ast::AstNode;
@@ -108,6 +108,7 @@ pub struct Function {
     name: String,
     parameters: Vec<Parameter>,
     return_ty: Expression,
+    body: Block,
 }
 
 impl Function {
@@ -141,12 +142,17 @@ impl Function {
             .map(|parameter| Parameter::lower(&parameter, file, diagnostics))
             .collect::<Result<_>>()?;
 
+        let body = ast.body().ok_or_else(|| {
+            diagnostics.error("function has no body", defined_here());
+        })?;
+
         Ok(Self {
             name,
             parameters,
             return_ty: ast.return_ty().map_or(Expression::UnitType, |ty| {
                 Expression::lower(&ty, file, diagnostics)
             }),
+            body: Block::lower(&body, file, diagnostics),
         })
     }
 }
@@ -189,9 +195,85 @@ impl Parameter {
 }
 
 #[derive(Debug)]
+pub struct Block {
+    statements: Vec<Statement>,
+}
+
+impl Block {
+    fn lower(
+        ast: &ast::Block,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Self {
+        Self {
+            statements: ast
+                .statements()
+                .map(|statement| {
+                    Statement::lower(&statement, file, diagnostics)
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Statement {
+    Let { variable: String, value: Expression },
+    Expr(Expression),
+    Error,
+}
+
+impl Statement {
+    fn lower(
+        ast: &ast::Statement,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Self {
+        match ast {
+            ast::Statement::Let(let_) => {
+                let Some(variable) = let_.variable() else {
+                    diagnostics.error(
+                        "expected variable name after `let`",
+                        [primary(span(file, ast.syntax().text_range()), "")],
+                    );
+                    return Self::Error;
+                };
+
+                let value = if let Some(value) = let_.value() {
+                    Expression::lower(&value, file, diagnostics)
+                } else {
+                    diagnostics.error(
+                        "expected expression after `=` in variable definition",
+                        [primary(span(file, ast.syntax().text_range()), "")],
+                    );
+                    Expression::Error
+                };
+
+                Self::Let {
+                    variable: variable.to_string(),
+                    value,
+                }
+            }
+            ast::Statement::Expr(expr) => {
+                Self::Expr(Expression::lower(expr, file, diagnostics))
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum Expression {
     Variable(Name),
     UnitType,
+    BinaryOperation {
+        lhs: Box<Expression>,
+        operator: BinaryOperator,
+        rhs: Box<Expression>,
+    },
+    FunctionCall {
+        name: String,
+        arguments: Vec<(Option<String>, Expression)>,
+    },
     Error,
 }
 
@@ -215,6 +297,76 @@ impl Expression {
                     Self::Variable,
                 )
             }
+            ast::Expression::FunctionCall(call) => Self::FunctionCall {
+                name: call.name().to_string(),
+                arguments: call
+                    .args()
+                    .map(|arg| {
+                        if let ast::Expression::NamedArgument(named_arg) = arg {
+                            (
+                                Some(named_arg.name().to_string()),
+                                Self::lower_opt(
+                                    named_arg.value(),
+                                    file,
+                                    diagnostics,
+                                ),
+                            )
+                        } else {
+                            (None, Self::lower(&arg, file, diagnostics))
+                        }
+                    })
+                    .collect(),
+            },
+            ast::Expression::BinaryOperation(op) => Self::BinaryOperation {
+                lhs: Box::new(Self::lower_opt(op.lhs(), file, diagnostics)),
+                operator: op.operator().kind().into(),
+                rhs: Box::new(Self::lower_opt(op.rhs(), file, diagnostics)),
+            },
+            ast::Expression::Parenthesized(expr) => {
+                Self::lower_opt(expr.inner(), file, diagnostics)
+            }
+            ast::Expression::NamedArgument(named_arg) => {
+                diagnostics.error(
+                    "unexpected named argument",
+                    [primary(
+                        span(file, named_arg.syntax().text_range()),
+                        "expected expression",
+                    )],
+                );
+                let _ = Self::lower_opt(named_arg.value(), file, diagnostics);
+                Self::Error
+            }
+        }
+    }
+
+    fn lower_opt(
+        ast: Option<ast::Expression>,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Self {
+        ast.map_or(Self::Error, |expr| Self::lower(&expr, file, diagnostics))
+    }
+}
+
+#[derive(Debug)]
+pub enum BinaryOperator {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+}
+
+impl From<SyntaxKind> for BinaryOperator {
+    fn from(value: SyntaxKind) -> Self {
+        use SyntaxKind::*;
+        match value {
+            PLUS => Self::Add,
+            MINUS => Self::Sub,
+            STAR => Self::Mul,
+            SLASH => Self::Div,
+            PERCENT => Self::Mod,
+            _ => unreachable!(),
         }
     }
 }

@@ -90,6 +90,12 @@ pub enum SyntaxKind {
 
 use SyntaxKind::*;
 
+impl SyntaxKind {
+    pub const fn is_binary_operator(self) -> bool {
+        matches!(self, PLUS | MINUS | STAR | SLASH | PERCENT)
+    }
+}
+
 impl From<SyntaxKind> for rowan::SyntaxKind {
     fn from(kind: SyntaxKind) -> Self {
         Self(kind as u16)
