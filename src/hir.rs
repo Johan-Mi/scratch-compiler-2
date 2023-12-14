@@ -138,33 +138,7 @@ impl Function {
             })
             .into_iter()
             .flat_map(|p| p.parameters())
-            .map(|parameter| {
-                let external_name =
-                    parameter.external_name().unwrap().identifier();
-                let internal_name = parameter
-                    .internal_name()
-                    .ok_or_else(|| {
-                        diagnostics.error(
-                            "function parameter has no internal name",
-                            [primary(
-                                span(file, external_name.text_range()),
-                                "",
-                            )],
-                        );
-                    })?
-                    .to_string();
-                let ty = parameter.ty().ok_or_else(|| {
-                    diagnostics.error(
-                        "function parameter has no type",
-                        [primary(span(file, external_name.text_range()), "")],
-                    );
-                })?;
-                Ok(Parameter {
-                    external_name: external_name.to_string(),
-                    internal_name,
-                    ty: Expression::lower(&ty, file, diagnostics),
-                })
-            })
+            .map(|parameter| Parameter::lower(&parameter, file, diagnostics))
             .collect::<Result<_>>()?;
 
         Ok(Self {
@@ -182,6 +156,36 @@ pub struct Parameter {
     external_name: String,
     internal_name: String,
     ty: Expression,
+}
+
+impl Parameter {
+    fn lower(
+        ast: &ast::Parameter,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Result<Self> {
+        let external_name = ast.external_name().unwrap().identifier();
+        let internal_name = ast
+            .internal_name()
+            .ok_or_else(|| {
+                diagnostics.error(
+                    "function parameter has no internal name",
+                    [primary(span(file, external_name.text_range()), "")],
+                );
+            })?
+            .to_string();
+        let ty = ast.ty().ok_or_else(|| {
+            diagnostics.error(
+                "function parameter has no type",
+                [primary(span(file, external_name.text_range()), "")],
+            );
+        })?;
+        Ok(Self {
+            external_name: external_name.to_string(),
+            internal_name,
+            ty: Expression::lower(&ty, file, diagnostics),
+        })
+    }
 }
 
 #[derive(Debug)]
