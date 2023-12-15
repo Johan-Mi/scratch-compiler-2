@@ -301,6 +301,7 @@ impl Expression {
                 name: call.name().to_string(),
                 arguments: call
                     .args()
+                    .iter()
                     .map(|arg| {
                         if let ast::Expression::NamedArgument(named_arg) = arg {
                             (

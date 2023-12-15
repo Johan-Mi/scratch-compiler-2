@@ -217,7 +217,15 @@ impl FunctionCall {
         rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
     }
 
-    pub fn args(&self) -> impl Iterator<Item = Expression> {
+    pub fn args(&self) -> Arguments {
+        rowan::ast::support::child(&self.syntax).unwrap()
+    }
+}
+
+ast_node!(Arguments: ARGUMENTS);
+
+impl Arguments {
+    pub fn iter(&self) -> impl Iterator<Item = Expression> {
         rowan::ast::support::children(&self.syntax)
     }
 }
