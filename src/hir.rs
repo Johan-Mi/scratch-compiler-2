@@ -1,5 +1,6 @@
 use crate::{
     ast,
+    comptime::{Ty, Value},
     diagnostics::{primary, secondary, span, Diagnostics},
     name::Name,
     parser::{SyntaxKind, SyntaxNode},
@@ -149,9 +150,11 @@ impl Function {
         Ok(Self {
             name,
             parameters,
-            return_ty: ast.return_ty().map_or(Expression::UnitType, |ty| {
-                Expression::lower(&ty, file, diagnostics)
-            }),
+            return_ty: ast
+                .return_ty()
+                .map_or(Expression::Imm(Value::Ty(Ty::Unit)), |ty| {
+                    Expression::lower(&ty, file, diagnostics)
+                }),
             body: Block::lower(&body, file, diagnostics),
         })
     }
@@ -264,7 +267,7 @@ impl Statement {
 #[derive(Debug)]
 pub enum Expression {
     Variable(Name),
-    UnitType,
+    Imm(Value),
     BinaryOperation {
         lhs: Box<Expression>,
         operator: BinaryOperator,

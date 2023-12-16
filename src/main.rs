@@ -3,6 +3,7 @@
 #![allow(clippy::enum_glob_use)]
 
 mod ast;
+mod comptime;
 mod diagnostics;
 mod hir;
 mod name;
