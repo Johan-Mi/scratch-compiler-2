@@ -4,6 +4,9 @@ use crate::{
 };
 use rowan::ast::AstNode;
 
+// BUG: Shadowing is not supported since variables need to be resolved in
+// reverse order.
+
 #[derive(Debug)]
 pub enum Name {
     User(SyntaxToken),
