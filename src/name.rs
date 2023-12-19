@@ -4,9 +4,6 @@ use crate::{
 };
 use rowan::{ast::AstNode, TextSize};
 
-// BUG: Shadowing is not supported since variables need to be resolved in
-// reverse order.
-
 #[derive(Debug)]
 pub enum Name {
     User(SyntaxToken),
@@ -75,7 +72,10 @@ fn all_in_exact_scope_at(
                 .filter_map(|statement| match statement {
                     ast::Statement::Let(let_) => Some(let_.variable()?),
                     _ => None,
-                }),
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev(),
         ),
         _ => Box::new(std::iter::empty()),
     }
