@@ -3,7 +3,7 @@ use crate::{
     comptime::{Ty, Value},
     diagnostics::{primary, secondary, span, Diagnostics},
     name::Name,
-    parser::{SyntaxKind, SyntaxNode},
+    parser::{SyntaxKind, SyntaxNode, SyntaxToken},
 };
 use codemap::{File, Span};
 use rowan::ast::AstNode;
@@ -163,7 +163,7 @@ impl Function {
 #[derive(Debug)]
 pub struct Parameter {
     external_name: String,
-    internal_name: String,
+    internal_name: SyntaxToken,
     ty: Expression,
 }
 
@@ -174,15 +174,12 @@ impl Parameter {
         diagnostics: &mut Diagnostics,
     ) -> Result<Self> {
         let external_name = ast.external_name().unwrap().identifier();
-        let internal_name = ast
-            .internal_name()
-            .ok_or_else(|| {
-                diagnostics.error(
-                    "function parameter has no internal name",
-                    [primary(span(file, external_name.text_range()), "")],
-                );
-            })?
-            .to_string();
+        let internal_name = ast.internal_name().ok_or_else(|| {
+            diagnostics.error(
+                "function parameter has no internal name",
+                [primary(span(file, external_name.text_range()), "")],
+            );
+        })?;
         let ty = ast.ty().ok_or_else(|| {
             diagnostics.error(
                 "function parameter has no type",
@@ -221,7 +218,10 @@ impl Block {
 
 #[derive(Debug)]
 pub enum Statement {
-    Let { variable: String, value: Expression },
+    Let {
+        variable: SyntaxToken,
+        value: Expression,
+    },
     Expr(Expression),
     Error,
 }
@@ -252,10 +252,7 @@ impl Statement {
                     Expression::Error
                 };
 
-                Self::Let {
-                    variable: variable.to_string(),
-                    value,
-                }
+                Self::Let { variable, value }
             }
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, diagnostics))
