@@ -6,7 +6,7 @@ use crate::{
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
 };
 use codemap::{File, Span};
-use rowan::ast::AstNode;
+use rowan::{ast::AstNode, TextRange};
 use std::collections::HashMap;
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
@@ -125,12 +125,9 @@ impl Function {
             )]
         };
 
-        let name = ast
-            .name()
-            .ok_or_else(|| {
-                diagnostics.error("function has no name", defined_here());
-            })?
-            .to_string();
+        let name = ast.name().ok_or_else(|| {
+            diagnostics.error("function has no name", defined_here());
+        })?;
 
         let parameters = ast
             .parameters()
@@ -148,13 +145,15 @@ impl Function {
         })?;
 
         Ok(Self {
-            name,
+            name: name.to_string(),
             parameters,
-            return_ty: ast
-                .return_ty()
-                .map_or(Expression::Imm(Value::Ty(Ty::Unit)), |ty| {
-                    Expression::lower(&ty, file, diagnostics)
-                }),
+            return_ty: ast.return_ty().map_or_else(
+                || Expression {
+                    kind: ExpressionKind::Imm(Value::Ty(Ty::Unit)),
+                    span: span(file, name.text_range()),
+                },
+                |ty| Expression::lower(&ty, file, diagnostics),
+            ),
             body: Block::lower(&body, file, diagnostics),
         })
     }
@@ -249,7 +248,10 @@ impl Statement {
                         "expected expression after `=` in variable definition",
                         [primary(span(file, ast.syntax().text_range()), "")],
                     );
-                    Expression::Error
+                    Expression {
+                        kind: ExpressionKind::Error,
+                        span: span(file, variable.text_range()),
+                    }
                 };
 
                 Self::Let { variable, value }
@@ -262,7 +264,13 @@ impl Statement {
 }
 
 #[derive(Debug)]
-pub enum Expression {
+pub struct Expression {
+    kind: ExpressionKind,
+    span: Span,
+}
+
+#[derive(Debug)]
+pub enum ExpressionKind {
     Variable(Name),
     Imm(Value),
     BinaryOperation {
@@ -283,7 +291,7 @@ impl Expression {
         file: &File,
         diagnostics: &mut Diagnostics,
     ) -> Self {
-        match ast {
+        let kind = match ast {
             ast::Expression::Variable(var) => {
                 let identifier = var.identifier();
                 Name::resolve(&identifier).map_or_else(
@@ -292,39 +300,62 @@ impl Expression {
                             "undefined variable",
                             [primary(span(file, identifier.text_range()), "")],
                         );
-                        Self::Error
+                        ExpressionKind::Error
                     },
-                    Self::Variable,
+                    ExpressionKind::Variable,
                 )
             }
-            ast::Expression::FunctionCall(call) => Self::FunctionCall {
-                name: call.name().to_string(),
-                arguments: call
-                    .args()
-                    .iter()
-                    .map(|arg| {
-                        if let ast::Expression::NamedArgument(named_arg) = arg {
-                            (
-                                Some(named_arg.name().to_string()),
-                                Self::lower_opt(
-                                    named_arg.value(),
-                                    file,
-                                    diagnostics,
-                                ),
-                            )
-                        } else {
-                            (None, Self::lower(&arg, file, diagnostics))
-                        }
-                    })
-                    .collect(),
-            },
-            ast::Expression::BinaryOperation(op) => Self::BinaryOperation {
-                lhs: Box::new(Self::lower_opt(op.lhs(), file, diagnostics)),
-                operator: op.operator().kind().into(),
-                rhs: Box::new(Self::lower_opt(op.rhs(), file, diagnostics)),
-            },
+            ast::Expression::FunctionCall(call) => {
+                ExpressionKind::FunctionCall {
+                    name: call.name().to_string(),
+                    arguments: call
+                        .args()
+                        .iter()
+                        .map(|arg| {
+                            if let ast::Expression::NamedArgument(named_arg) =
+                                arg
+                            {
+                                (
+                                    Some(named_arg.name().to_string()),
+                                    Self::lower_opt(
+                                        named_arg.value(),
+                                        file,
+                                        diagnostics,
+                                        named_arg.syntax().text_range(),
+                                    ),
+                                )
+                            } else {
+                                (None, Self::lower(&arg, file, diagnostics))
+                            }
+                        })
+                        .collect(),
+                }
+            }
+            ast::Expression::BinaryOperation(op) => {
+                let operator = &op.operator();
+                ExpressionKind::BinaryOperation {
+                    lhs: Box::new(Self::lower_opt(
+                        op.lhs(),
+                        file,
+                        diagnostics,
+                        operator.text_range(),
+                    )),
+                    operator: operator.kind().into(),
+                    rhs: Box::new(Self::lower_opt(
+                        op.rhs(),
+                        file,
+                        diagnostics,
+                        operator.text_range(),
+                    )),
+                }
+            }
             ast::Expression::Parenthesized(expr) => {
-                Self::lower_opt(expr.inner(), file, diagnostics)
+                return Self::lower_opt(
+                    expr.inner(),
+                    file,
+                    diagnostics,
+                    expr.syntax().text_range(),
+                );
             }
             ast::Expression::NamedArgument(named_arg) => {
                 diagnostics.error(
@@ -334,9 +365,19 @@ impl Expression {
                         "expected expression",
                     )],
                 );
-                let _ = Self::lower_opt(named_arg.value(), file, diagnostics);
-                Self::Error
+                let _ = Self::lower_opt(
+                    named_arg.value(),
+                    file,
+                    diagnostics,
+                    named_arg.syntax().text_range(),
+                );
+                ExpressionKind::Error
             }
+        };
+
+        Self {
+            kind,
+            span: span(file, ast.syntax().text_range()),
         }
     }
 
@@ -344,8 +385,15 @@ impl Expression {
         ast: Option<ast::Expression>,
         file: &File,
         diagnostics: &mut Diagnostics,
+        fallback_text_range: TextRange,
     ) -> Self {
-        ast.map_or(Self::Error, |expr| Self::lower(&expr, file, diagnostics))
+        ast.map_or_else(
+            || Self {
+                kind: ExpressionKind::Error,
+                span: span(file, fallback_text_range),
+            },
+            |expr| Self::lower(&expr, file, diagnostics),
+        )
     }
 }
 
