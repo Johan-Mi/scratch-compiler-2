@@ -6,4 +6,5 @@ pub enum Value {
 #[derive(Debug)]
 pub enum Ty {
     Unit,
+    Num,
 }
