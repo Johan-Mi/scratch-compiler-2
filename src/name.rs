@@ -2,7 +2,7 @@ use crate::{
     ast,
     parser::{SyntaxKind::*, SyntaxNode, SyntaxToken},
 };
-use rowan::ast::AstNode;
+use rowan::{ast::AstNode, TextSize};
 
 // BUG: Shadowing is not supported since variables need to be resolved in
 // reverse order.
@@ -29,45 +29,54 @@ impl Builtin {
 
 impl Name {
     pub fn resolve(identifier: &SyntaxToken) -> Option<Self> {
+        let position = identifier.text_range().start();
         identifier
             .parent_ancestors()
-            .find_map(|scope| resolve_in_scope(scope, identifier))
+            .flat_map(|scope| all_in_exact_scope_at(scope, position))
+            .find(|name| name.text() == identifier.text())
             .map(Self::User)
             .or_else(|| Builtin::resolve(identifier.text()).map(Self::Builtin))
     }
 }
 
-fn resolve_in_scope(
+fn all_in_exact_scope_at(
     scope: SyntaxNode,
-    identifier: &SyntaxToken,
-) -> Option<SyntaxToken> {
-    let start = identifier.text_range().start();
-    let identifier = identifier.text();
+    position: TextSize,
+) -> Box<dyn Iterator<Item = SyntaxToken>> {
     match scope.kind() {
-        DOCUMENT => ast::Document::cast(scope)?
-            .sprites()
-            .filter_map(|sprite| sprite.name())
-            .find(|name| name.text() == identifier),
-        SPRITE => ast::Sprite::cast(scope)?
-            .functions()
-            .filter_map(|func| func.name())
-            .find(|name| name.text() == identifier),
-        FN => ast::Function::cast(scope)?
-            .parameters()?
-            .parameters()
-            .filter_map(|parameter| parameter.internal_name())
-            .find(|name| name.text() == identifier),
-        BLOCK => ast::Block::cast(scope)?
-            .statements()
-            .take_while(|statement| {
-                // You can't refer to a variable before its definition.
-                statement.syntax().text_range().end() <= start
-            })
-            .filter_map(|statement| match statement {
-                ast::Statement::Let(let_) => Some(let_.variable()?),
-                _ => None,
-            })
-            .find(|name| name.text() == identifier),
-        _ => None,
+        DOCUMENT => Box::new(
+            ast::Document::cast(scope)
+                .unwrap()
+                .sprites()
+                .filter_map(|sprite| sprite.name()),
+        ),
+        SPRITE => Box::new(
+            ast::Sprite::cast(scope)
+                .unwrap()
+                .functions()
+                .filter_map(|func| func.name()),
+        ),
+        FN => Box::new(
+            ast::Function::cast(scope)
+                .unwrap()
+                .parameters()
+                .into_iter()
+                .flat_map(|p| p.parameters())
+                .filter_map(|parameter| parameter.internal_name()),
+        ),
+        BLOCK => Box::new(
+            ast::Block::cast(scope)
+                .unwrap()
+                .statements()
+                .take_while(move |statement| {
+                    // You can't refer to a variable before its definition.
+                    statement.syntax().text_range().end() <= position
+                })
+                .filter_map(|statement| match statement {
+                    ast::Statement::Let(let_) => Some(let_.variable()?),
+                    _ => None,
+                }),
+        ),
+        _ => Box::new(std::iter::empty()),
     }
 }
