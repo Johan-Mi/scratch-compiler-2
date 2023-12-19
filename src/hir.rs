@@ -265,8 +265,8 @@ impl Statement {
 
 #[derive(Debug)]
 pub struct Expression {
-    kind: ExpressionKind,
-    span: Span,
+    pub kind: ExpressionKind,
+    pub span: Span,
 }
 
 #[derive(Debug)]
