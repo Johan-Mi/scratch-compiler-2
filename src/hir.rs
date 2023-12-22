@@ -1,6 +1,6 @@
 use crate::{
     ast,
-    comptime::{Ty, Value},
+    comptime::{self, Ty, Value},
     diagnostics::{primary, secondary, span, Diagnostics},
     name::Name,
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
@@ -108,7 +108,7 @@ impl Sprite {
 pub struct Function {
     name: String,
     parameters: Vec<Parameter>,
-    return_ty: Expression,
+    return_ty: Result<Ty>,
     body: Block,
 }
 
@@ -144,16 +144,17 @@ impl Function {
             diagnostics.error("function has no body", defined_here());
         })?;
 
+        let return_ty = ast.return_ty().map_or(Ok(Ty::Unit), |ty| {
+            let expr = Expression::lower(&ty, file, diagnostics);
+            match comptime::evaluate(expr, diagnostics)? {
+                Value::Ty(ty) => Ok(ty),
+            }
+        });
+
         Ok(Self {
             name: name.to_string(),
             parameters,
-            return_ty: ast.return_ty().map_or_else(
-                || Expression {
-                    kind: ExpressionKind::Imm(Value::Ty(Ty::Unit)),
-                    span: span(file, name.text_range()),
-                },
-                |ty| Expression::lower(&ty, file, diagnostics),
-            ),
+            return_ty,
             body: Block::lower(&body, file, diagnostics),
         })
     }
@@ -163,7 +164,7 @@ impl Function {
 pub struct Parameter {
     external_name: String,
     internal_name: SyntaxToken,
-    ty: Expression,
+    ty: Result<Ty>,
 }
 
 impl Parameter {
@@ -179,16 +180,23 @@ impl Parameter {
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
+
         let ty = ast.ty().ok_or_else(|| {
             diagnostics.error(
                 "function parameter has no type",
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
+        let ty = Expression::lower(&ty, file, diagnostics);
+        let ty = match comptime::evaluate(ty, diagnostics) {
+            Ok(Value::Ty(ty)) => Ok(ty),
+            _ => Err(()),
+        };
+
         Ok(Self {
             external_name: external_name.to_string(),
             internal_name,
-            ty: Expression::lower(&ty, file, diagnostics),
+            ty,
         })
     }
 }
