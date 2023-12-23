@@ -194,7 +194,10 @@ impl Parameter {
         };
 
         Ok(Self {
-            external_name: external_name.to_string(),
+            external_name: match external_name.text() {
+                "_" => None,
+                name => Some(name.to_owned()),
+            },
             internal_name,
             ty,
         })
