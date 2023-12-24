@@ -1,4 +1,7 @@
-use crate::{diagnostics::Diagnostics, hir};
+use crate::{
+    diagnostics::{primary, span, Diagnostics},
+    hir,
+};
 use codemap::File;
 use std::fmt;
 
@@ -58,7 +61,19 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
         })
         .last()
         .unwrap_or(Ok(Ty::Unit));
-    // TODO
+    if let (Ok(return_ty), Ok(actual_return_ty)) =
+        (&function.return_ty, actual_return_ty)
+    {
+        if !actual_return_ty.is_subtype_of(return_ty) {
+            tcx.diagnostics.error(
+                "function has wrong return type",
+                [primary(
+                    span(tcx.file, function.name.text_range()),
+                    format!("according to the signature, this function should return {return_ty} but it actually returns {actual_return_ty}"),
+                )],
+            );
+        }
+    }
 }
 
 pub struct Context<'a> {

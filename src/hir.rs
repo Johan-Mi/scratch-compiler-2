@@ -110,7 +110,7 @@ impl Sprite {
 pub struct Function {
     pub name: SyntaxToken,
     parameters: Vec<Parameter>,
-    return_ty: Result<Ty>,
+    pub return_ty: Result<Ty>,
     pub body: Block,
 }
 
