@@ -70,6 +70,21 @@ pub fn resolve(
                 "function call has more than one viable overload",
                 [primary(span, "")],
             );
+            tcx.diagnostics.note(
+                "following are all of the viable overloads:",
+                viable_overloads
+                    .iter()
+                    .map(|(_, function)| {
+                        primary(
+                            crate::diagnostics::span(
+                                tcx.file,
+                                function.name.text_range(),
+                            ),
+                            "",
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
             Err(())
         }
     }
