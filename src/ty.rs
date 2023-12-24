@@ -61,15 +61,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
         .body
         .statements
         .iter()
-        .map(|statement| match statement {
-            hir::Statement::Let { variable, value } => {
-                let ty = value.ty(tcx);
-                tcx.variable_types.insert(variable.text_range().start(), ty);
-                Ok(Ty::Unit)
-            }
-            hir::Statement::Expr(expr) => expr.ty(tcx),
-            hir::Statement::Error => Err(()),
-        })
+        .map(|statement| check_statement(statement, tcx))
         .last()
         .unwrap_or(Ok(Ty::Unit));
     if let (Ok(return_ty), Ok(actual_return_ty)) =
@@ -84,6 +76,21 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
                 )],
             );
         }
+    }
+}
+
+fn check_statement(
+    statement: &hir::Statement,
+    tcx: &mut Context<'_>,
+) -> Result<Ty, ()> {
+    match statement {
+        hir::Statement::Let { variable, value } => {
+            let ty = value.ty(tcx);
+            tcx.variable_types.insert(variable.text_range().start(), ty);
+            Ok(Ty::Unit)
+        }
+        hir::Statement::Expr(expr) => expr.ty(tcx),
+        hir::Statement::Error => Err(()),
     }
 }
 
