@@ -25,7 +25,7 @@ pub fn resolve(
         .functions
         .iter()
         .enumerate()
-        .filter(|(_, function)| function.name == name)
+        .filter(|(_, function)| function.name.text() == name)
         .collect::<Vec<_>>();
 
     let viable_overloads = all_overloads
@@ -45,8 +45,21 @@ pub fn resolve(
                     "function call has no viable overloads",
                     [primary(span, "")],
                 );
-                tcx.diagnostics
-                    .note("following are all of the non-viable overloads:", []);
+                tcx.diagnostics.note(
+                    "following are all of the non-viable overloads:",
+                    all_overloads
+                        .iter()
+                        .map(|(_, function)| {
+                            primary(
+                                crate::diagnostics::span(
+                                    tcx.file,
+                                    function.name.text_range(),
+                                ),
+                                "",
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                );
             }
             Err(())
         }

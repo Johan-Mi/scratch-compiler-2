@@ -108,7 +108,7 @@ impl Sprite {
 
 #[derive(Debug)]
 pub struct Function {
-    pub name: String,
+    pub name: SyntaxToken,
     parameters: Vec<Parameter>,
     return_ty: Result<Ty>,
     pub body: Block,
@@ -154,7 +154,7 @@ impl Function {
         });
 
         Ok(Self {
-            name: name.to_string(),
+            name,
             parameters,
             return_ty,
             body: Block::lower(&body, file, diagnostics),
