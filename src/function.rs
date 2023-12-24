@@ -40,7 +40,6 @@ pub fn resolve(
                 tcx.diagnostics
                     .error("undefined function", [primary(span, "")]);
             } else {
-                // TODO: show non-viable overloads
                 tcx.diagnostics.error(
                     "function call has no viable overloads",
                     [primary(span, "")],
@@ -65,7 +64,6 @@ pub fn resolve(
         }
         [(index, _)] => Ok(Ref::User(index)),
         _ => {
-            // TODO: show viable overloads
             tcx.diagnostics.error(
                 "function call has more than one viable overload",
                 [primary(span, "")],
