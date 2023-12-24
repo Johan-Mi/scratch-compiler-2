@@ -5,11 +5,13 @@
 mod ast;
 mod comptime;
 mod diagnostics;
+mod function;
 mod hir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
 mod syntax_errors;
+mod ty;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
@@ -38,6 +40,7 @@ fn real_main(
     eprintln!("{document:#?}");
     let document = hir::lower(document, &file, diagnostics);
     eprintln!("{document:#?}");
+    ty::check(&document, &file, diagnostics);
 
     Ok(())
 }

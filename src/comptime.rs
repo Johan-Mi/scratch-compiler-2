@@ -2,6 +2,7 @@ use crate::{
     diagnostics::{primary, Diagnostics},
     hir::{Expression, ExpressionKind},
     name::{Builtin, Name},
+    ty::Ty,
 };
 
 #[derive(Debug)]
@@ -9,10 +10,12 @@ pub enum Value {
     Ty(Ty),
 }
 
-#[derive(Debug)]
-pub enum Ty {
-    Unit,
-    Num,
+impl Value {
+    pub const fn ty(&self) -> Ty {
+        match self {
+            Self::Ty(_) => Ty::Ty,
+        }
+    }
 }
 
 pub fn evaluate(

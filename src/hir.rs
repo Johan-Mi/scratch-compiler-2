@@ -1,9 +1,11 @@
 use crate::{
     ast,
-    comptime::{self, Ty, Value},
+    comptime::{self, Value},
     diagnostics::{primary, secondary, span, Diagnostics},
-    name::Name,
+    function,
+    name::{self, Name},
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
+    ty::{Context, Ty},
 };
 use codemap::{File, Span};
 use rowan::{ast::AstNode, TextRange};
@@ -25,7 +27,7 @@ pub fn lower(
 
 #[derive(Debug)]
 pub struct Document {
-    sprites: Vec<Sprite>,
+    pub sprites: Vec<Sprite>,
 }
 
 impl Document {
@@ -67,7 +69,7 @@ impl Document {
 #[derive(Debug)]
 pub struct Sprite {
     name_span: Span,
-    functions: Vec<Function>,
+    pub functions: Vec<Function>,
 }
 
 impl Sprite {
@@ -106,10 +108,10 @@ impl Sprite {
 
 #[derive(Debug)]
 pub struct Function {
-    name: String,
+    pub name: String,
     parameters: Vec<Parameter>,
     return_ty: Result<Ty>,
-    body: Block,
+    pub body: Block,
 }
 
 impl Function {
@@ -158,11 +160,24 @@ impl Function {
             body: Block::lower(&body, file, diagnostics),
         })
     }
+
+    pub fn can_be_called_with(
+        &self,
+        arguments: &[Argument],
+        tcx: &mut Context,
+    ) -> bool {
+        self.parameters.len() == arguments.len()
+            && std::iter::zip(&self.parameters, arguments).all(
+                |(parameter, argument)| {
+                    parameter.is_compatible_with(argument, tcx)
+                },
+            )
+    }
 }
 
 #[derive(Debug)]
 pub struct Parameter {
-    external_name: String,
+    external_name: Option<String>,
     internal_name: SyntaxToken,
     ty: Result<Ty>,
 }
@@ -202,11 +217,26 @@ impl Parameter {
             ty,
         })
     }
+
+    fn is_compatible_with(
+        &self,
+        (argument_name, value): &Argument,
+        tcx: &mut Context,
+    ) -> bool {
+        self.external_name == *argument_name
+            && match (&self.ty, value.ty(tcx)) {
+                (Ok(parameter_ty), Ok(argument_ty)) => {
+                    argument_ty.is_subtype_of(parameter_ty)
+                }
+                // A type error has already occured; don't let it cascade.
+                _ => true,
+            }
+    }
 }
 
 #[derive(Debug)]
 pub struct Block {
-    statements: Vec<Statement>,
+    pub statements: Vec<Statement>,
 }
 
 impl Block {
@@ -290,11 +320,13 @@ pub enum ExpressionKind {
         rhs: Box<Expression>,
     },
     FunctionCall {
-        name: String,
-        arguments: Vec<(Option<String>, Expression)>,
+        name: SyntaxToken,
+        arguments: Vec<Argument>,
     },
     Error,
 }
+
+pub type Argument = (Option<String>, Expression);
 
 impl Expression {
     fn lower(
@@ -318,7 +350,7 @@ impl Expression {
             }
             ast::Expression::FunctionCall(call) => {
                 ExpressionKind::FunctionCall {
-                    name: call.name().to_string(),
+                    name: call.name(),
                     arguments: call
                         .args()
                         .iter()
@@ -405,6 +437,60 @@ impl Expression {
             },
             |expr| Self::lower(&expr, file, diagnostics),
         )
+    }
+
+    pub fn ty(&self, tcx: &mut Context) -> Result<Ty> {
+        match &self.kind {
+            ExpressionKind::Variable(Name::User(_)) => {
+                // TODO
+                Err(())
+            }
+            ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
+                name::Builtin::Num => Ok(Ty::Ty),
+            },
+            ExpressionKind::Imm(value) => Ok(value.ty()),
+            ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
+                if let Ok(ty) = lhs.ty(tcx) {
+                    if ty != Ty::Num {
+                        tcx.diagnostics.error(
+                            "left-hand side of binary operation must be a number",
+                            [primary(
+                                lhs.span,
+                                format!("expected `Num`, got {ty}"),
+                            )],
+                        );
+                    }
+                }
+                if let Ok(ty) = rhs.ty(tcx) {
+                    if ty != Ty::Num {
+                        tcx.diagnostics.error(
+                            "right-hand side of binary operation must be a number",
+                            [primary(
+                                rhs.span,
+                                format!("expected `Num`, got {ty}"),
+                            )],
+                        );
+                    }
+                }
+
+                Ok(Ty::Num)
+            }
+            ExpressionKind::FunctionCall { name, arguments } => {
+                let resolved = function::resolve(
+                    name.text(),
+                    arguments,
+                    span(tcx.file, name.text_range()),
+                    tcx,
+                )?;
+                match resolved {
+                    function::Ref::User(index) => {
+                        tcx.sprite.functions[index].return_ty.clone()
+                    }
+                    function::Ref::Builtin(_) => todo!(),
+                }
+            }
+            ExpressionKind::Error => Err(()),
+        }
     }
 }
 
