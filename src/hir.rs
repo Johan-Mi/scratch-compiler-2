@@ -109,7 +109,7 @@ impl Sprite {
 #[derive(Debug)]
 pub struct Function {
     pub name: SyntaxToken,
-    parameters: Vec<Parameter>,
+    pub parameters: Vec<Parameter>,
     pub return_ty: Result<Ty>,
     pub body: Block,
 }
@@ -178,8 +178,8 @@ impl Function {
 #[derive(Debug)]
 pub struct Parameter {
     external_name: Option<String>,
-    internal_name: SyntaxToken,
-    ty: Result<Ty>,
+    pub internal_name: SyntaxToken,
+    pub ty: Result<Ty>,
 }
 
 impl Parameter {
@@ -441,10 +441,11 @@ impl Expression {
 
     pub fn ty(&self, tcx: &mut Context) -> Result<Ty> {
         match &self.kind {
-            ExpressionKind::Variable(Name::User(_)) => {
-                // TODO
-                Err(())
-            }
+            ExpressionKind::Variable(Name::User(variable)) => tcx
+                .variable_types
+                .get(&variable.text_range().start())
+                .unwrap_or_else(|| panic!("variable `{variable}` has no type"))
+                .clone(),
             ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
                 name::Builtin::Num => Ok(Ty::Ty),
             },

@@ -3,7 +3,8 @@ use crate::{
     hir,
 };
 use codemap::File;
-use std::fmt;
+use rowan::TextSize;
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
@@ -38,6 +39,7 @@ pub fn check(
             sprite,
             file,
             diagnostics,
+            variable_types: HashMap::new(),
         };
 
         for function in &sprite.functions {
@@ -47,13 +49,22 @@ pub fn check(
 }
 
 fn check_function(function: &hir::Function, tcx: &mut Context) {
+    tcx.variable_types
+        .extend(function.parameters.iter().map(|parameter| {
+            (
+                parameter.internal_name.text_range().start(),
+                parameter.ty.clone(),
+            )
+        }));
+
     let actual_return_ty = function
         .body
         .statements
         .iter()
         .map(|statement| match statement {
-            hir::Statement::Let { value, .. } => {
-                let _ = value.ty(tcx);
+            hir::Statement::Let { variable, value } => {
+                let ty = value.ty(tcx);
+                tcx.variable_types.insert(variable.text_range().start(), ty);
                 Ok(Ty::Unit)
             }
             hir::Statement::Expr(expr) => expr.ty(tcx),
@@ -80,4 +91,5 @@ pub struct Context<'a> {
     pub sprite: &'a hir::Sprite,
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
+    pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
 }
