@@ -452,7 +452,7 @@ impl Expression {
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
                 if let Ok(ty) = lhs.ty(tcx) {
-                    if ty != Ty::Num {
+                    if !ty.is_subtype_of(&Ty::Num) {
                         tcx.diagnostics.error(
                             "left-hand side of binary operation must be a number",
                             [primary(
@@ -463,7 +463,7 @@ impl Expression {
                     }
                 }
                 if let Ok(ty) = rhs.ty(tcx) {
-                    if ty != Ty::Num {
+                    if !ty.is_subtype_of(&Ty::Num) {
                         tcx.diagnostics.error(
                             "right-hand side of binary operation must be a number",
                             [primary(
