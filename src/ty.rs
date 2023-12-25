@@ -11,21 +11,24 @@ pub enum Ty {
     Unit,
     Num,
     Ty,
+    Var(Box<Self>),
 }
 
 impl fmt::Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Self::Unit => "`Unit`",
-            Self::Num => "`Num`",
-            Self::Ty => "`Ty`",
-        })
+        match self {
+            Self::Unit => write!(f, "Unit"),
+            Self::Num => write!(f, "Num"),
+            Self::Ty => write!(f, "Ty"),
+            Self::Var(inner) => write!(f, "Var[{inner}]"),
+        }
     }
 }
 
 impl Ty {
     pub fn is_subtype_of(&self, other: &Self) -> bool {
         self == other
+            || matches!(self, Self::Var(inner) if inner.is_subtype_of(other))
     }
 }
 
@@ -72,7 +75,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
                 "function has wrong return type",
                 [primary(
                     span(tcx.file, function.name.text_range()),
-                    format!("according to the signature, this function should return {return_ty} but it actually returns {actual_return_ty}"),
+                    format!("according to the signature, this function should return `{return_ty}` but it actually returns `{actual_return_ty}`"),
                 )],
             );
         }
@@ -85,7 +88,7 @@ fn check_statement(
 ) -> Result<Ty, ()> {
     match statement {
         hir::Statement::Let { variable, value } => {
-            let ty = value.ty(tcx);
+            let ty = value.ty(tcx).map(Box::new).map(Ty::Var);
             tcx.variable_types.insert(variable.text_range().start(), ty);
             Ok(Ty::Unit)
         }

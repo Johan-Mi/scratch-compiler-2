@@ -457,7 +457,7 @@ impl Expression {
                             "left-hand side of binary operation must be a number",
                             [primary(
                                 lhs.span,
-                                format!("expected `Num`, got {ty}"),
+                                format!("expected `Num`, got `{ty}`"),
                             )],
                         );
                     }
@@ -468,7 +468,7 @@ impl Expression {
                             "right-hand side of binary operation must be a number",
                             [primary(
                                 rhs.span,
-                                format!("expected `Num`, got {ty}"),
+                                format!("expected `Num`, got `{ty}`"),
                             )],
                         );
                     }
