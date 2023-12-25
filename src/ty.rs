@@ -27,6 +27,10 @@ impl fmt::Display for Ty {
 
 impl Ty {
     pub fn is_subtype_of(&self, other: &Self) -> bool {
+        //          v <: t
+        // ------   -----------
+        // t <: t   Var[v] <: t
+
         self == other
             || matches!(self, Self::Var(inner) if inner.is_subtype_of(other))
     }
