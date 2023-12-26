@@ -109,7 +109,7 @@ impl Sprite {
 #[derive(Debug)]
 pub struct Function {
     pub name: SyntaxToken,
-    pub parameters: Vec<Parameter>,
+    pub parameters: Vec<(Parameter, SyntaxToken)>,
     pub return_ty: Result<Ty>,
     pub body: Block,
 }
@@ -168,7 +168,7 @@ impl Function {
     ) -> bool {
         self.parameters.len() == arguments.len()
             && std::iter::zip(&self.parameters, arguments).all(
-                |(parameter, argument)| {
+                |((parameter, _), argument)| {
                     parameter.is_compatible_with(argument, tcx)
                 },
             )
@@ -178,7 +178,6 @@ impl Function {
 #[derive(Debug)]
 pub struct Parameter {
     external_name: Option<String>,
-    pub internal_name: SyntaxToken,
     pub ty: Result<Ty>,
 }
 
@@ -187,7 +186,7 @@ impl Parameter {
         ast: &ast::Parameter,
         file: &File,
         diagnostics: &mut Diagnostics,
-    ) -> Result<Self> {
+    ) -> Result<(Self, SyntaxToken)> {
         let external_name = ast.external_name().unwrap().identifier();
         let internal_name = ast.internal_name().ok_or_else(|| {
             diagnostics.error(
@@ -208,17 +207,19 @@ impl Parameter {
             _ => Err(()),
         };
 
-        Ok(Self {
-            external_name: match external_name.text() {
-                "_" => None,
-                name => Some(name.to_owned()),
+        Ok((
+            Self {
+                external_name: match external_name.text() {
+                    "_" => None,
+                    name => Some(name.to_owned()),
+                },
+                ty,
             },
             internal_name,
-            ty,
-        })
+        ))
     }
 
-    fn is_compatible_with(
+    pub fn is_compatible_with(
         &self,
         (argument_name, value): &Argument,
         tcx: &mut Context,
