@@ -9,7 +9,7 @@ use crate::{
 };
 use codemap::{File, Span};
 use rowan::{ast::AstNode, TextRange};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -177,7 +177,7 @@ impl Function {
 
 #[derive(Debug)]
 pub struct Parameter {
-    external_name: Option<String>,
+    pub external_name: Option<Cow<'static, str>>,
     pub ty: Result<Ty>,
 }
 
@@ -211,7 +211,7 @@ impl Parameter {
             Self {
                 external_name: match external_name.text() {
                     "_" => None,
-                    name => Some(name.to_owned()),
+                    name => Some(name.to_owned().into()),
                 },
                 ty,
             },
@@ -224,7 +224,7 @@ impl Parameter {
         (argument_name, value): &Argument,
         tcx: &mut Context,
     ) -> bool {
-        self.external_name == *argument_name
+        self.external_name.as_deref() == argument_name.as_deref()
             && match (&self.ty, value.ty(tcx)) {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
                     argument_ty.is_subtype_of(parameter_ty)

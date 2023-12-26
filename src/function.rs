@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     diagnostics::primary,
     hir::{Argument, Parameter},
@@ -118,4 +120,17 @@ pub fn resolve(
     }
 }
 
-static BUILTINS: &[Builtin] = &[];
+static BUILTINS: &[Builtin] = &[Builtin {
+    name: "go-to",
+    parameters: &[
+        Parameter {
+            external_name: Some(Cow::Borrowed("x")),
+            ty: Ok(Ty::Num),
+        },
+        Parameter {
+            external_name: Some(Cow::Borrowed("y")),
+            ty: Ok(Ty::Num),
+        },
+    ],
+    return_ty: Ty::Unit,
+}];
