@@ -18,7 +18,7 @@ pub enum Ref {
 pub struct Builtin {
     name: &'static str,
     parameters: &'static [Parameter],
-    return_ty: Ty,
+    pub return_ty: Ty,
 }
 
 impl Builtin {

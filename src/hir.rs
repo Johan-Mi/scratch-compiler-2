@@ -488,7 +488,9 @@ impl Expression {
                     function::Ref::User(index) => {
                         tcx.sprite.functions[index].return_ty.clone()
                     }
-                    function::Ref::Builtin(_) => todo!(),
+                    function::Ref::Builtin(builtin) => {
+                        Ok(builtin.return_ty.clone())
+                    }
                 }
             }
             ExpressionKind::Error => Err(()),
