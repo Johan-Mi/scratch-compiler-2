@@ -39,6 +39,13 @@ impl Diagnostics {
             spans: labels.into(),
         });
     }
+
+    pub fn successful(&self) -> bool {
+        !self
+            .0
+            .iter()
+            .any(|diagnostic| diagnostic.level == Level::Error)
+    }
 }
 
 pub fn primary(span: Span, text: impl Into<String>) -> SpanLabel {

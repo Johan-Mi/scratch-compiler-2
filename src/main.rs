@@ -3,6 +3,7 @@
 #![allow(clippy::enum_glob_use)]
 
 mod ast;
+mod codegen;
 mod comptime;
 mod diagnostics;
 mod function;
@@ -41,6 +42,10 @@ fn real_main(
     let document = hir::lower(document, &file, diagnostics);
     eprintln!("{document:#?}");
     ty::check(&document, &file, diagnostics);
+
+    if diagnostics.successful() {
+        codegen::generate(&document);
+    }
 
     Ok(())
 }
