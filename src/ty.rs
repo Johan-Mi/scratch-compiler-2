@@ -57,11 +57,13 @@ pub fn check(
 }
 
 fn check_function(function: &hir::Function, tcx: &mut Context) {
-    tcx.variable_types.extend(function.parameters.iter().map(
-        |(parameter, internal_name)| {
-            (internal_name.text_range().start(), parameter.ty.clone())
-        },
-    ));
+    tcx.variable_types
+        .extend(function.parameters.iter().map(|parameter| {
+            (
+                parameter.internal_name.text_range().start(),
+                parameter.ty.clone(),
+            )
+        }));
 
     let actual_return_ty = function
         .body
