@@ -1,4 +1,5 @@
-use std::borrow::Cow;
+use itertools::Itertools;
+use std::{borrow::Cow, fmt};
 
 use crate::{
     diagnostics::primary,
@@ -21,6 +22,18 @@ pub struct Builtin {
     name: &'static str,
     parameters: &'static [Parameter],
     pub return_ty: Ty,
+}
+
+impl fmt::Display for Builtin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "fn {}({}) -> {}",
+            self.name,
+            self.parameters.iter().format(", "),
+            self.return_ty,
+        )
+    }
 }
 
 impl Builtin {
@@ -88,6 +101,23 @@ pub fn resolve(
             .collect::<Vec<_>>()
     };
 
+    let show_builtins = |tcx: &mut Context| {
+        let builtins = all_overloads
+            .iter()
+            .filter_map(|overload| match overload {
+                Ref::User(_) => None,
+                Ref::Builtin(builtin) => Some(*builtin),
+            })
+            .collect::<Vec<_>>();
+        if !builtins.is_empty() {
+            tcx.diagnostics
+                .note("...as well as these builtin functions:", []);
+            for builtin in builtins {
+                tcx.diagnostics.note(format!("  - {builtin}"), []);
+            }
+        }
+    };
+
     match *viable_overloads {
         [] => {
             if all_overloads.is_empty() {
@@ -102,6 +132,7 @@ pub fn resolve(
                     "following are all of the non-viable overloads:",
                     spans(&all_overloads),
                 );
+                show_builtins(tcx);
             }
             Err(())
         }
@@ -115,6 +146,7 @@ pub fn resolve(
                 "following are all of the viable overloads:",
                 spans(&viable_overloads),
             );
+            show_builtins(tcx);
             Err(())
         }
     }
