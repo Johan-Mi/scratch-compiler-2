@@ -28,6 +28,7 @@ pub fn lower(
 #[derive(Debug)]
 pub struct Document {
     pub sprites: Vec<Sprite>,
+    functions: Vec<Function>,
 }
 
 impl Document {
@@ -60,8 +61,16 @@ impl Document {
             }
         }
 
+        let functions = ast
+            .functions()
+            .filter_map(|function| {
+                Function::lower(&function, file, diagnostics).ok()
+            })
+            .collect();
+
         Self {
             sprites: sprites.into_values().collect(),
+            functions,
         }
     }
 }

@@ -38,6 +38,10 @@ impl Document {
     pub fn sprites(&self) -> impl Iterator<Item = Sprite> {
         rowan::ast::support::children(&self.syntax)
     }
+
+    pub fn functions(&self) -> impl Iterator<Item = Function> {
+        rowan::ast::support::children(&self.syntax)
+    }
 }
 
 ast_node!(Sprite: SPRITE);
