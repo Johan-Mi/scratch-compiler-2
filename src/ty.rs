@@ -44,6 +44,7 @@ pub fn check(
     for sprite in &document.sprites {
         let mut tcx = Context {
             sprite,
+            top_level_functions: &document.functions,
             file,
             diagnostics,
             variable_types: HashMap::new(),
@@ -101,6 +102,7 @@ fn check_statement(
 
 pub struct Context<'a> {
     pub sprite: &'a hir::Sprite,
+    pub top_level_functions: &'a [hir::Function],
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
