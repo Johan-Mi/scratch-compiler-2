@@ -1,5 +1,5 @@
 use crate::{
-    diagnostics::{primary, span, Diagnostics},
+    diagnostics::{primary, Diagnostics},
     hir,
 };
 use codemap::File;
@@ -77,7 +77,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
             tcx.diagnostics.error(
                 "function has wrong return type",
                 [primary(
-                    span(tcx.file, function.name.text_range()),
+                    function.name.span,
                     format!("according to the signature, this function should return `{return_ty}` but it actually returns `{actual_return_ty}`"),
                 )],
             );

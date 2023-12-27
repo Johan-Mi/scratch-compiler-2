@@ -7,7 +7,7 @@ use crate::{
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
     ty::{Context, Ty},
 };
-use codemap::{File, Span};
+use codemap::{File, Span, Spanned};
 use rowan::{ast::AstNode, TextRange};
 use std::{borrow::Cow, collections::HashMap, fmt};
 
@@ -117,7 +117,7 @@ impl Sprite {
 
 #[derive(Debug)]
 pub struct Function {
-    pub name: SyntaxToken,
+    pub name: Spanned<String>,
     pub parameters: Vec<(Parameter, SyntaxToken)>,
     pub return_ty: Result<Ty>,
     pub body: Block,
@@ -139,6 +139,10 @@ impl Function {
         let name = ast.name().ok_or_else(|| {
             diagnostics.error("function has no name", defined_here());
         })?;
+        let name = Spanned {
+            node: name.text().to_owned(),
+            span: span(file, name.text_range()),
+        };
 
         let parameters = ast
             .parameters()
@@ -505,14 +509,15 @@ impl Expression {
                     span(tcx.file, name.text_range()),
                     tcx,
                 )?;
-                match resolved {
-                    function::Ref::User(index) => {
-                        tcx.sprite.functions[index].return_ty.clone()
+                let function = match resolved {
+                    function::Ref::SpriteLocal(index) => {
+                        &tcx.sprite.functions[index]
                     }
-                    function::Ref::Builtin(builtin) => {
-                        Ok(builtin.return_ty.clone())
+                    function::Ref::TopLevel(index) => {
+                        &tcx.top_level_functions[index]
                     }
-                }
+                };
+                function.return_ty.clone()
             }
             ExpressionKind::Error => Err(()),
         }
