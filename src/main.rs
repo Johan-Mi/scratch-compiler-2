@@ -3,6 +3,7 @@
 #![allow(clippy::enum_glob_use)]
 
 mod ast;
+mod builtins;
 mod codegen;
 mod comptime;
 mod diagnostics;
@@ -39,8 +40,9 @@ fn real_main(
     let document = parser::parse(&file, diagnostics);
     syntax_errors::check(&document, &file, diagnostics);
     eprintln!("{document:#?}");
-    let document = hir::lower(document, &file, diagnostics);
+    let mut document = hir::lower(document, &file, diagnostics);
     eprintln!("{document:#?}");
+    builtins::add_to_hir(&mut document, code_map);
     ty::check(&document, &file, diagnostics);
 
     if diagnostics.successful() {

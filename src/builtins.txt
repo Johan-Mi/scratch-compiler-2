@@ -1,0 +1,1 @@
+fn go-to(x _: Num, y _: Num) {}

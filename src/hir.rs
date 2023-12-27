@@ -28,7 +28,7 @@ pub fn lower(
 #[derive(Debug)]
 pub struct Document {
     pub sprites: Vec<Sprite>,
-    functions: Vec<Function>,
+    pub functions: Vec<Function>,
 }
 
 impl Document {
