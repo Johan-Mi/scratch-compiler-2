@@ -9,7 +9,7 @@ use crate::{
 };
 use codemap::{File, Span, Spanned};
 use rowan::{ast::AstNode, TextRange};
-use std::{collections::HashMap, fmt};
+use std::collections::HashMap;
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -193,18 +193,6 @@ pub struct Parameter {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
     pub ty: Result<Ty>,
-}
-
-impl fmt::Display for Parameter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(name) = &self.external_name {
-            write!(f, "{name}: ")?;
-        }
-        match &self.ty {
-            Ok(ty) => write!(f, "{ty}"),
-            Err(()) => write!(f, "<error>"),
-        }
-    }
 }
 
 impl Parameter {
