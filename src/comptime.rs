@@ -8,12 +8,14 @@ use crate::{
 #[derive(Debug)]
 pub enum Value {
     Ty(Ty),
+    Num(f64),
 }
 
 impl Value {
     pub const fn ty(&self) -> Ty {
         match self {
             Self::Ty(_) => Ty::Ty,
+            Self::Num(_) => Ty::Num,
         }
     }
 }

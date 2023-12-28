@@ -161,6 +161,7 @@ pub enum Expression {
     FunctionCall(FunctionCall),
     BinaryOperation(BinaryOperation),
     NamedArgument(NamedArgument),
+    Literal(Literal),
 }
 
 impl AstNode for Expression {
@@ -172,6 +173,7 @@ impl AstNode for Expression {
             || FunctionCall::can_cast(kind)
             || BinaryOperation::can_cast(kind)
             || NamedArgument::can_cast(kind)
+            || Literal::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
@@ -183,6 +185,7 @@ impl AstNode for Expression {
             FUNCTION_CALL => AstNode::cast(node).map(Self::FunctionCall),
             BINARY_EXPRESSION => AstNode::cast(node).map(Self::BinaryOperation),
             NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
+            LITERAL => AstNode::cast(node).map(Self::Literal),
             _ => None,
         }
     }
@@ -194,6 +197,7 @@ impl AstNode for Expression {
             Self::BinaryOperation(inner) => &inner.syntax,
             Self::Parenthesized(inner) => &inner.syntax,
             Self::NamedArgument(inner) => &inner.syntax,
+            Self::Literal(inner) => &inner.syntax,
         }
     }
 }
@@ -273,3 +277,5 @@ impl NamedArgument {
         rowan::ast::support::child(&self.syntax)
     }
 }
+
+ast_node!(Literal: LITERAL);

@@ -47,6 +47,7 @@ pub enum SyntaxKind {
     LET,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
+    LITERAL,
 
     #[token("(")]
     LPAREN,
@@ -84,6 +85,10 @@ pub enum SyntaxKind {
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
+
+    // TODO: binary, hex, octal and decimals
+    #[regex(r"[+-]?[0-9]+")]
+    NUMBER,
 
     ERROR,
 }
@@ -254,6 +259,11 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.bump();
                 self.parse_expression();
                 self.expect(RPAREN);
+                self.builder.finish_node();
+            }
+            NUMBER => {
+                self.builder.start_node(LITERAL.into());
+                self.bump();
                 self.builder.finish_node();
             }
             _ => self.error(),

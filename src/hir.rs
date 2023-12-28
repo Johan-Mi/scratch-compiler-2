@@ -161,8 +161,19 @@ impl Function {
 
         let return_ty = ast.return_ty().map_or(Ok(Ty::Unit), |ty| {
             let expr = Expression::lower(&ty, file, diagnostics);
+            let span = expr.span;
             match comptime::evaluate(expr, diagnostics)? {
                 Value::Ty(ty) => Ok(ty),
+                value => {
+                    diagnostics.error(
+                        "function return type must be a type",
+                        [primary(
+                            span,
+                            format!("expected `Type`, got `{}`", value.ty()),
+                        )],
+                    );
+                    Err(())
+                }
             }
         });
 
@@ -428,6 +439,13 @@ impl Expression {
                     named_arg.syntax().text_range(),
                 );
                 ExpressionKind::Error
+            }
+            ast::Expression::Literal(lit) => {
+                let token = lit.syntax().first_token().unwrap();
+                assert!(token.kind() == crate::parser::SyntaxKind::NUMBER);
+                token.text().parse().map_or(ExpressionKind::Error, |n| {
+                    ExpressionKind::Imm(Value::Num(n))
+                })
             }
         };
 
