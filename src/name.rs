@@ -12,13 +12,19 @@ pub enum Name {
 
 #[derive(Debug)]
 pub enum Builtin {
+    Unit,
     Num,
+    String,
+    Type,
 }
 
 impl Builtin {
     fn resolve(identifier: &str) -> Option<Self> {
         match identifier {
+            "Unit" => Some(Self::Unit),
             "Num" => Some(Self::Num),
+            "String" => Some(Self::String),
+            "Type" => Some(Self::Type),
             _ => None,
         }
     }

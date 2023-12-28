@@ -36,7 +36,10 @@ pub fn evaluate(
             error("user-defined variables are not supported at compile-time")
         }
         ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
+            Builtin::Unit => Ok(Value::Ty(Ty::Unit)),
             Builtin::Num => Ok(Value::Ty(Ty::Num)),
+            Builtin::String => Ok(Value::Ty(Ty::String)),
+            Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
         ExpressionKind::BinaryOperation { .. } => {

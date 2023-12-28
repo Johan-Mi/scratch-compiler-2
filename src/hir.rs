@@ -486,7 +486,10 @@ impl Expression {
                 .unwrap_or_else(|| panic!("variable `{variable}` has no type"))
                 .clone(),
             ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
-                name::Builtin::Num => Ok(Ty::Ty),
+                name::Builtin::Unit
+                | name::Builtin::Num
+                | name::Builtin::String
+                | name::Builtin::Type => Ok(Ty::Ty),
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
