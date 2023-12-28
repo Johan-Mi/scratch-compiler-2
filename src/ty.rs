@@ -19,7 +19,7 @@ impl fmt::Display for Ty {
         match self {
             Self::Unit => write!(f, "Unit"),
             Self::Num => write!(f, "Num"),
-            Self::Ty => write!(f, "Ty"),
+            Self::Ty => write!(f, "Type"),
             Self::Var(inner) => write!(f, "Var[{inner}]"),
         }
     }
