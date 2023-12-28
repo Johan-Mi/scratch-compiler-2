@@ -442,10 +442,18 @@ impl Expression {
             }
             ast::Expression::Literal(lit) => {
                 let token = lit.syntax().first_token().unwrap();
-                assert!(token.kind() == crate::parser::SyntaxKind::NUMBER);
-                token.text().parse().map_or(ExpressionKind::Error, |n| {
-                    ExpressionKind::Imm(Value::Num(n))
-                })
+                match token.kind() {
+                    crate::parser::SyntaxKind::NUMBER => token
+                        .text()
+                        .parse()
+                        .map_or(ExpressionKind::Error, |n| {
+                            ExpressionKind::Imm(Value::Num(n))
+                        }),
+                    crate::parser::SyntaxKind::STRING => ExpressionKind::Imm(
+                        Value::String(parse_string_literal(token.text())),
+                    ),
+                    _ => unreachable!(),
+                }
             }
         };
 
@@ -550,4 +558,9 @@ impl From<SyntaxKind> for BinaryOperator {
             _ => unreachable!(),
         }
     }
+}
+
+fn parse_string_literal(lit: &str) -> String {
+    // Remove the quotes.
+    lit[1..lit.len() - 1].to_owned()
 }

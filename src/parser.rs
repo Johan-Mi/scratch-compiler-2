@@ -90,6 +90,10 @@ pub enum SyntaxKind {
     #[regex(r"[+-]?[0-9]+")]
     NUMBER,
 
+    // TODO: escape sequences
+    #[regex(r#""[^"]*""#)]
+    STRING,
+
     ERROR,
 }
 
@@ -261,7 +265,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.expect(RPAREN);
                 self.builder.finish_node();
             }
-            NUMBER => {
+            NUMBER | STRING => {
                 self.builder.start_node(LITERAL.into());
                 self.bump();
                 self.builder.finish_node();

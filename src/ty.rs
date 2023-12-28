@@ -10,6 +10,7 @@ use std::{collections::HashMap, fmt};
 pub enum Ty {
     Unit,
     Num,
+    String,
     Ty,
     Var(Box<Self>),
 }
@@ -19,6 +20,7 @@ impl fmt::Display for Ty {
         match self {
             Self::Unit => write!(f, "Unit"),
             Self::Num => write!(f, "Num"),
+            Self::String => write!(f, "String"),
             Self::Ty => write!(f, "Type"),
             Self::Var(inner) => write!(f, "Var[{inner}]"),
         }

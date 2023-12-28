@@ -9,6 +9,7 @@ use crate::{
 pub enum Value {
     Ty(Ty),
     Num(f64),
+    String(String),
 }
 
 impl Value {
@@ -16,6 +17,7 @@ impl Value {
         match self {
             Self::Ty(_) => Ty::Ty,
             Self::Num(_) => Ty::Num,
+            Self::String(_) => Ty::String,
         }
     }
 }
