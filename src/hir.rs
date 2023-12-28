@@ -440,21 +440,7 @@ impl Expression {
                 );
                 ExpressionKind::Error
             }
-            ast::Expression::Literal(lit) => {
-                let token = lit.syntax().first_token().unwrap();
-                match token.kind() {
-                    crate::parser::SyntaxKind::NUMBER => token
-                        .text()
-                        .parse()
-                        .map_or(ExpressionKind::Error, |n| {
-                            ExpressionKind::Imm(Value::Num(n))
-                        }),
-                    crate::parser::SyntaxKind::STRING => ExpressionKind::Imm(
-                        Value::String(parse_string_literal(token.text())),
-                    ),
-                    _ => unreachable!(),
-                }
-            }
+            ast::Expression::Literal(lit) => lower_literal(lit),
         };
 
         Self {
@@ -537,6 +523,21 @@ impl Expression {
             }
             ExpressionKind::Error => Err(()),
         }
+    }
+}
+
+fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
+    let token = lit.syntax().first_token().unwrap();
+    match token.kind() {
+        crate::parser::SyntaxKind::NUMBER => {
+            token.text().parse().map_or(ExpressionKind::Error, |n| {
+                ExpressionKind::Imm(Value::Num(n))
+            })
+        }
+        crate::parser::SyntaxKind::STRING => ExpressionKind::Imm(
+            Value::String(parse_string_literal(token.text())),
+        ),
+        _ => unreachable!(),
     }
 }
 
