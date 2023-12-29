@@ -11,6 +11,7 @@ pub enum Ty {
     Unit,
     Num,
     String,
+    #[allow(clippy::enum_variant_names)]
     Ty,
     Var(Box<Self>),
 }
