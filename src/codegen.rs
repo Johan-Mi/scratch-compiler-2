@@ -1,5 +1,5 @@
-use crate::hir;
-use sb3_builder::{block, Costume, Project, Target};
+use crate::{comptime::Value, hir};
+use sb3_builder::{block, Costume, Operand, Project, Target};
 use std::path::Path;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -33,18 +33,69 @@ fn compile_sprite(
         )?);
     }
 
+    let mut cx = Context { sprite };
+
     for function in &hir.functions {
-        compile_function(function, &mut sprite);
+        compile_function(function, &mut cx);
     }
 
     Ok(())
 }
 
-fn compile_function(hir: &hir::Function, sprite: &mut Target) {
+struct Context<'a> {
+    sprite: Target<'a>,
+}
+
+fn compile_function(hir: &hir::Function, cx: &mut Context) {
     match &**hir.name {
         "when-flag-clicked" => {
-            sprite.start_script(block::when_flag_clicked());
+            cx.sprite.start_script(block::when_flag_clicked());
+            for statement in &hir.body.statements {
+                compile_statement(statement, cx);
+            }
         }
         _ => todo!(),
+    }
+}
+
+fn compile_statement(hir: &hir::Statement, cx: &mut Context) {
+    match hir {
+        hir::Statement::Let { variable, value } => todo!(),
+        hir::Statement::Expr(expr) => {
+            let operand = compile_expression(expr, cx);
+            // Don't create orphaned reporters; they're useless.
+            // TODO: write a pass that extracts the non-pure parts of expression
+            // statements to satisfy this assertion
+            debug_assert!(operand.is_none());
+        }
+        hir::Statement::Error => unreachable!(),
+    }
+}
+
+fn compile_expression(
+    hir: &hir::Expression,
+    cx: &mut Context,
+) -> Option<Operand> {
+    match &hir.kind {
+        hir::ExpressionKind::Variable(_) => todo!(),
+        hir::ExpressionKind::Imm(value) => match value {
+            Value::Num(n) => Some((*n).into()),
+            Value::String(s) => Some(s.clone().into()),
+            // TODO: emit an error for this during semantic analysis
+            Value::Ty(_) => unreachable!(),
+        },
+        hir::ExpressionKind::BinaryOperation { lhs, operator, rhs } => {
+            let lhs = compile_expression(lhs, cx).unwrap();
+            let rhs = compile_expression(rhs, cx).unwrap();
+            Some(match operator {
+                hir::BinaryOperator::Add => cx.sprite.add(lhs, rhs),
+                hir::BinaryOperator::Sub => cx.sprite.sub(lhs, rhs),
+                hir::BinaryOperator::Mul => cx.sprite.mul(lhs, rhs),
+                hir::BinaryOperator::Div => cx.sprite.div(lhs, rhs),
+                hir::BinaryOperator::Mod => cx.sprite.modulo(lhs, rhs),
+            })
+        }
+        hir::ExpressionKind::FunctionCall { name, arguments } => todo!(),
+        hir::ExpressionKind::Error => unreachable!(),
     }
 }
