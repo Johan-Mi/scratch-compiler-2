@@ -1,6 +1,8 @@
-use crate::{comptime::Value, hir};
-use sb3_builder::{block, Costume, Operand, Project, Target};
-use std::path::Path;
+use crate::{comptime::Value, hir, parser::SyntaxToken};
+use sb3_builder::{
+    block, Costume, Operand, Project, Target, Variable, VariableRef,
+};
+use std::{collections::HashMap, path::Path};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -33,9 +35,12 @@ fn compile_sprite(
         )?);
     }
 
-    let mut cx = Context { sprite };
+    let mut cx = Context {
+        sprite,
+        variables: HashMap::new(),
+    };
 
-    for function in &hir.functions {
+    for function in hir.functions {
         compile_function(function, &mut cx);
     }
 
@@ -44,13 +49,14 @@ fn compile_sprite(
 
 struct Context<'a> {
     sprite: Target<'a>,
+    variables: HashMap<SyntaxToken, VariableRef>,
 }
 
-fn compile_function(hir: &hir::Function, cx: &mut Context) {
+fn compile_function(hir: hir::Function, cx: &mut Context) {
     match &**hir.name {
         "when-flag-clicked" => {
             cx.sprite.start_script(block::when_flag_clicked());
-            for statement in &hir.body.statements {
+            for statement in hir.body.statements {
                 compile_statement(statement, cx);
             }
         }
@@ -58,11 +64,21 @@ fn compile_function(hir: &hir::Function, cx: &mut Context) {
     }
 }
 
-fn compile_statement(hir: &hir::Statement, cx: &mut Context) {
+fn compile_statement(hir: hir::Statement, cx: &mut Context) {
     match hir {
-        hir::Statement::Let { variable, value } => todo!(),
+        hir::Statement::Let {
+            variable: token,
+            value,
+        } => {
+            let value = compile_expression(&value, cx).unwrap();
+            let var = cx.sprite.add_variable(Variable {
+                name: token.to_string(),
+            });
+            cx.variables.insert(token, var.clone());
+            cx.sprite.put(block::set_variable(var, value));
+        }
         hir::Statement::Expr(expr) => {
-            let operand = compile_expression(expr, cx);
+            let operand = compile_expression(&expr, cx);
             // Don't create orphaned reporters; they're useless.
             // TODO: write a pass that extracts the non-pure parts of expression
             // statements to satisfy this assertion
