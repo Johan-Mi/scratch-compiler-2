@@ -1,21 +1,26 @@
 use crate::{
     comptime::Value,
-    hir,
+    function, hir,
     name::{self, Name},
     parser::SyntaxToken,
 };
+use codemap::Pos;
 use sb3_builder::{
     block, Costume, Operand, Project, Target, Variable, VariableRef,
 };
 use std::{collections::HashMap, path::Path};
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
-pub fn generate(document: hir::Document, output_path: &Path) -> Result<()> {
+pub fn generate(
+    document: hir::Document,
+    resolved_calls: &HashMap<Pos, Result<function::Ref, ()>>,
+    output_path: &Path,
+) -> Result<()> {
     let mut project = Project::default();
 
     for (name, sprite) in document.sprites {
-        compile_sprite(sprite, name, &mut project)?;
+        compile_sprite(sprite, name, resolved_calls, &mut project)?;
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -25,6 +30,7 @@ pub fn generate(document: hir::Document, output_path: &Path) -> Result<()> {
 fn compile_sprite(
     hir: hir::Sprite,
     name: String,
+    resolved_calls: &HashMap<Pos, Result<function::Ref, ()>>,
     project: &mut Project,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
@@ -43,6 +49,7 @@ fn compile_sprite(
     let mut cx = Context {
         sprite,
         variables: HashMap::new(),
+        resolved_calls,
     };
 
     for function in hir.functions {
@@ -55,6 +62,7 @@ fn compile_sprite(
 struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
+    resolved_calls: &'a HashMap<Pos, Result<function::Ref, ()>>,
 }
 
 fn compile_function(hir: hir::Function, cx: &mut Context) {
@@ -146,7 +154,5 @@ fn compile_function_call(
     arguments: &[Operand],
     cx: &mut Context,
 ) -> Option<Operand> {
-    // FIXME: we need to save resolved function calls during type checking so we
-    // can reuse that information here.
     todo!()
 }

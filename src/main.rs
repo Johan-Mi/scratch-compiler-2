@@ -45,15 +45,16 @@ fn real_main(
     let mut document = hir::lower(document, &file, diagnostics);
     eprintln!("{document:#?}");
     builtins::add_to_hir(&mut document, code_map);
-    ty::check(&document, &file, diagnostics);
+    let resolved_calls = ty::check(&document, &file, diagnostics);
     semantics::check(&document, diagnostics);
 
     if !diagnostics.successful() {
         return Err(());
     }
 
-    codegen::generate(document, Path::new("project.sb3")).map_err(|err| {
-        diagnostics.error("failed to create project file", []);
-        diagnostics.note(err.to_string(), []);
-    })
+    codegen::generate(document, &resolved_calls, Path::new("project.sb3"))
+        .map_err(|err| {
+            diagnostics.error("failed to create project file", []);
+            diagnostics.note(err.to_string(), []);
+        })
 }

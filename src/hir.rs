@@ -530,8 +530,9 @@ impl Expression {
                     arguments,
                     span(tcx.file, name.text_range()),
                     tcx,
-                )?;
-                let function = match resolved {
+                );
+                tcx.resolved_calls.insert(self.span.low(), resolved);
+                let function = match resolved? {
                     function::Ref::SpriteLocal(index) => {
                         &tcx.sprite.functions[index]
                     }
