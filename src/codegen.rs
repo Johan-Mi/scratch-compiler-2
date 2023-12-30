@@ -20,7 +20,11 @@ fn compile_sprite(
     name: String,
     project: &mut Project,
 ) -> Result<()> {
-    let mut sprite = project.add_sprite(name);
+    let mut sprite = if name == "Stage" {
+        project.stage()
+    } else {
+        project.add_sprite(name)
+    };
 
     for costume in hir.costumes {
         sprite.add_costume(Costume::from_file(
