@@ -80,11 +80,14 @@ impl Costume {
     }
 
     pub fn path(&self) -> Option<SyntaxToken> {
+        let colon = rowan::ast::support::token(&self.syntax, COLON)?;
         self.syntax
             .children_with_tokens()
             .filter_map(NodeOrToken::into_token)
-            .skip_while(|it| it.kind() == COLON)
-            .find(|it| it.kind() == STRING)
+            .find(|it| {
+                it.text_range().start() >= colon.text_range().end()
+                    && it.kind() == STRING
+            })
     }
 }
 
