@@ -50,7 +50,7 @@ fn real_main(
         return Err(());
     }
 
-    codegen::generate(&document, Path::new("project.sb3")).map_err(|err| {
+    codegen::generate(document, Path::new("project.sb3")).map_err(|err| {
         diagnostics.error("failed to create project file", []);
         diagnostics.note(err.to_string(), []);
     })

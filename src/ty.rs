@@ -44,7 +44,7 @@ pub fn check(
     file: &File,
     diagnostics: &mut Diagnostics,
 ) {
-    for sprite in &document.sprites {
+    for sprite in document.sprites.values() {
         let mut tcx = Context {
             sprite,
             top_level_functions: &document.functions,

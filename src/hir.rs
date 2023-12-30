@@ -27,7 +27,7 @@ pub fn lower(
 
 #[derive(Debug)]
 pub struct Document {
-    pub sprites: Vec<Sprite>,
+    pub sprites: HashMap<String, Sprite>,
     pub functions: Vec<Function>,
 }
 
@@ -68,10 +68,7 @@ impl Document {
             })
             .collect();
 
-        Self {
-            sprites: sprites.into_values().collect(),
-            functions,
-        }
+        Self { sprites, functions }
     }
 }
 
