@@ -17,6 +17,7 @@ mod ty;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
+use std::path::Path;
 
 fn main() {
     let mut code_map = CodeMap::default();
@@ -45,9 +46,12 @@ fn real_main(
     builtins::add_to_hir(&mut document, code_map);
     ty::check(&document, &file, diagnostics);
 
-    if diagnostics.successful() {
-        codegen::generate(&document);
+    if !diagnostics.successful() {
+        return Err(());
     }
 
-    Ok(())
+    codegen::generate(&document, Path::new("project.sb3")).map_err(|err| {
+        diagnostics.error("failed to create project file", []);
+        diagnostics.note(err.to_string(), []);
+    })
 }

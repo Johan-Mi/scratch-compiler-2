@@ -10,3 +10,4 @@ codemap = "0.1.3"
 codemap-diagnostic = { git = "https://github.com/Johan-Mi/codemap-diagnostic", version = "0.1.1" }
 logos = "0.13.0"
 rowan = "0.15.13"
+sb3-builder = { version = "0.1.0", path = "../sb3-builder" }
