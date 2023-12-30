@@ -1,5 +1,5 @@
 use crate::hir;
-use sb3_builder::{Costume, Project};
+use sb3_builder::{block, Costume, Project, Target};
 use std::path::Path;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -33,5 +33,18 @@ fn compile_sprite(
         )?);
     }
 
+    for function in &hir.functions {
+        compile_function(function, &mut sprite);
+    }
+
     Ok(())
+}
+
+fn compile_function(hir: &hir::Function, sprite: &mut Target) {
+    match &**hir.name {
+        "when-flag-clicked" => {
+            sprite.start_script(block::when_flag_clicked());
+        }
+        _ => todo!(),
+    }
 }
