@@ -51,6 +51,10 @@ impl Sprite {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
 
+    pub fn costume_lists(&self) -> impl Iterator<Item = CostumeList> {
+        rowan::ast::support::children(&self.syntax)
+    }
+
     pub fn functions(&self) -> impl Iterator<Item = Function> {
         rowan::ast::support::children(&self.syntax)
     }

@@ -78,6 +78,7 @@ impl Document {
 #[derive(Debug)]
 pub struct Sprite {
     name_span: Span,
+    pub costumes: Vec<Costume>,
     pub functions: Vec<Function>,
 }
 
@@ -98,6 +99,12 @@ impl Sprite {
         })?;
         let name_span = span(file, name.text_range());
 
+        let costumes = ast
+            .costume_lists()
+            .flat_map(|it| it.iter())
+            .filter_map(|it| Costume::lower(&it).ok())
+            .collect();
+
         let functions = ast
             .functions()
             .filter_map(|function| {
@@ -109,9 +116,25 @@ impl Sprite {
             name.to_string(),
             Self {
                 name_span,
+                costumes,
                 functions,
             },
         ))
+    }
+}
+
+#[derive(Debug)]
+pub struct Costume {
+    pub name: String,
+    pub path: String,
+}
+
+impl Costume {
+    fn lower(ast: &ast::Costume) -> Result<Self> {
+        Ok(Self {
+            name: parse_string_literal(ast.name().ok_or(())?.text()),
+            path: parse_string_literal(ast.path().ok_or(())?.text()),
+        })
     }
 }
 
