@@ -12,6 +12,7 @@ mod hir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
+mod semantics;
 mod syntax_errors;
 mod ty;
 
@@ -45,6 +46,7 @@ fn real_main(
     eprintln!("{document:#?}");
     builtins::add_to_hir(&mut document, code_map);
     ty::check(&document, &file, diagnostics);
+    semantics::check(&document, diagnostics);
 
     if !diagnostics.successful() {
         return Err(());
