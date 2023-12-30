@@ -2,7 +2,7 @@ use crate::parser::{
     SyntaxKind::{self, *},
     SyntaxNode, SyntaxToken,
 };
-use rowan::ast::AstNode;
+use rowan::{ast::AstNode, NodeOrToken};
 
 macro_rules! ast_node {
     ($Name:ident: $kind:expr) => {
@@ -53,6 +53,34 @@ impl Sprite {
 
     pub fn functions(&self) -> impl Iterator<Item = Function> {
         rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(CostumeList: COSTUME_LIST);
+
+impl CostumeList {
+    pub fn iter(&self) -> impl Iterator<Item = Costume> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(Costume: COSTUME);
+
+impl Costume {
+    pub fn name(&self) -> Option<SyntaxToken> {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(NodeOrToken::into_token)
+            .take_while(|it| it.kind() != COLON)
+            .find(|it| it.kind() == STRING)
+    }
+
+    pub fn path(&self) -> Option<SyntaxToken> {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(NodeOrToken::into_token)
+            .skip_while(|it| it.kind() == COLON)
+            .find(|it| it.kind() == STRING)
     }
 }
 
