@@ -125,7 +125,28 @@ fn compile_expression(
                 hir::BinaryOperator::Mod => cx.sprite.modulo(lhs, rhs),
             })
         }
-        hir::ExpressionKind::FunctionCall { name, arguments } => todo!(),
+        hir::ExpressionKind::FunctionCall { name, arguments } => {
+            let arguments = arguments
+                .iter()
+                .map(|(_, arg)| {
+                    compile_expression(arg, cx)
+                        // TODO: write a pass that removes `Unit` parameters/arguments
+                        // since they don't exist at runtime
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            compile_function_call(name.text(), &arguments, cx)
+        }
         hir::ExpressionKind::Error => unreachable!(),
     }
+}
+
+fn compile_function_call(
+    name: &str,
+    arguments: &[Operand],
+    cx: &mut Context,
+) -> Option<Operand> {
+    // FIXME: we need to save resolved function calls during type checking so we
+    // can reuse that information here.
+    todo!()
 }
