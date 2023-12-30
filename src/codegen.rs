@@ -1,4 +1,9 @@
-use crate::{comptime::Value, hir, parser::SyntaxToken};
+use crate::{
+    comptime::Value,
+    hir,
+    name::{self, Name},
+    parser::SyntaxToken,
+};
 use sb3_builder::{
     block, Costume, Operand, Project, Target, Variable, VariableRef,
 };
@@ -93,7 +98,16 @@ fn compile_expression(
     cx: &mut Context,
 ) -> Option<Operand> {
     match &hir.kind {
-        hir::ExpressionKind::Variable(_) => todo!(),
+        hir::ExpressionKind::Variable(name) => match name {
+            Name::User(token) => Some(cx.variables[token].clone().into()),
+            Name::Builtin(builtin) => match builtin {
+                // TODO: emit an error for this during semantic analysis
+                name::Builtin::Unit
+                | name::Builtin::Num
+                | name::Builtin::String
+                | name::Builtin::Type => unreachable!(),
+            },
+        },
         hir::ExpressionKind::Imm(value) => match value {
             Value::Num(n) => Some((*n).into()),
             Value::String(s) => Some(s.clone().into()),
