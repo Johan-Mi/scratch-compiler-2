@@ -35,6 +35,8 @@ pub enum SyntaxKind {
 
     DOCUMENT,
     SPRITE,
+    COSTUME_LIST,
+    COSTUME,
     FN,
     FUNCTION_PARAMETERS,
     PARAMETER,
@@ -82,6 +84,8 @@ pub enum SyntaxKind {
     KW_FN,
     #[token("let")]
     KW_LET,
+    #[token("costumes")]
+    KW_COSTUMES,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -196,6 +200,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
             KW_FN => self.parse_function(),
+            KW_COSTUMES => self.parse_costume_list(),
             LPAREN => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RPAREN) {
@@ -364,6 +369,25 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
+    fn parse_costume_list(&mut self) {
+        self.builder.start_node(COSTUME_LIST.into());
+        self.bump(); // KW_COSTUMES
+        self.expect(LBRACE);
+        while !self.at(EOF) && !self.eat(RBRACE) {
+            if !self.at(STRING) {
+                self.error();
+                continue;
+            }
+            self.builder.start_node(COSTUME.into());
+            self.bump();
+            self.expect(COLON);
+            self.expect(STRING);
+            self.eat(COMMA);
+            self.builder.finish_node();
+        }
+        self.builder.finish_node();
+    }
+
     fn parse_sprite(&mut self) {
         self.builder.start_node(SPRITE.into());
         let kw_sprite_span = self.peek_span();
@@ -375,6 +399,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         while !self.eat(RBRACE) {
             match self.peek() {
                 KW_FN => self.parse_function(),
+                KW_COSTUMES => self.parse_costume_list(),
                 EOF | KW_SPRITE => {
                     let mut labels = vec![primary(kw_sprite_span, "")];
                     if let Some(lbrace_span) = lbrace_span {
