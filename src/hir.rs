@@ -501,6 +501,7 @@ impl Expression {
                 name::Builtin::Unit
                 | name::Builtin::Num
                 | name::Builtin::String
+                | name::Builtin::Bool
                 | name::Builtin::Type => Ok(Ty::Ty),
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),

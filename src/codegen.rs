@@ -180,6 +180,7 @@ fn compile_expression(
                 name::Builtin::Unit
                 | name::Builtin::Num
                 | name::Builtin::String
+                | name::Builtin::Bool
                 | name::Builtin::Type => unreachable!(),
             },
         },

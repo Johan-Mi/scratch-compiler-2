@@ -41,6 +41,7 @@ pub fn evaluate(
             Builtin::Unit => Ok(Value::Ty(Ty::Unit)),
             Builtin::Num => Ok(Value::Ty(Ty::Num)),
             Builtin::String => Ok(Value::Ty(Ty::String)),
+            Builtin::Bool => Ok(Value::Ty(Ty::Bool)),
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
