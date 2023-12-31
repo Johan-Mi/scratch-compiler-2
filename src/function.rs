@@ -7,7 +7,7 @@ use codemap::Span;
 
 type Result<T> = std::result::Result<T, ()>;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Ref {
     /// An index into the functions of the sprite containing the call.
     SpriteLocal(usize),

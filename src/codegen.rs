@@ -6,7 +6,8 @@ use crate::{
 };
 use codemap::Pos;
 use sb3_builder::{
-    block, Costume, Operand, Project, Target, Variable, VariableRef,
+    block, Costume, CustomBlockRef, InsertionPoint, Operand, Project, Target,
+    Variable, VariableRef,
 };
 use std::{collections::HashMap, path::Path};
 
@@ -50,6 +51,7 @@ fn compile_sprite(
         sprite,
         variables: HashMap::new(),
         resolved_calls,
+        compiled_functions: HashMap::new(),
     };
 
     for function in hir.functions {
@@ -63,6 +65,15 @@ struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
     resolved_calls: &'a HashMap<Pos, function::Ref>,
+    compiled_functions: HashMap<function::Ref, CompiledFunction>,
+}
+
+enum CompiledFunction {
+    User {
+        block: CustomBlockRef,
+        insertion_point: InsertionPoint,
+    },
+    Builtin,
 }
 
 fn compile_function(hir: hir::Function, cx: &mut Context) {
@@ -142,8 +153,8 @@ fn compile_expression(
                         // since they don't exist at runtime
                         .unwrap()
                 })
-                .collect::<Vec<_>>();
-            compile_function_call(name.text(), &arguments, cx)
+                .collect();
+            compile_function_call(name.text(), hir.span.low(), arguments, cx)
         }
         hir::ExpressionKind::Error => unreachable!(),
     }
@@ -151,8 +162,34 @@ fn compile_expression(
 
 fn compile_function_call(
     name: &str,
-    arguments: &[Operand],
+    pos: Pos,
+    arguments: Vec<Operand>,
     cx: &mut Context,
 ) -> Option<Operand> {
-    todo!()
+    let function = &cx.compiled_functions[&cx.resolved_calls[&pos]];
+    match function {
+        CompiledFunction::User { block, .. } => {
+            cx.sprite.use_custom_block(*block, &arguments);
+            // TODO: pass return value somehow
+            None
+        }
+        CompiledFunction::Builtin => {
+            compile_builtin_function_call(name, arguments, cx)
+        }
+    }
+}
+
+fn compile_builtin_function_call(
+    name: &str,
+    arguments: Vec<Operand>,
+    cx: &mut Context,
+) -> Option<Operand> {
+    match name {
+        "go-to" => {
+            let [x, y] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::go_to_xy(x, y));
+            None
+        }
+        _ => unreachable!(),
+    }
 }
