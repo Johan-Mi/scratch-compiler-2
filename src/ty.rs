@@ -43,7 +43,7 @@ pub fn check(
     document: &hir::Document,
     file: &File,
     diagnostics: &mut Diagnostics,
-) -> HashMap<Pos, Result<function::Ref, ()>> {
+) -> HashMap<Pos, function::Ref> {
     let mut resolved_calls = HashMap::new();
 
     for sprite in document.sprites.values() {
@@ -116,5 +116,5 @@ pub struct Context<'a> {
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
-    pub resolved_calls: &'a mut HashMap<Pos, Result<function::Ref, ()>>,
+    pub resolved_calls: &'a mut HashMap<Pos, function::Ref>,
 }

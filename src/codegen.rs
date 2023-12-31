@@ -10,11 +10,11 @@ use sb3_builder::{
 };
 use std::{collections::HashMap, path::Path};
 
-type Result<T, E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub fn generate(
     document: hir::Document,
-    resolved_calls: &HashMap<Pos, Result<function::Ref, ()>>,
+    resolved_calls: &HashMap<Pos, function::Ref>,
     output_path: &Path,
 ) -> Result<()> {
     let mut project = Project::default();
@@ -30,7 +30,7 @@ pub fn generate(
 fn compile_sprite(
     hir: hir::Sprite,
     name: String,
-    resolved_calls: &HashMap<Pos, Result<function::Ref, ()>>,
+    resolved_calls: &HashMap<Pos, function::Ref>,
     project: &mut Project,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
@@ -62,7 +62,7 @@ fn compile_sprite(
 struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
-    resolved_calls: &'a HashMap<Pos, Result<function::Ref, ()>>,
+    resolved_calls: &'a HashMap<Pos, function::Ref>,
 }
 
 fn compile_function(hir: hir::Function, cx: &mut Context) {
