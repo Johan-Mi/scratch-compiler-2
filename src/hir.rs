@@ -219,6 +219,10 @@ impl Function {
                 },
             )
     }
+
+    pub fn is_special(&self) -> bool {
+        &**self.name == "when-flag-clicked"
+    }
 }
 
 #[derive(Debug)]

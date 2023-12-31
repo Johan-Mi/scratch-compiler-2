@@ -3,11 +3,12 @@ use crate::{
     function, hir,
     name::{self, Name},
     parser::SyntaxToken,
+    ty::Ty,
 };
 use codemap::Pos;
 use sb3_builder::{
-    block, Costume, CustomBlockRef, InsertionPoint, Operand, Project, Target,
-    Variable, VariableRef,
+    block, Costume, CustomBlockRef, InsertionPoint, Operand, Parameter,
+    ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{collections::HashMap, path::Path};
 
@@ -21,7 +22,13 @@ pub fn generate(
     let mut project = Project::default();
 
     for (name, sprite) in document.sprites {
-        compile_sprite(sprite, name, resolved_calls, &mut project)?;
+        compile_sprite(
+            sprite,
+            name,
+            &document.functions,
+            resolved_calls,
+            &mut project,
+        )?;
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -31,6 +38,7 @@ pub fn generate(
 fn compile_sprite(
     hir: hir::Sprite,
     name: String,
+    top_level_functions: &[hir::Function],
     resolved_calls: &HashMap<Pos, function::Ref>,
     project: &mut Project,
 ) -> Result<()> {
@@ -47,11 +55,26 @@ fn compile_sprite(
         )?);
     }
 
+    let sprite_functions_refs =
+        hir.functions.iter().enumerate().map(|(index, function)| {
+            (function::Ref::SpriteLocal(index), function)
+        });
+    let top_level_functions_refs = top_level_functions
+        .iter()
+        .enumerate()
+        .map(|(index, function)| (function::Ref::TopLevel(index), function));
+    let compiled_functions = sprite_functions_refs
+        .chain(top_level_functions_refs)
+        .filter_map(|(ref_, function)| {
+            Some(ref_).zip(CompiledFunctionRef::new(function, &mut sprite))
+        })
+        .collect();
+
     let mut cx = Context {
         sprite,
         variables: HashMap::new(),
         resolved_calls,
-        compiled_functions: HashMap::new(),
+        compiled_functions,
     };
 
     for function in hir.functions {
@@ -65,15 +88,44 @@ struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
     resolved_calls: &'a HashMap<Pos, function::Ref>,
-    compiled_functions: HashMap<function::Ref, CompiledFunction>,
+    compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
 }
 
-enum CompiledFunction {
+enum CompiledFunctionRef {
     User {
         block: CustomBlockRef,
         insertion_point: InsertionPoint,
     },
     Builtin,
+}
+
+impl CompiledFunctionRef {
+    fn new(function: &hir::Function, sprite: &mut Target) -> Option<Self> {
+        if function.is_builtin {
+            Some(Self::Builtin)
+        } else if function.is_special() {
+            None
+        } else {
+            let parameters = function
+                .parameters
+                .iter()
+                .filter_map(|parameter| match parameter.ty.as_ref().unwrap() {
+                    Ty::Unit => None,
+                    Ty::Num | Ty::String => Some(Parameter {
+                        name: parameter.internal_name.to_string(),
+                        kind: ParameterKind::StringOrNumber,
+                    }),
+                    Ty::Ty | Ty::Var(_) => unreachable!(),
+                })
+                .collect();
+            let (block, insertion_point) =
+                sprite.add_custom_block(function.name.to_string(), parameters);
+            Some(Self::User {
+                block,
+                insertion_point,
+            })
+        }
+    }
 }
 
 fn compile_function(hir: hir::Function, cx: &mut Context) {
@@ -168,12 +220,12 @@ fn compile_function_call(
 ) -> Option<Operand> {
     let function = &cx.compiled_functions[&cx.resolved_calls[&pos]];
     match function {
-        CompiledFunction::User { block, .. } => {
+        CompiledFunctionRef::User { block, .. } => {
             cx.sprite.use_custom_block(*block, &arguments);
             // TODO: pass return value somehow
             None
         }
-        CompiledFunction::Builtin => {
+        CompiledFunctionRef::Builtin => {
             compile_builtin_function_call(name, arguments, cx)
         }
     }
