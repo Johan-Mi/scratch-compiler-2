@@ -71,7 +71,7 @@ pub fn resolve(
                     .error("undefined function", [primary(span, "")]);
             } else {
                 tcx.diagnostics.error(
-                    "function call has no viable overloads",
+                    "function call has no viable overload",
                     [primary(span, "")],
                 );
                 tcx.diagnostics.note(
