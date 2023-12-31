@@ -9,6 +9,7 @@ mod comptime;
 mod diagnostics;
 mod function;
 mod hir;
+mod linter;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
@@ -47,6 +48,7 @@ fn real_main(
     builtins::add_to_hir(&mut document, code_map);
     let resolved_calls = ty::check(&document, &file, diagnostics);
     semantics::check(&document, diagnostics);
+    linter::lint(&document, &file, diagnostics);
 
     if !diagnostics.successful() {
         return Err(());

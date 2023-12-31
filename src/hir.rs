@@ -1,3 +1,6 @@
+mod visit;
+pub use visit::Visitor;
+
 use crate::{
     ast,
     comptime::{self, Value},
