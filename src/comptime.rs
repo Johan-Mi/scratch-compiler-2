@@ -10,6 +10,7 @@ pub enum Value {
     Ty(Ty),
     Num(f64),
     String(String),
+    Bool(bool),
 }
 
 impl Value {
@@ -18,6 +19,7 @@ impl Value {
             Self::Ty(_) => Ty::Ty,
             Self::Num(_) => Ty::Num,
             Self::String(_) => Ty::String,
+            Self::Bool(_) => Ty::Bool,
         }
     }
 }

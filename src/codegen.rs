@@ -186,6 +186,12 @@ fn compile_expression(
         hir::ExpressionKind::Imm(value) => match value {
             Value::Num(n) => Some((*n).into()),
             Value::String(s) => Some(s.clone().into()),
+            // TODO: booleans are tricky since Scratch doesn't have literals,
+            // variables or lists for them. We'll probably need a parameter to
+            // specify what kind of slot the expression will be used in so we
+            // can choose between leaving it empty, using an empty `not` or the
+            // strings "false"/"true".
+            Value::Bool(_) => todo!(),
             // TODO: emit an error for this during semantic analysis
             Value::Ty(_) => unreachable!(),
         },

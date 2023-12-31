@@ -564,6 +564,12 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
         crate::parser::SyntaxKind::STRING => ExpressionKind::Imm(
             Value::String(parse_string_literal(token.text())),
         ),
+        crate::parser::SyntaxKind::KW_FALSE => {
+            ExpressionKind::Imm(Value::Bool(false))
+        }
+        crate::parser::SyntaxKind::KW_TRUE => {
+            ExpressionKind::Imm(Value::Bool(true))
+        }
         _ => unreachable!(),
     }
 }

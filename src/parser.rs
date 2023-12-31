@@ -86,6 +86,10 @@ pub enum SyntaxKind {
     KW_LET,
     #[token("costumes")]
     KW_COSTUMES,
+    #[token("false")]
+    KW_FALSE,
+    #[token("true")]
+    KW_TRUE,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -270,7 +274,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.expect(RPAREN);
                 self.builder.finish_node();
             }
-            NUMBER | STRING => {
+            NUMBER | STRING | KW_FALSE | KW_TRUE => {
                 self.builder.start_node(LITERAL.into());
                 self.bump();
                 self.builder.finish_node();
