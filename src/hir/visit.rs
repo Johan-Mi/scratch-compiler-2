@@ -5,9 +5,9 @@ use super::{
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
 pub trait Visitor {
-    fn visit_statement(&mut self, statement: &Statement) {}
+    fn visit_statement(&mut self, _statement: &Statement) {}
 
-    fn visit_expression(&mut self, expr: &Expression) {}
+    fn visit_expression(&mut self, _expr: &Expression) {}
 
     fn traverse_document(&mut self, document: &Document) {
         for sprite in document.sprites.values() {
