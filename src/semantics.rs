@@ -20,14 +20,19 @@ fn check_function(
     is_top_level: bool,
     diagnostics: &mut Diagnostics,
 ) {
+    if is_top_level && function.is_special() {
+        diagnostics.error(
+            format!(
+                "special function `{}` cannot be defined outside of a sprite",
+                *function.name
+            ),
+            [primary(function.name.span, "")],
+        );
+    }
+
     match &**function.name {
         "when-flag-clicked" => {
-            if is_top_level {
-                diagnostics.error(
-                    "special function `when-flag-clicked` cannot be defined outside of a sprite",
-                    [primary(function.name.span, "")],
-                );
-            } else if !function.parameters.is_empty()
+            if !function.parameters.is_empty()
                 || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
             {
                 diagnostics.error(
