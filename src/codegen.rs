@@ -115,6 +115,10 @@ impl CompiledFunctionRef {
                         name: parameter.internal_name.to_string(),
                         kind: ParameterKind::StringOrNumber,
                     }),
+                    Ty::Bool => Some(Parameter {
+                        name: parameter.internal_name.to_string(),
+                        kind: ParameterKind::Boolean,
+                    }),
                     Ty::Ty | Ty::Var(_) => unreachable!(),
                 })
                 .collect();
