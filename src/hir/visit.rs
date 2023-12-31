@@ -36,7 +36,7 @@ pub trait Visitor {
             Statement::Let { value, .. } | Statement::Expr(value) => {
                 self.traverse_expression(value);
             }
-            Statement::Error => todo!(),
+            Statement::Error => {}
         }
     }
 
