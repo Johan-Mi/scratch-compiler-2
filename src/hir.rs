@@ -141,6 +141,7 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub return_ty: Result<Ty>,
     pub body: Block,
+    pub is_builtin: bool,
 }
 
 impl Function {
@@ -202,6 +203,7 @@ impl Function {
             parameters,
             return_ty,
             body: Block::lower(&body, file, diagnostics),
+            is_builtin: false,
         })
     }
 

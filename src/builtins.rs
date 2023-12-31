@@ -7,7 +7,10 @@ pub fn add_to_hir(
         code_map.add_file("<builtins>".to_owned(), source_code.to_owned());
     let mut diagnostics = crate::diagnostics::Diagnostics::default();
     let cst = crate::parser::parse(&file, &mut diagnostics);
-    let hir = crate::hir::lower(cst, &file, &mut diagnostics);
+    let mut hir = crate::hir::lower(cst, &file, &mut diagnostics);
     debug_assert!(diagnostics.successful());
+    for function in &mut hir.functions {
+        function.is_builtin = true;
+    }
     document.functions.extend(hir.functions);
 }
