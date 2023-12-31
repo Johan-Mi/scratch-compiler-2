@@ -42,9 +42,13 @@ fn real_main(
     let file = code_map.add_file(source_file, source_code);
     let document = parser::parse(&file, diagnostics);
     syntax_errors::check(&document, &file, diagnostics);
-    eprintln!("{document:#?}");
+    if std::env::var_os("DUMP_CST").is_some() {
+        eprintln!("{document:#?}");
+    }
     let mut document = hir::lower(document, &file, diagnostics);
-    eprintln!("{document:#?}");
+    if std::env::var_os("DUMP_HIR").is_some() {
+        eprintln!("{document:#?}");
+    }
     builtins::add_to_hir(&mut document, code_map);
     let resolved_calls = ty::check(&document, &file, diagnostics);
     semantics::check(&document, diagnostics);
