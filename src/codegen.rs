@@ -146,29 +146,42 @@ impl CompiledFunctionRef {
 }
 
 fn compile_function(hir: hir::Function, ref_: function::Ref, cx: &mut Context) {
-    match &**hir.name {
+    let return_variable = match &**hir.name {
         "when-flag-clicked" => {
             cx.sprite.start_script(block::when_flag_clicked());
+            None
         }
         _ => {
-            let insertion_point =
-                match cx.compiled_functions.get_mut(&ref_).unwrap() {
-                    CompiledFunctionRef::User {
-                        insertion_point, ..
-                    } => insertion_point.take().unwrap(),
-                    CompiledFunctionRef::Builtin => return,
-                };
+            let (insertion_point, return_variable) = match cx
+                .compiled_functions
+                .get_mut(&ref_)
+                .unwrap()
+            {
+                CompiledFunctionRef::User {
+                    insertion_point,
+                    return_variable,
+                    ..
+                } => (insertion_point.take().unwrap(), return_variable.clone()),
+                CompiledFunctionRef::Builtin => return,
+            };
             cx.sprite.insert_at(insertion_point);
+            return_variable
         }
-    }
-    for statement in hir.body.statements {
-        compile_statement(statement, cx);
-    }
+    };
 
-    // TODO: set return variable
+    let return_value = hir
+        .body
+        .statements
+        .into_iter()
+        .filter_map(|it| compile_statement(it, cx))
+        .last();
+    if let Some(return_variable) = return_variable {
+        cx.sprite
+            .put(block::set_variable(return_variable, return_value.unwrap()));
+    }
 }
 
-fn compile_statement(hir: hir::Statement, cx: &mut Context) {
+fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
     match hir {
         hir::Statement::Let {
             variable: token,
@@ -180,14 +193,9 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) {
             });
             cx.variables.insert(token, var.clone());
             cx.sprite.put(block::set_variable(var, value));
+            None
         }
-        hir::Statement::Expr(expr) => {
-            let operand = compile_expression(&expr, cx);
-            // Don't create orphaned reporters; they're useless.
-            // TODO: write a pass that extracts the non-pure parts of expression
-            // statements to satisfy this assertion
-            debug_assert!(operand.is_none());
-        }
+        hir::Statement::Expr(expr) => compile_expression(&expr, cx),
         hir::Statement::Error => unreachable!(),
     }
 }
