@@ -77,6 +77,12 @@ pub enum SyntaxKind {
     SLASH,
     #[token("%")]
     PERCENT,
+    #[token("<")]
+    LT,
+    #[token("==")]
+    EQ_EQ,
+    #[token(">")]
+    GT,
 
     #[token("sprite")]
     KW_SPRITE,
@@ -109,7 +115,10 @@ use SyntaxKind::*;
 
 impl SyntaxKind {
     pub const fn is_binary_operator(self) -> bool {
-        matches!(self, PLUS | MINUS | STAR | SLASH | PERCENT)
+        matches!(
+            self,
+            PLUS | MINUS | STAR | SLASH | PERCENT | LT | EQ_EQ | GT
+        )
     }
 }
 
@@ -439,7 +448,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
 }
 
 const PRECEDENCE_TABLE: &[&[SyntaxKind]] =
-    &[&[PLUS, MINUS], &[STAR, SLASH, PERCENT]];
+    &[&[LT, EQ_EQ, GT], &[PLUS, MINUS], &[STAR, SLASH, PERCENT]];
 
 fn binding_power(kind: SyntaxKind) -> Option<usize> {
     PRECEDENCE_TABLE

@@ -509,6 +509,7 @@ impl Expression {
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
+                // TODO: support comparing non-numbers
                 if let Ok(ty) = lhs.ty(tcx) {
                     if !ty.is_subtype_of(&Ty::Num) {
                         tcx.diagnostics.error(
@@ -585,6 +586,9 @@ pub enum BinaryOperator {
     Mul,
     Div,
     Mod,
+    Lt,
+    Eq,
+    Gt,
 }
 
 impl From<SyntaxKind> for BinaryOperator {
@@ -596,6 +600,9 @@ impl From<SyntaxKind> for BinaryOperator {
             STAR => Self::Mul,
             SLASH => Self::Div,
             PERCENT => Self::Mod,
+            LT => Self::Lt,
+            EQ_EQ => Self::Eq,
+            GT => Self::Gt,
             _ => unreachable!(),
         }
     }

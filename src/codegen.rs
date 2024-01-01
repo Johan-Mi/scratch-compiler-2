@@ -237,6 +237,9 @@ fn compile_expression(
                 hir::BinaryOperator::Mul => cx.sprite.mul(lhs, rhs),
                 hir::BinaryOperator::Div => cx.sprite.div(lhs, rhs),
                 hir::BinaryOperator::Mod => cx.sprite.modulo(lhs, rhs),
+                hir::BinaryOperator::Lt => cx.sprite.lt(lhs, rhs),
+                hir::BinaryOperator::Eq => cx.sprite.eq(lhs, rhs),
+                hir::BinaryOperator::Gt => cx.sprite.gt(lhs, rhs),
             })
         }
         hir::ExpressionKind::FunctionCall { name, arguments } => {
