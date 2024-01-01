@@ -95,6 +95,7 @@ enum CompiledFunctionRef {
     User {
         block: CustomBlockRef,
         insertion_point: Option<InsertionPoint>,
+        return_variable: Option<VariableRef>,
     },
     Builtin,
 }
@@ -122,11 +123,23 @@ impl CompiledFunctionRef {
                     Ty::Ty | Ty::Var(_) => unreachable!(),
                 })
                 .collect();
+
             let (block, insertion_point) =
                 sprite.add_custom_block(function.name.to_string(), parameters);
+
+            let return_variable =
+                (!function.return_ty.as_ref().unwrap().is_zero_sized()).then(
+                    || {
+                        sprite.add_variable(Variable {
+                            name: format!("return {}", *function.name),
+                        })
+                    },
+                );
+
             Some(Self::User {
                 block,
                 insertion_point: Some(insertion_point),
+                return_variable,
             })
         }
     }
@@ -151,6 +164,8 @@ fn compile_function(hir: hir::Function, ref_: function::Ref, cx: &mut Context) {
     for statement in hir.body.statements {
         compile_statement(statement, cx);
     }
+
+    // TODO: set return variable
 }
 
 fn compile_statement(hir: hir::Statement, cx: &mut Context) {
@@ -240,10 +255,13 @@ fn compile_function_call(
 ) -> Option<Operand> {
     let function = &cx.compiled_functions[&cx.resolved_calls[&pos]];
     match function {
-        CompiledFunctionRef::User { block, .. } => {
+        CompiledFunctionRef::User {
+            block,
+            return_variable,
+            ..
+        } => {
             cx.sprite.use_custom_block(*block, &arguments);
-            // TODO: pass return value somehow
-            None
+            return_variable.clone().map(Operand::from)
         }
         CompiledFunctionRef::Builtin => {
             compile_builtin_function_call(name, arguments, cx)

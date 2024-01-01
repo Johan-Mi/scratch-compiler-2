@@ -39,6 +39,10 @@ impl Ty {
         self == other
             || matches!(self, Self::Var(inner) if inner.is_subtype_of(other))
     }
+
+    pub fn is_zero_sized(&self) -> bool {
+        *self == Self::Unit
+    }
 }
 
 pub fn check(
