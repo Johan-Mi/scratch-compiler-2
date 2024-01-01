@@ -45,9 +45,6 @@ pub fn evaluate(
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
-        ExpressionKind::BinaryOperation { .. } => {
-            error("binary operations are not supported at compile-time")
-        }
         ExpressionKind::FunctionCall { .. } => {
             error("function calls are not supported at compile-time")
         }

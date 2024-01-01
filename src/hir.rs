@@ -367,13 +367,8 @@ pub struct Expression {
 pub enum ExpressionKind {
     Variable(Name),
     Imm(Value),
-    BinaryOperation {
-        lhs: Box<Expression>,
-        operator: BinaryOperator,
-        rhs: Box<Expression>,
-    },
     FunctionCall {
-        name: SyntaxToken,
+        name_or_operator: SyntaxToken,
         arguments: Vec<Argument>,
     },
     Error,
@@ -403,7 +398,7 @@ impl Expression {
             }
             ast::Expression::FunctionCall(call) => {
                 ExpressionKind::FunctionCall {
-                    name: call.name(),
+                    name_or_operator: call.name(),
                     arguments: call
                         .args()
                         .iter()
@@ -428,21 +423,30 @@ impl Expression {
                 }
             }
             ast::Expression::BinaryOperation(op) => {
-                let operator = &op.operator();
-                ExpressionKind::BinaryOperation {
-                    lhs: Box::new(Self::lower_opt(
-                        op.lhs(),
-                        file,
-                        diagnostics,
-                        operator.text_range(),
-                    )),
-                    operator: operator.kind().into(),
-                    rhs: Box::new(Self::lower_opt(
-                        op.rhs(),
-                        file,
-                        diagnostics,
-                        operator.text_range(),
-                    )),
+                let operator = op.operator();
+                let operator_range = operator.text_range();
+                ExpressionKind::FunctionCall {
+                    name_or_operator: operator,
+                    arguments: vec![
+                        (
+                            None,
+                            Self::lower_opt(
+                                op.lhs(),
+                                file,
+                                diagnostics,
+                                operator_range,
+                            ),
+                        ),
+                        (
+                            None,
+                            Self::lower_opt(
+                                op.rhs(),
+                                file,
+                                diagnostics,
+                                operator_range,
+                            ),
+                        ),
+                    ],
                 }
             }
             ast::Expression::Parenthesized(expr) => {
@@ -508,38 +512,15 @@ impl Expression {
                 | name::Builtin::Type => Ok(Ty::Ty),
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),
-            ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
-                // TODO: support comparing non-numbers
-                if let Ok(ty) = lhs.ty(tcx) {
-                    if !ty.is_subtype_of(&Ty::Num) {
-                        tcx.diagnostics.error(
-                            "left-hand side of binary operation must be a number",
-                            [primary(
-                                lhs.span,
-                                format!("expected `Num`, got `{ty}`"),
-                            )],
-                        );
-                    }
-                }
-                if let Ok(ty) = rhs.ty(tcx) {
-                    if !ty.is_subtype_of(&Ty::Num) {
-                        tcx.diagnostics.error(
-                            "right-hand side of binary operation must be a number",
-                            [primary(
-                                rhs.span,
-                                format!("expected `Num`, got `{ty}`"),
-                            )],
-                        );
-                    }
-                }
-
-                Ok(Ty::Num)
-            }
-            ExpressionKind::FunctionCall { name, arguments } => {
+            ExpressionKind::FunctionCall {
+                name_or_operator,
+                arguments,
+            } => {
+                let name = desugar_function_call_name(name_or_operator);
                 let resolved = function::resolve(
-                    name.text(),
+                    name,
                     arguments,
-                    span(tcx.file, name.text_range()),
+                    span(tcx.file, name_or_operator.text_range()),
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
@@ -579,36 +560,22 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
     }
 }
 
-#[derive(Debug)]
-pub enum BinaryOperator {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Lt,
-    Eq,
-    Gt,
-}
-
-impl From<SyntaxKind> for BinaryOperator {
-    fn from(value: SyntaxKind) -> Self {
-        use SyntaxKind::*;
-        match value {
-            PLUS => Self::Add,
-            MINUS => Self::Sub,
-            STAR => Self::Mul,
-            SLASH => Self::Div,
-            PERCENT => Self::Mod,
-            LT => Self::Lt,
-            EQ_EQ => Self::Eq,
-            GT => Self::Gt,
-            _ => unreachable!(),
-        }
-    }
-}
-
 fn parse_string_literal(lit: &str) -> String {
     // Remove the quotes.
     lit[1..lit.len() - 1].to_owned()
+}
+
+pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
+    use SyntaxKind::*;
+    match token.kind() {
+        PLUS => "add",
+        MINUS => "sub",
+        STAR => "mul",
+        SLASH => "div",
+        PERCENT => "mod",
+        LT => "lt",
+        EQ_EQ => "eq",
+        GT => "gt",
+        _ => token.text(),
+    }
 }

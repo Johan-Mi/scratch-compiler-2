@@ -228,21 +228,11 @@ fn compile_expression(
             // TODO: emit an error for this during semantic analysis
             Value::Ty(_) => unreachable!(),
         },
-        hir::ExpressionKind::BinaryOperation { lhs, operator, rhs } => {
-            let lhs = compile_expression(lhs, cx).unwrap();
-            let rhs = compile_expression(rhs, cx).unwrap();
-            Some(match operator {
-                hir::BinaryOperator::Add => cx.sprite.add(lhs, rhs),
-                hir::BinaryOperator::Sub => cx.sprite.sub(lhs, rhs),
-                hir::BinaryOperator::Mul => cx.sprite.mul(lhs, rhs),
-                hir::BinaryOperator::Div => cx.sprite.div(lhs, rhs),
-                hir::BinaryOperator::Mod => cx.sprite.modulo(lhs, rhs),
-                hir::BinaryOperator::Lt => cx.sprite.lt(lhs, rhs),
-                hir::BinaryOperator::Eq => cx.sprite.eq(lhs, rhs),
-                hir::BinaryOperator::Gt => cx.sprite.gt(lhs, rhs),
-            })
-        }
-        hir::ExpressionKind::FunctionCall { name, arguments } => {
+        hir::ExpressionKind::FunctionCall {
+            name_or_operator: name,
+            arguments,
+        } => {
+            let name = hir::desugar_function_call_name(name);
             let arguments = arguments
                 .iter()
                 .map(|(_, arg)| {
@@ -252,7 +242,7 @@ fn compile_expression(
                         .unwrap()
                 })
                 .collect();
-            compile_function_call(name.text(), hir.span.low(), arguments, cx)
+            compile_function_call(name, hir.span.low(), arguments, cx)
         }
         hir::ExpressionKind::Error => unreachable!(),
     }
@@ -290,6 +280,38 @@ fn compile_builtin_function_call(
             let [x, y] = arguments.try_into().ok().unwrap();
             cx.sprite.put(block::go_to_xy(x, y));
             None
+        }
+        "add" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.add(lhs, rhs))
+        }
+        "sub" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.sub(lhs, rhs))
+        }
+        "mul" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.mul(lhs, rhs))
+        }
+        "div" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.div(lhs, rhs))
+        }
+        "mod" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.modulo(lhs, rhs))
+        }
+        "lt" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.lt(lhs, rhs))
+        }
+        "eq" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.eq(lhs, rhs))
+        }
+        "gt" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            Some(cx.sprite.gt(lhs, rhs))
         }
         _ => unreachable!(),
     }

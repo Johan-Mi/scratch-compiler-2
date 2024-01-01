@@ -46,10 +46,6 @@ pub trait Visitor {
             ExpressionKind::Variable(_)
             | ExpressionKind::Imm(_)
             | ExpressionKind::Error => {}
-            ExpressionKind::BinaryOperation { lhs, rhs, .. } => {
-                self.traverse_expression(lhs);
-                self.traverse_expression(rhs);
-            }
             ExpressionKind::FunctionCall { arguments, .. } => {
                 for (_, arg) in arguments {
                     self.traverse_expression(arg);

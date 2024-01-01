@@ -1,1 +1,14 @@
+fn add(_ lhs: Num, _ rhs: Num) -> Num {}
+fn sub(_ lhs: Num, _ rhs: Num) -> Num {}
+fn mul(_ lhs: Num, _ rhs: Num) -> Num {}
+fn div(_ lhs: Num, _ rhs: Num) -> Num {}
+fn mod(_ lhs: Num, _ rhs: Num) -> Num {}
+
+fn lt(_ lhs: Num, _ rhs: Num) -> Bool {}
+fn eq(_ lhs: Num, _ rhs: Num) -> Bool {}
+fn gt(_ lhs: Num, _ rhs: Num) -> Bool {}
+fn lt(_ lhs: String, _ rhs: String) -> Bool {}
+fn eq(_ lhs: String, _ rhs: String) -> Bool {}
+fn gt(_ lhs: String, _ rhs: String) -> Bool {}
+
 fn go-to(x _: Num, y _: Num) {}
