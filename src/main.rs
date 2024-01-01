@@ -19,13 +19,18 @@ mod ty;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
-use std::path::Path;
+use std::{path::Path, process::ExitCode};
 
-fn main() {
+fn main() -> ExitCode {
     let mut code_map = CodeMap::default();
     let mut diagnostics = Diagnostics::default();
-    let _ = real_main(&mut code_map, &mut diagnostics);
+    let res = real_main(&mut code_map, &mut diagnostics);
     diagnostics.show(&code_map);
+    if res.is_ok() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn real_main(
