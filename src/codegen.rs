@@ -77,8 +77,8 @@ fn compile_sprite(
         compiled_functions,
     };
 
-    for function in hir.functions {
-        compile_function(function, &mut cx);
+    for (index, function) in hir.functions.into_iter().enumerate() {
+        compile_function(function, function::Ref::SpriteLocal(index), &mut cx);
     }
 
     Ok(())
@@ -94,7 +94,7 @@ struct Context<'a> {
 enum CompiledFunctionRef {
     User {
         block: CustomBlockRef,
-        insertion_point: InsertionPoint,
+        insertion_point: Option<InsertionPoint>,
     },
     Builtin,
 }
@@ -126,21 +126,30 @@ impl CompiledFunctionRef {
                 sprite.add_custom_block(function.name.to_string(), parameters);
             Some(Self::User {
                 block,
-                insertion_point,
+                insertion_point: Some(insertion_point),
             })
         }
     }
 }
 
-fn compile_function(hir: hir::Function, cx: &mut Context) {
+fn compile_function(hir: hir::Function, ref_: function::Ref, cx: &mut Context) {
     match &**hir.name {
         "when-flag-clicked" => {
             cx.sprite.start_script(block::when_flag_clicked());
-            for statement in hir.body.statements {
-                compile_statement(statement, cx);
-            }
         }
-        _ => todo!(),
+        _ => {
+            let insertion_point =
+                match cx.compiled_functions.get_mut(&ref_).unwrap() {
+                    CompiledFunctionRef::User {
+                        insertion_point, ..
+                    } => insertion_point.take().unwrap(),
+                    CompiledFunctionRef::Builtin => return,
+                };
+            cx.sprite.insert_at(insertion_point);
+        }
+    }
+    for statement in hir.body.statements {
+        compile_statement(statement, cx);
     }
 }
 
