@@ -63,16 +63,21 @@ fn compile_sprite(
         .iter()
         .enumerate()
         .map(|(index, function)| (function::Ref::TopLevel(index), function));
+    let mut custom_block_parameters = HashMap::new();
     let compiled_functions = sprite_functions_refs
         .chain(top_level_functions_refs)
         .filter_map(|(ref_, function)| {
-            Some(ref_).zip(CompiledFunctionRef::new(function, &mut sprite))
+            Some(ref_).zip(CompiledFunctionRef::new(
+                function,
+                &mut sprite,
+                &mut custom_block_parameters,
+            ))
         })
         .collect();
-
     let mut cx = Context {
         sprite,
         variables: HashMap::new(),
+        custom_block_parameters,
         resolved_calls,
         compiled_functions,
     };
@@ -87,6 +92,7 @@ fn compile_sprite(
 struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
+    custom_block_parameters: HashMap<SyntaxToken, Parameter>,
     resolved_calls: &'a HashMap<Pos, function::Ref>,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
 }
@@ -101,7 +107,11 @@ enum CompiledFunctionRef {
 }
 
 impl CompiledFunctionRef {
-    fn new(function: &hir::Function, sprite: &mut Target) -> Option<Self> {
+    fn new(
+        function: &hir::Function,
+        sprite: &mut Target,
+        custom_block_parameters: &mut HashMap<SyntaxToken, Parameter>,
+    ) -> Option<Self> {
         if function.is_builtin {
             Some(Self::Builtin)
         } else if function.is_special() {
@@ -122,7 +132,16 @@ impl CompiledFunctionRef {
                     }),
                     Ty::Ty | Ty::Var(_) => unreachable!(),
                 })
-                .collect();
+                .collect::<Vec<_>>();
+
+            for (custom_block_param, function_param) in
+                std::iter::zip(&parameters, &function.parameters)
+            {
+                custom_block_parameters.insert(
+                    function_param.internal_name.clone(),
+                    custom_block_param.clone(),
+                );
+            }
 
             let (block, insertion_point) =
                 sprite.add_custom_block(function.name.to_string(), parameters);
@@ -206,7 +225,16 @@ fn compile_expression(
 ) -> Option<Operand> {
     match &hir.kind {
         hir::ExpressionKind::Variable(name) => match name {
-            Name::User(token) => Some(cx.variables[token].clone().into()),
+            Name::User(token) => {
+                Some(cx.variables.get(token).cloned().map_or_else(
+                    || {
+                        cx.sprite.custom_block_parameter(
+                            cx.custom_block_parameters[token].clone(),
+                        )
+                    },
+                    Operand::from,
+                ))
+            }
             Name::Builtin(builtin) => match builtin {
                 // TODO: emit an error for this during semantic analysis
                 name::Builtin::Unit
