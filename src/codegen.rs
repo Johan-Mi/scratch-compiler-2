@@ -7,7 +7,7 @@ use crate::{
 };
 use codemap::Pos;
 use sb3_builder::{
-    block, Costume, CustomBlockRef, InsertionPoint, Operand, Parameter,
+    block, Costume, CustomBlock, InsertionPoint, Operand, Parameter,
     ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{collections::HashMap, path::Path};
@@ -93,7 +93,7 @@ struct Context<'a> {
 
 enum CompiledFunctionRef {
     User {
-        block: CustomBlockRef,
+        block: CustomBlock,
         insertion_point: Option<InsertionPoint>,
         return_variable: Option<VariableRef>,
     },
@@ -261,7 +261,7 @@ fn compile_function_call(
             return_variable,
             ..
         } => {
-            cx.sprite.use_custom_block(*block, &arguments);
+            cx.sprite.use_custom_block(block, arguments);
             return_variable.clone().map(Operand::from)
         }
         CompiledFunctionRef::Builtin => {
