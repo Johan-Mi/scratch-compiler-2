@@ -55,7 +55,7 @@ pub fn check(
 
     for sprite in document.sprites.values() {
         let mut tcx = Context {
-            sprite,
+            sprite: Some(sprite),
             top_level_functions: &document.functions,
             file,
             diagnostics,
@@ -66,6 +66,19 @@ pub fn check(
         for function in &sprite.functions {
             check_function(function, &mut tcx);
         }
+    }
+
+    let mut tcx = Context {
+        sprite: None,
+        top_level_functions: &document.functions,
+        file,
+        diagnostics,
+        variable_types: HashMap::new(),
+        resolved_calls: &mut resolved_calls,
+    };
+
+    for function in &document.functions {
+        check_function(function, &mut tcx);
     }
 
     resolved_calls
@@ -137,7 +150,7 @@ fn check_statement(
 }
 
 pub struct Context<'a> {
-    pub sprite: &'a hir::Sprite,
+    pub sprite: Option<&'a hir::Sprite>,
     pub top_level_functions: &'a [hir::Function],
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,

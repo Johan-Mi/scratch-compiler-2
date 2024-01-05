@@ -17,9 +17,11 @@ pub enum Ref {
 }
 
 impl<'a> Context<'a> {
-    fn function(&self, index: Ref) -> &'a Function {
+    pub fn function(&self, index: Ref) -> &'a Function {
         match index {
-            Ref::SpriteLocal(index) => &self.sprite.functions[index],
+            Ref::SpriteLocal(index) => {
+                &self.sprite.as_ref().unwrap().functions[index]
+            }
             Ref::TopLevel(index) => &self.top_level_functions[index],
         }
     }
@@ -35,8 +37,8 @@ pub fn resolve(
 ) -> Result<Ref> {
     let sprite_local_overloads = tcx
         .sprite
-        .functions
         .iter()
+        .flat_map(|sprite| &sprite.functions)
         .enumerate()
         .filter(|(_, function)| *function.name == name)
         .map(|(index, _)| Ref::SpriteLocal(index));

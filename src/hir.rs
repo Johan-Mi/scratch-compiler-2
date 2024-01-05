@@ -540,15 +540,7 @@ impl Expression {
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
-                let function = match resolved {
-                    function::Ref::SpriteLocal(index) => {
-                        &tcx.sprite.functions[index]
-                    }
-                    function::Ref::TopLevel(index) => {
-                        &tcx.top_level_functions[index]
-                    }
-                };
-                function.return_ty.clone()
+                tcx.function(resolved).return_ty.clone()
             }
             ExpressionKind::Error => Err(()),
         }
