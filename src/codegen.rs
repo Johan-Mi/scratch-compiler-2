@@ -84,7 +84,13 @@ fn compile_sprite(
     };
 
     for (index, function) in hir.functions.into_iter().enumerate() {
-        compile_function(function, function::Ref::SpriteLocal(index), &mut cx);
+        if !function.is_dead {
+            compile_function(
+                function,
+                function::Ref::SpriteLocal(index),
+                &mut cx,
+            );
+        }
     }
 
     Ok(())

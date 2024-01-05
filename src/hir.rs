@@ -145,6 +145,9 @@ pub struct Function {
     pub return_ty: Result<Ty>,
     pub body: Block,
     pub is_builtin: bool,
+    // Removing functions during DCE would invalidate indices, so we instead
+    // mark them as dead like this.
+    pub is_dead: bool,
 }
 
 impl Function {
@@ -207,6 +210,7 @@ impl Function {
             return_ty,
             body: Block::lower(&body, file, diagnostics),
             is_builtin: false,
+            is_dead: false,
         })
     }
 

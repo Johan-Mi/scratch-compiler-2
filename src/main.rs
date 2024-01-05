@@ -7,6 +7,7 @@ mod builtins;
 mod codegen;
 mod comptime;
 mod diagnostics;
+mod early_dce;
 mod function;
 mod hir;
 mod linter;
@@ -62,6 +63,8 @@ fn real_main(
     if !diagnostics.successful() {
         return Err(());
     }
+
+    early_dce::perform(&mut document, &resolved_calls);
 
     codegen::generate(document, &resolved_calls, Path::new("project.sb3"))
         .map_err(|err| {
