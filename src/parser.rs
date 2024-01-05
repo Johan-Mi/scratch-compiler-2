@@ -369,8 +369,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 
     fn parse_block(&mut self) {
+        if !self.at(LBRACE) {
+            self.error();
+            return;
+        }
         self.builder.start_node(BLOCK.into());
-        self.expect(LBRACE);
+        self.bump();
         while !self.at(EOF) && !self.eat(RBRACE) {
             if self.at(KW_SPRITE) {
                 break;
