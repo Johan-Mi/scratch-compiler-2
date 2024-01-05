@@ -5,6 +5,11 @@ use crate::{
 };
 
 pub fn check(document: &hir::Document, diagnostics: &mut Diagnostics) {
+    if !document.sprites.contains_key("Stage") {
+        diagnostics.error("project has no stage", []);
+        diagnostics.help("try creating a stage: `sprite Stage {}`");
+    }
+
     for sprite in document.sprites.values() {
         for function in sprite.functions.values() {
             check_function(function, false, diagnostics);
