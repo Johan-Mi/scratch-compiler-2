@@ -214,6 +214,15 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             cx.sprite.put(block::set_variable(var, value));
             None
         }
+        hir::Statement::If { condition, then } => {
+            let condition = compile_expression(&condition, cx).unwrap();
+            let after = cx.sprite.if_(condition);
+            for statement in then.unwrap().statements {
+                compile_statement(statement, cx);
+            }
+            cx.sprite.insert_at(after);
+            None
+        }
         hir::Statement::Expr(expr) => compile_expression(&expr, cx),
         hir::Statement::Error => unreachable!(),
     }

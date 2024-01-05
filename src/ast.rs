@@ -153,6 +153,7 @@ impl Block {
 
 pub enum Statement {
     Let(Let),
+    If(If),
     Expr(Expression),
 }
 
@@ -160,12 +161,13 @@ impl AstNode for Statement {
     type Language = crate::parser::Lang;
 
     fn can_cast(kind: SyntaxKind) -> bool {
-        Let::can_cast(kind) || Expression::can_cast(kind)
+        Let::can_cast(kind) || If::can_cast(kind) || Expression::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
             LET => AstNode::cast(node).map(Self::Let),
+            IF => AstNode::cast(node).map(Self::If),
             _ => Expression::cast(node).map(Self::Expr),
         }
     }
@@ -173,6 +175,7 @@ impl AstNode for Statement {
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::Let(inner) => &inner.syntax,
+            Self::If(inner) => &inner.syntax,
             Self::Expr(inner) => inner.syntax(),
         }
     }
@@ -186,6 +189,18 @@ impl Let {
     }
 
     pub fn value(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(If: IF);
+
+impl If {
+    pub fn condition(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn then(&self) -> Option<Block> {
         rowan::ast::support::child(&self.syntax)
     }
 }

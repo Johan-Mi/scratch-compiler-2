@@ -47,6 +47,7 @@ pub enum SyntaxKind {
     ARGUMENTS,
     NAMED_ARGUMENT,
     LET,
+    IF,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
     LITERAL,
@@ -96,6 +97,8 @@ pub enum SyntaxKind {
     KW_FALSE,
     #[token("true")]
     KW_TRUE,
+    #[token("if")]
+    KW_IF,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -214,6 +217,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             KW_SPRITE => self.parse_sprite(),
             KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
+            KW_IF => self.parse_if(),
             LPAREN => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RPAREN) {
@@ -348,9 +352,18 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
+    fn parse_if(&mut self) {
+        self.builder.start_node(IF.into());
+        self.bump(); // KW_IF
+        self.parse_expression();
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
     fn parse_statement(&mut self) {
         match self.peek() {
             KW_LET => self.parse_let(),
+            KW_IF => self.parse_if(),
             _ => self.parse_expression(),
         }
     }

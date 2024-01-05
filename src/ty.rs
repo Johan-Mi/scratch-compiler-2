@@ -111,6 +111,25 @@ fn check_statement(
             tcx.variable_types.insert(variable.text_range().start(), ty);
             Ok(Ty::Unit)
         }
+        hir::Statement::If { condition, then } => {
+            if let Ok(condition_ty) = condition.ty(tcx) {
+                if !condition_ty.is_subtype_of(&Ty::Bool) {
+                    tcx.diagnostics.error(
+                        "`if` condition must be a `Bool`",
+                        [primary(
+                            condition.span,
+                            format!("expected `Bool`, got `{condition_ty}`"),
+                        )],
+                    );
+                }
+            }
+            if let Ok(then) = then {
+                for statement in &then.statements {
+                    let _ = check_statement(statement, tcx);
+                }
+            }
+            Ok(Ty::Unit)
+        }
         hir::Statement::Expr(expr) => expr.ty(tcx),
         hir::Statement::Error => Err(()),
     }

@@ -315,6 +315,10 @@ pub enum Statement {
         variable: SyntaxToken,
         value: Expression,
     },
+    If {
+        condition: Expression,
+        then: Result<Block>,
+    },
     Expr(Expression),
     Error,
 }
@@ -350,6 +354,18 @@ impl Statement {
 
                 Self::Let { variable, value }
             }
+            ast::Statement::If(if_) => Self::If {
+                condition: Expression::lower_opt(
+                    if_.condition(),
+                    file,
+                    diagnostics,
+                    ast.syntax().text_range(),
+                ),
+                then: if_
+                    .then()
+                    .map(|then| Block::lower(&then, file, diagnostics))
+                    .ok_or(()),
+            },
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, diagnostics))
             }
