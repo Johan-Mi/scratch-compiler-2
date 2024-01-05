@@ -3,7 +3,8 @@ use crate::{
     hir::{Argument, Function},
     ty::Context,
 };
-use codemap::Span;
+use codemap::{Pos, Span};
+use std::collections::HashMap;
 
 type Result<T> = std::result::Result<T, ()>;
 
@@ -23,6 +24,8 @@ impl<'a> Context<'a> {
         }
     }
 }
+
+pub type ResolvedCalls = HashMap<Pos, Ref>;
 
 pub fn resolve(
     name: &str,

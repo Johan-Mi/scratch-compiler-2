@@ -1,8 +1,9 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
-    function, hir,
+    function::ResolvedCalls,
+    hir,
 };
-use codemap::{File, Pos};
+use codemap::File;
 use rowan::TextSize;
 use std::{collections::HashMap, fmt};
 
@@ -49,7 +50,7 @@ pub fn check(
     document: &hir::Document,
     file: &File,
     diagnostics: &mut Diagnostics,
-) -> HashMap<Pos, function::Ref> {
+) -> ResolvedCalls {
     let mut resolved_calls = HashMap::new();
 
     for sprite in document.sprites.values() {
@@ -141,5 +142,5 @@ pub struct Context<'a> {
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
-    pub resolved_calls: &'a mut HashMap<Pos, function::Ref>,
+    pub resolved_calls: &'a mut ResolvedCalls,
 }

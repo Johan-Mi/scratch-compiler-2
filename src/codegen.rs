@@ -1,6 +1,7 @@
 use crate::{
     comptime::Value,
-    function, hir,
+    function::{self, ResolvedCalls},
+    hir,
     name::{self, Name},
     parser::SyntaxToken,
     ty::Ty,
@@ -16,7 +17,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub fn generate(
     document: hir::Document,
-    resolved_calls: &HashMap<Pos, function::Ref>,
+    resolved_calls: &ResolvedCalls,
     output_path: &Path,
 ) -> Result<()> {
     let mut project = Project::default();
@@ -39,7 +40,7 @@ fn compile_sprite(
     hir: hir::Sprite,
     name: String,
     top_level_functions: &[hir::Function],
-    resolved_calls: &HashMap<Pos, function::Ref>,
+    resolved_calls: &ResolvedCalls,
     project: &mut Project,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
@@ -93,7 +94,7 @@ struct Context<'a> {
     sprite: Target<'a>,
     variables: HashMap<SyntaxToken, VariableRef>,
     custom_block_parameters: HashMap<SyntaxToken, Parameter>,
-    resolved_calls: &'a HashMap<Pos, function::Ref>,
+    resolved_calls: &'a ResolvedCalls,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
 }
 
