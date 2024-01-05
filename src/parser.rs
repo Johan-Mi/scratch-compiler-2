@@ -355,7 +355,13 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_if(&mut self) {
         self.builder.start_node(IF.into());
         self.bump(); // KW_IF
-        self.parse_expression();
+        if self.at(LBRACE) {
+            let label = primary(self.peek_span(), "");
+            self.diagnostics
+                .error("expected expression after `if`", [label]);
+        } else {
+            self.parse_expression();
+        }
         self.parse_block();
         self.builder.finish_node();
     }
