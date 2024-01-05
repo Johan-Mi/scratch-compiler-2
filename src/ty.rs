@@ -78,7 +78,9 @@ pub fn check(
     };
 
     for function in &document.functions {
-        check_function(function, &mut tcx);
+        if !function.is_builtin {
+            check_function(function, &mut tcx);
+        }
     }
 
     resolved_calls
