@@ -12,7 +12,7 @@ use crate::{
 };
 use codemap::{File, Span, Spanned};
 use rowan::{ast::AstNode, TextRange};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -31,7 +31,7 @@ pub fn lower(
 #[derive(Debug)]
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
-    pub functions: Vec<Function>,
+    pub functions: BTreeMap<usize, Function>,
 }
 
 impl Document {
@@ -69,6 +69,7 @@ impl Document {
             .filter_map(|function| {
                 Function::lower(&function, file, diagnostics).ok()
             })
+            .enumerate()
             .collect();
 
         Self { sprites, functions }
@@ -79,7 +80,7 @@ impl Document {
 pub struct Sprite {
     name_span: Span,
     pub costumes: Vec<Costume>,
-    pub functions: Vec<Function>,
+    pub functions: BTreeMap<usize, Function>,
 }
 
 impl Sprite {
@@ -110,6 +111,7 @@ impl Sprite {
             .filter_map(|function| {
                 Function::lower(&function, file, diagnostics).ok()
             })
+            .enumerate()
             .collect();
 
         Ok((
@@ -145,9 +147,6 @@ pub struct Function {
     pub return_ty: Result<Ty>,
     pub body: Block,
     pub is_builtin: bool,
-    // Removing functions during DCE would invalidate indices, so we instead
-    // mark them as dead like this.
-    pub is_dead: bool,
 }
 
 impl Function {
@@ -210,7 +209,6 @@ impl Function {
             return_ty,
             body: Block::lower(&body, file, diagnostics),
             is_builtin: false,
-            is_dead: false,
         })
     }
 

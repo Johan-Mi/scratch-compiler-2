@@ -20,9 +20,9 @@ impl<'a> Context<'a> {
     pub fn function(&self, index: Ref) -> &'a Function {
         match index {
             Ref::SpriteLocal(index) => {
-                &self.sprite.as_ref().unwrap().functions[index]
+                &self.sprite.as_ref().unwrap().functions[&index]
             }
-            Ref::TopLevel(index) => &self.top_level_functions[index],
+            Ref::TopLevel(index) => &self.top_level_functions[&index],
         }
     }
 }
@@ -39,16 +39,14 @@ pub fn resolve(
         .sprite
         .iter()
         .flat_map(|sprite| &sprite.functions)
-        .enumerate()
         .filter(|(_, function)| *function.name == name)
-        .map(|(index, _)| Ref::SpriteLocal(index));
+        .map(|(&index, _)| Ref::SpriteLocal(index));
 
     let top_level_overloads = tcx
         .top_level_functions
         .iter()
-        .enumerate()
         .filter(|(_, function)| *function.name == name)
-        .map(|(index, _)| Ref::TopLevel(index));
+        .map(|(&index, _)| Ref::TopLevel(index));
 
     let all_overloads = sprite_local_overloads
         .chain(top_level_overloads)

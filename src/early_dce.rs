@@ -22,13 +22,11 @@ pub fn perform(document: &mut Document, resolved_calls: &ResolvedCalls) {
 
     while let Some(index) = visitor.pending_top_level_functions.pop_last() {
         visitor.required_top_level_functions.insert(index);
-        visitor.traverse_function(&document.functions[index]);
+        visitor.traverse_function(&document.functions[&index]);
     }
-    for (index, function) in document.functions.iter_mut().enumerate() {
-        if !visitor.required_top_level_functions.contains(&index) {
-            function.is_dead = true;
-        }
-    }
+    document.functions.retain(|index, _| {
+        visitor.required_top_level_functions.contains(index)
+    });
 }
 
 struct DceVisitor<'a> {
@@ -44,20 +42,17 @@ impl DceVisitor<'_> {
         self.pending_sprite_functions = sprite
             .functions
             .iter()
-            .enumerate()
             .filter(|(_, function)| function.is_special())
-            .map(|(index, _)| index)
+            .map(|(&index, _)| index)
             .collect();
         self.required_sprite_functions.clear();
         while let Some(index) = self.pending_sprite_functions.pop_last() {
             self.required_sprite_functions.insert(index);
-            self.traverse_function(&sprite.functions[index]);
+            self.traverse_function(&sprite.functions[&index]);
         }
-        for (index, function) in sprite.functions.iter_mut().enumerate() {
-            if !self.required_sprite_functions.contains(&index) {
-                function.is_dead = true;
-            }
-        }
+        sprite
+            .functions
+            .retain(|index, _| self.required_sprite_functions.contains(index));
     }
 }
 

@@ -11,7 +11,10 @@ use sb3_builder::{
     block, Costume, CustomBlock, InsertionPoint, Operand, Parameter,
     ParameterKind, Project, Target, Variable, VariableRef,
 };
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::Path,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -39,7 +42,7 @@ pub fn generate(
 fn compile_sprite(
     hir: hir::Sprite,
     name: String,
-    top_level_functions: &[hir::Function],
+    top_level_functions: &BTreeMap<usize, hir::Function>,
     resolved_calls: &ResolvedCalls,
     project: &mut Project,
 ) -> Result<()> {
@@ -57,13 +60,12 @@ fn compile_sprite(
     }
 
     let sprite_functions_refs =
-        hir.functions.iter().enumerate().map(|(index, function)| {
+        hir.functions.iter().map(|(&index, function)| {
             (function::Ref::SpriteLocal(index), function)
         });
     let top_level_functions_refs = top_level_functions
         .iter()
-        .enumerate()
-        .map(|(index, function)| (function::Ref::TopLevel(index), function));
+        .map(|(&index, function)| (function::Ref::TopLevel(index), function));
     let mut custom_block_parameters = HashMap::new();
     let compiled_functions = sprite_functions_refs
         .chain(top_level_functions_refs)
@@ -83,14 +85,8 @@ fn compile_sprite(
         compiled_functions,
     };
 
-    for (index, function) in hir.functions.into_iter().enumerate() {
-        if !function.is_dead {
-            compile_function(
-                function,
-                function::Ref::SpriteLocal(index),
-                &mut cx,
-            );
-        }
+    for (index, function) in hir.functions {
+        compile_function(function, function::Ref::SpriteLocal(index), &mut cx);
     }
 
     Ok(())

@@ -6,11 +6,11 @@ use crate::{
 
 pub fn check(document: &hir::Document, diagnostics: &mut Diagnostics) {
     for sprite in document.sprites.values() {
-        for function in &sprite.functions {
+        for function in sprite.functions.values() {
             check_function(function, false, diagnostics);
         }
     }
-    for function in &document.functions {
+    for function in document.functions.values() {
         check_function(function, true, diagnostics);
     }
 }

@@ -5,7 +5,10 @@ use crate::{
 };
 use codemap::File;
 use rowan::TextSize;
-use std::{collections::HashMap, fmt};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
@@ -63,7 +66,7 @@ pub fn check(
             resolved_calls: &mut resolved_calls,
         };
 
-        for function in &sprite.functions {
+        for function in sprite.functions.values() {
             check_function(function, &mut tcx);
         }
     }
@@ -77,7 +80,7 @@ pub fn check(
         resolved_calls: &mut resolved_calls,
     };
 
-    for function in &document.functions {
+    for function in document.functions.values() {
         if !function.is_builtin {
             check_function(function, &mut tcx);
         }
@@ -153,7 +156,7 @@ fn check_statement(
 
 pub struct Context<'a> {
     pub sprite: Option<&'a hir::Sprite>,
-    pub top_level_functions: &'a [hir::Function],
+    pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
     pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,

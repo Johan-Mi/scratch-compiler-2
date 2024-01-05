@@ -13,13 +13,13 @@ pub trait Visitor {
         for sprite in document.sprites.values() {
             self.traverse_sprite(sprite);
         }
-        for function in &document.functions {
+        for function in document.functions.values() {
             self.traverse_function(function);
         }
     }
 
     fn traverse_sprite(&mut self, sprite: &Sprite) {
-        for function in &sprite.functions {
+        for function in sprite.functions.values() {
             self.traverse_function(function);
         }
     }

@@ -9,7 +9,7 @@ pub fn add_to_hir(
     let cst = crate::parser::parse(&file, &mut diagnostics);
     let mut hir = crate::hir::lower(cst, &file, &mut diagnostics);
     debug_assert!(diagnostics.successful());
-    for function in &mut hir.functions {
+    for function in hir.functions.values_mut() {
         function.is_builtin = true;
     }
     document.functions.extend(hir.functions);
