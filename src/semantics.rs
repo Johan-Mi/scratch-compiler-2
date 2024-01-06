@@ -7,7 +7,7 @@ use crate::{
 pub fn check(document: &hir::Document, diagnostics: &mut Diagnostics) {
     if !document.sprites.contains_key("Stage") {
         diagnostics.error("project has no stage", []);
-        diagnostics.help("try creating a stage: `sprite Stage {}`");
+        diagnostics.help("try creating a stage: `sprite Stage {}`", []);
     }
 
     for sprite in document.sprites.values() {

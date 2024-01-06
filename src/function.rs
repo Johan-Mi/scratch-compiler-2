@@ -72,6 +72,7 @@ pub fn resolve(
             if all_overloads.is_empty() {
                 tcx.diagnostics
                     .error("undefined function", [primary(span, "")]);
+                suggest_similar(name, tcx);
             } else {
                 tcx.diagnostics.error(
                     "function call has no viable overload",
@@ -97,4 +98,26 @@ pub fn resolve(
             Err(())
         }
     }
+}
+
+fn suggest_similar(name: &str, tcx: &mut Context) {
+    let mut all_names = tcx
+        .sprite
+        .into_iter()
+        .flat_map(|sprite| sprite.functions.values())
+        .chain(tcx.top_level_functions.values())
+        .map(|function| &function.name)
+        .collect::<Vec<_>>();
+    // PERFORMANCE: there's really no need to sort the entire vector but it's
+    // the simplest solution.
+    all_names.sort_by_key(|it| levenshtein::levenshtein(name, it));
+
+    tcx.diagnostics.help(
+        "here are the functions with the most similar names:",
+        all_names
+            .iter()
+            .take(3)
+            .map(|it| primary(it.span, ""))
+            .collect::<Vec<_>>(),
+    );
 }

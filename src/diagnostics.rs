@@ -53,12 +53,16 @@ impl Diagnostics {
         });
     }
 
-    pub fn help(&mut self, message: impl Into<String>) {
+    pub fn help(
+        &mut self,
+        message: impl Into<String>,
+        labels: impl Into<Vec<SpanLabel>>,
+    ) {
         self.0.push(Diagnostic {
             level: Level::Help,
             message: message.into(),
             code: None,
-            spans: Vec::new(),
+            spans: labels.into(),
         });
     }
 
