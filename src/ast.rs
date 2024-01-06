@@ -204,12 +204,16 @@ impl If {
         rowan::ast::support::child(&self.syntax)
     }
 
-    pub fn else_(&self) -> Option<Block> {
-        let clause = self
-            .syntax
-            .children()
-            .find(|child| child.kind() == ELSE_CLAUSE)?;
-        rowan::ast::support::child(&clause)
+    pub fn else_clause(&self) -> Option<ElseClause> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(ElseClause: ELSE_CLAUSE);
+
+impl ElseClause {
+    pub fn block(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
     }
 }
 

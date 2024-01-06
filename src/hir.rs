@@ -369,7 +369,8 @@ impl Statement {
                     .map(|then| Block::lower(&then, file, diagnostics))
                     .ok_or(()),
                 else_: if_
-                    .else_()
+                    .else_clause()
+                    .and_then(|clause| clause.block())
                     .map(|else_| Block::lower(&else_, file, diagnostics))
                     .ok_or(()),
             },
