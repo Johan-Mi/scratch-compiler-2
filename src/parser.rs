@@ -368,7 +368,11 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.parse_block();
         if self.eat(KW_ELSE) {
             self.builder.start_node(ELSE_CLAUSE.into());
-            self.parse_block();
+            if self.at(KW_IF) {
+                self.parse_if();
+            } else {
+                self.parse_block();
+            }
             self.builder.finish_node();
         }
         self.builder.finish_node();

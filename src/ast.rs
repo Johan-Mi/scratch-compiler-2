@@ -215,6 +215,10 @@ impl ElseClause {
     pub fn block(&self) -> Option<Block> {
         rowan::ast::support::child(&self.syntax)
     }
+
+    pub fn if_(&self) -> Option<If> {
+        rowan::ast::support::child(&self.syntax)
+    }
 }
 
 pub enum Expression {

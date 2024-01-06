@@ -370,8 +370,22 @@ impl Statement {
                     .ok_or(()),
                 else_: if_
                     .else_clause()
-                    .and_then(|clause| clause.block())
-                    .map(|else_| Block::lower(&else_, file, diagnostics))
+                    .and_then(|clause| {
+                        clause
+                            .block()
+                            .map(|block| {
+                                Block::lower(&block, file, diagnostics)
+                            })
+                            .or_else(|| {
+                                clause.if_().map(|if_| Block {
+                                    statements: vec![Self::lower(
+                                        &ast::Statement::If(if_),
+                                        file,
+                                        diagnostics,
+                                    )],
+                                })
+                            })
+                    })
                     .ok_or(()),
             },
             ast::Statement::Expr(expr) => {
