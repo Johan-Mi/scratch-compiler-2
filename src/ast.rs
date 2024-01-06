@@ -203,6 +203,14 @@ impl If {
     pub fn then(&self) -> Option<Block> {
         rowan::ast::support::child(&self.syntax)
     }
+
+    pub fn else_(&self) -> Option<Block> {
+        let clause = self
+            .syntax
+            .children()
+            .find(|child| child.kind() == ELSE_CLAUSE)?;
+        rowan::ast::support::child(&clause)
+    }
 }
 
 pub enum Expression {

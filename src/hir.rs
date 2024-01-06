@@ -320,6 +320,7 @@ pub enum Statement {
     If {
         condition: Expression,
         then: Result<Block>,
+        else_: Result<Block>,
     },
     Expr(Expression),
     Error,
@@ -366,6 +367,10 @@ impl Statement {
                 then: if_
                     .then()
                     .map(|then| Block::lower(&then, file, diagnostics))
+                    .ok_or(()),
+                else_: if_
+                    .else_()
+                    .map(|else_| Block::lower(&else_, file, diagnostics))
                     .ok_or(()),
             },
             ast::Statement::Expr(expr) => {

@@ -48,6 +48,7 @@ pub enum SyntaxKind {
     NAMED_ARGUMENT,
     LET,
     IF,
+    ELSE_CLAUSE,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
     LITERAL,
@@ -99,6 +100,8 @@ pub enum SyntaxKind {
     KW_TRUE,
     #[token("if")]
     KW_IF,
+    #[token("else")]
+    KW_ELSE,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -363,6 +366,11 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             self.parse_expression();
         }
         self.parse_block();
+        if self.eat(KW_ELSE) {
+            self.builder.start_node(ELSE_CLAUSE.into());
+            self.parse_block();
+            self.builder.finish_node();
+        }
         self.builder.finish_node();
     }
 

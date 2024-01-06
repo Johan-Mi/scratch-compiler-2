@@ -217,13 +217,29 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             cx.sprite.put(block::set_variable(var, value));
             None
         }
-        hir::Statement::If { condition, then } => {
+        hir::Statement::If {
+            condition,
+            then,
+            else_,
+        } => {
             let condition = compile_expression(&condition, cx).unwrap();
-            let after = cx.sprite.if_(condition);
-            for statement in then.unwrap().statements {
-                compile_statement(statement, cx);
+            if let Ok(else_) = else_ {
+                let [after, else_clause] = cx.sprite.if_else(condition);
+                for statement in then.unwrap().statements {
+                    compile_statement(statement, cx);
+                }
+                cx.sprite.insert_at(else_clause);
+                for statement in else_.statements {
+                    compile_statement(statement, cx);
+                }
+                cx.sprite.insert_at(after);
+            } else {
+                let after = cx.sprite.if_(condition);
+                for statement in then.unwrap().statements {
+                    compile_statement(statement, cx);
+                }
+                cx.sprite.insert_at(after);
             }
-            cx.sprite.insert_at(after);
             None
         }
         hir::Statement::Expr(expr) => compile_expression(&expr, cx),

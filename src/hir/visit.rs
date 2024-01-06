@@ -36,10 +36,19 @@ pub trait Visitor {
             Statement::Let { value, .. } | Statement::Expr(value) => {
                 self.traverse_expression(value);
             }
-            Statement::If { condition, then } => {
+            Statement::If {
+                condition,
+                then,
+                else_,
+            } => {
                 self.traverse_expression(condition);
                 if let Ok(then) = then {
                     for statement in &then.statements {
+                        self.traverse_statement(statement);
+                    }
+                }
+                if let Ok(else_) = else_ {
+                    for statement in &else_.statements {
                         self.traverse_statement(statement);
                     }
                 }
