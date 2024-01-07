@@ -111,7 +111,7 @@ pub enum SyntaxKind {
     NUMBER,
 
     // TODO: escape sequences
-    #[regex(r#""[^"]*""#)]
+    #[regex(r#""[^"\n]*""#)]
     STRING,
 
     ERROR,
