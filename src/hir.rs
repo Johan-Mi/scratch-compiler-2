@@ -134,8 +134,8 @@ pub struct Costume {
 impl Costume {
     fn lower(ast: &ast::Costume) -> Result<Self> {
         Ok(Self {
-            name: parse_string_literal(ast.name().ok_or(())?.text()),
-            path: parse_string_literal(ast.path().ok_or(())?.text()),
+            name: parse_string_literal(ast.name().ok_or(())?.text())?,
+            path: parse_string_literal(ast.path().ok_or(())?.text())?,
         })
     }
 }
@@ -577,9 +577,10 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 ExpressionKind::Imm(Value::Num(n))
             })
         }
-        crate::parser::SyntaxKind::STRING => ExpressionKind::Imm(
-            Value::String(parse_string_literal(token.text())),
-        ),
+        crate::parser::SyntaxKind::STRING => parse_string_literal(token.text())
+            .map_or(ExpressionKind::Error, |s| {
+                ExpressionKind::Imm(Value::String(s))
+            }),
         crate::parser::SyntaxKind::KW_FALSE => {
             ExpressionKind::Imm(Value::Bool(false))
         }
@@ -590,9 +591,9 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
     }
 }
 
-fn parse_string_literal(lit: &str) -> String {
+fn parse_string_literal(lit: &str) -> Result<String> {
     // Remove the quotes.
-    lit[1..lit.len() - 1].to_owned()
+    Ok(lit[1..].strip_suffix('"').ok_or(())?.to_owned())
 }
 
 pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {

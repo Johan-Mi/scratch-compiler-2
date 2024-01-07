@@ -9,10 +9,23 @@ pub fn check(
     file: &File,
     diagnostics: &mut Diagnostics,
 ) {
-    for node in document.descendants() {
-        if node.kind() == ERROR {
-            let span = span(file, node.text_range());
-            diagnostics.error("syntax error", [primary(span, "")]);
+    for thing in document.descendants_with_tokens() {
+        match thing {
+            rowan::NodeOrToken::Node(node) => {
+                if node.kind() == ERROR {
+                    let span = span(file, node.text_range());
+                    diagnostics.error("syntax error", [primary(span, "")]);
+                }
+            }
+            rowan::NodeOrToken::Token(token) => {
+                if token.kind() == STRING && !token.text().ends_with('"') {
+                    let span = span(file, token.text_range());
+                    diagnostics.error(
+                        "unterminated string literal",
+                        [primary(span, "")],
+                    );
+                }
+            }
         }
     }
 }
