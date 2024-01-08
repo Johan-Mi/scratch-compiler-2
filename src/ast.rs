@@ -154,6 +154,11 @@ impl Block {
 pub enum Statement {
     Let(Let),
     If(If),
+    Repeat(Repeat),
+    Forever(Forever),
+    While(While),
+    Until(Until),
+    For(For),
     Expr(Expression),
 }
 
@@ -168,6 +173,11 @@ impl AstNode for Statement {
         match node.kind() {
             LET => AstNode::cast(node).map(Self::Let),
             IF => AstNode::cast(node).map(Self::If),
+            REPEAT => AstNode::cast(node).map(Self::Repeat),
+            FOREVER => AstNode::cast(node).map(Self::Forever),
+            WHILE => AstNode::cast(node).map(Self::While),
+            UNTIL => AstNode::cast(node).map(Self::Until),
+            FOR => AstNode::cast(node).map(Self::For),
             _ => Expression::cast(node).map(Self::Expr),
         }
     }
@@ -176,6 +186,11 @@ impl AstNode for Statement {
         match self {
             Self::Let(inner) => &inner.syntax,
             Self::If(inner) => &inner.syntax,
+            Self::Repeat(inner) => &inner.syntax,
+            Self::Forever(inner) => &inner.syntax,
+            Self::While(inner) => &inner.syntax,
+            Self::Until(inner) => &inner.syntax,
+            Self::For(inner) => &inner.syntax,
             Self::Expr(inner) => inner.syntax(),
         }
     }
@@ -217,6 +232,66 @@ impl ElseClause {
     }
 
     pub fn if_(&self) -> Option<If> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(Repeat: REPEAT);
+
+impl Repeat {
+    pub fn times(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(Forever: FOREVER);
+
+impl Forever {
+    pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(While: WHILE);
+
+impl While {
+    pub fn condition(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(Until: UNTIL);
+
+impl Until {
+    pub fn condition(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(For: FOR);
+
+impl For {
+    pub fn variable(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+
+    pub fn times(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
+    pub fn body(&self) -> Option<Block> {
         rowan::ast::support::child(&self.syntax)
     }
 }

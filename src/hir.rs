@@ -388,6 +388,11 @@ impl Statement {
                     })
                     .ok_or(()),
             },
+            ast::Statement::Repeat(_) => todo!(),
+            ast::Statement::Forever(_) => todo!(),
+            ast::Statement::While(_) => todo!(),
+            ast::Statement::Until(_) => todo!(),
+            ast::Statement::For(_) => todo!(),
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, diagnostics))
             }
