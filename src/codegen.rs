@@ -242,7 +242,7 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             }
             None
         }
-        hir::Statement::Forever { body } => {
+        hir::Statement::Forever { body, .. } => {
             cx.sprite.forever();
             for statement in body.unwrap().statements {
                 compile_statement(statement, cx);

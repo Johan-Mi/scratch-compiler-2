@@ -1,6 +1,6 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
-    hir,
+    hir::{self, Visitor},
     ty::Ty,
 };
 
@@ -49,5 +49,34 @@ fn check_function(
             }
         }
         _ => {}
+    }
+
+    SemanticVisitor { diagnostics }.traverse_function(function);
+}
+
+struct SemanticVisitor<'a> {
+    diagnostics: &'a mut Diagnostics,
+}
+
+impl Visitor for SemanticVisitor<'_> {
+    fn visit_block(&mut self, block: &hir::Block) {
+        let Some(index) = block.statements.iter().position(|statement| {
+            matches!(statement, hir::Statement::Forever { .. })
+        }) else {
+            return;
+        };
+
+        if index == block.statements.len() - 1 {
+            return;
+        }
+
+        let hir::Statement::Forever { span, .. } = block.statements[index]
+        else {
+            unreachable!()
+        };
+        self.diagnostics.error(
+            "unreachable code",
+            [primary(span, "any code after this loop is unreachable")],
+        );
     }
 }

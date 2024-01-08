@@ -56,7 +56,7 @@ pub trait Visitor {
                     self.traverse_block(else_);
                 }
             }
-            Statement::Forever { body } => {
+            Statement::Forever { body, .. } => {
                 if let Ok(body) = body {
                     self.traverse_block(body);
                 }

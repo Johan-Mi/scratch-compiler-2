@@ -324,6 +324,7 @@ pub enum Statement {
     },
     Forever {
         body: Result<Block>,
+        span: Span,
     },
     Expr(Expression),
     Error,
@@ -397,6 +398,7 @@ impl Statement {
                     .body()
                     .map(|body| Block::lower(&body, file, diagnostics))
                     .ok_or(()),
+                span: span(file, ast.syntax().text_range()),
             },
             ast::Statement::While(_) => todo!(),
             ast::Statement::Until(_) => todo!(),
