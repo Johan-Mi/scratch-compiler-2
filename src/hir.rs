@@ -322,6 +322,9 @@ pub enum Statement {
         then: Result<Block>,
         else_: Result<Block>,
     },
+    Forever {
+        body: Result<Block>,
+    },
     Expr(Expression),
     Error,
 }
@@ -389,7 +392,12 @@ impl Statement {
                     .ok_or(()),
             },
             ast::Statement::Repeat(_) => todo!(),
-            ast::Statement::Forever(_) => todo!(),
+            ast::Statement::Forever(forever) => Self::Forever {
+                body: forever
+                    .body()
+                    .map(|body| Block::lower(&body, file, diagnostics))
+                    .ok_or(()),
+            },
             ast::Statement::While(_) => todo!(),
             ast::Statement::Until(_) => todo!(),
             ast::Statement::For(_) => todo!(),

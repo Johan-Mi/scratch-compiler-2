@@ -158,6 +158,14 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
+        hir::Statement::Forever { body } => {
+            if let Ok(body) = body {
+                for statement in &body.statements {
+                    let _ = check_statement(statement, tcx);
+                }
+            }
+            Ok(Ty::Unit)
+        }
         hir::Statement::Expr(expr) => expr.ty(tcx),
         hir::Statement::Error => Err(()),
     }
