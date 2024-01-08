@@ -1,10 +1,12 @@
 use super::{
-    Document, Expression, ExpressionKind, Function, Sprite, Statement,
+    Block, Document, Expression, ExpressionKind, Function, Sprite, Statement,
 };
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
 pub trait Visitor {
+    fn visit_block(&mut self, _block: &Block) {}
+
     fn visit_statement(&mut self, _statement: &Statement) {}
 
     fn visit_expression(&mut self, _expr: &Expression) {}
@@ -25,7 +27,12 @@ pub trait Visitor {
     }
 
     fn traverse_function(&mut self, function: &Function) {
-        for statement in &function.body.statements {
+        self.traverse_block(&function.body);
+    }
+
+    fn traverse_block(&mut self, block: &Block) {
+        self.visit_block(block);
+        for statement in &block.statements {
             self.traverse_statement(statement);
         }
     }
@@ -43,14 +50,10 @@ pub trait Visitor {
             } => {
                 self.traverse_expression(condition);
                 if let Ok(then) = then {
-                    for statement in &then.statements {
-                        self.traverse_statement(statement);
-                    }
+                    self.traverse_block(then);
                 }
                 if let Ok(else_) = else_ {
-                    for statement in &else_.statements {
-                        self.traverse_statement(statement);
-                    }
+                    self.traverse_block(else_);
                 }
             }
             Statement::Error => {}
