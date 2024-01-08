@@ -49,6 +49,11 @@ pub enum SyntaxKind {
     LET,
     IF,
     ELSE_CLAUSE,
+    REPEAT,
+    FOREVER,
+    WHILE,
+    UNTIL,
+    FOR,
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
     LITERAL,
@@ -102,6 +107,16 @@ pub enum SyntaxKind {
     KW_IF,
     #[token("else")]
     KW_ELSE,
+    #[token("repeat")]
+    KW_REPEAT,
+    #[token("forever")]
+    KW_FOREVER,
+    #[token("while")]
+    KW_WHILE,
+    #[token("until")]
+    KW_UNTIL,
+    #[token("for")]
+    KW_FOR,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -221,6 +236,11 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
             KW_IF => self.parse_if(),
+            KW_REPEAT => self.parse_repeat(),
+            KW_FOREVER => self.parse_forever(),
+            KW_WHILE => self.parse_while(),
+            KW_UNTIL => self.parse_until(),
+            KW_FOR => self.parse_for(),
             LPAREN => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RPAREN) {
@@ -378,10 +398,87 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
+    fn parse_repeat(&mut self) {
+        self.builder.start_node(REPEAT.into());
+        self.bump(); // KW_REPEAT
+        if self.at(LBRACE) {
+            let label = primary(self.peek_span(), "");
+            self.diagnostics
+                .error("expected expression after `repeat`", [label]);
+        } else {
+            self.parse_expression();
+        }
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
+    fn parse_forever(&mut self) {
+        self.builder.start_node(FOREVER.into());
+        self.bump(); // KW_FOREVER
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
+    fn parse_while(&mut self) {
+        self.builder.start_node(WHILE.into());
+        self.bump(); // KW_WHILE
+        if self.at(LBRACE) {
+            let label = primary(self.peek_span(), "");
+            self.diagnostics
+                .error("expected expression after `while`", [label]);
+        } else {
+            self.parse_expression();
+        }
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
+    fn parse_until(&mut self) {
+        self.builder.start_node(UNTIL.into());
+        self.bump(); // KW_UNTIL
+        if self.at(LBRACE) {
+            let label = primary(self.peek_span(), "");
+            self.diagnostics
+                .error("expected expression after `until`", [label]);
+        } else {
+            self.parse_expression();
+        }
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
+    fn parse_for(&mut self) {
+        self.builder.start_node(FOR.into());
+        self.bump(); // KW_FOR
+        if self.at(LBRACE) {
+            let label = primary(self.peek_span(), "");
+            self.diagnostics
+                .error("expected identifier after `for`", [label]);
+        } else {
+            self.expect(IDENTIFIER);
+            if self.at(LBRACE) {
+                let label = primary(self.peek_span(), "");
+                self.diagnostics.error(
+                    "expected expression after variable in `for` loop",
+                    [label],
+                );
+            } else {
+                self.parse_expression();
+            }
+        }
+        self.parse_block();
+        self.builder.finish_node();
+    }
+
     fn parse_statement(&mut self) {
         match self.peek() {
             KW_LET => self.parse_let(),
             KW_IF => self.parse_if(),
+            KW_REPEAT => self.parse_repeat(),
+            KW_FOREVER => self.parse_forever(),
+            KW_WHILE => self.parse_while(),
+            KW_UNTIL => self.parse_until(),
+            KW_FOR => self.parse_for(),
             _ => self.parse_expression(),
         }
     }
