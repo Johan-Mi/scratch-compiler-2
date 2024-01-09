@@ -166,6 +166,44 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
+        hir::Statement::While { condition, body } => {
+            if let Ok(condition_ty) = condition.ty(tcx) {
+                if !condition_ty.is_subtype_of(&Ty::Bool) {
+                    tcx.diagnostics.error(
+                        "`while` condition must be a `Bool`",
+                        [primary(
+                            condition.span,
+                            format!("expected `Bool`, got `{condition_ty}`"),
+                        )],
+                    );
+                }
+            }
+            if let Ok(body) = body {
+                for statement in &body.statements {
+                    let _ = check_statement(statement, tcx);
+                }
+            }
+            Ok(Ty::Unit)
+        }
+        hir::Statement::Until { condition, body } => {
+            if let Ok(condition_ty) = condition.ty(tcx) {
+                if !condition_ty.is_subtype_of(&Ty::Bool) {
+                    tcx.diagnostics.error(
+                        "`until` condition must be a `Bool`",
+                        [primary(
+                            condition.span,
+                            format!("expected `Bool`, got `{condition_ty}`"),
+                        )],
+                    );
+                }
+            }
+            if let Ok(body) = body {
+                for statement in &body.statements {
+                    let _ = check_statement(statement, tcx);
+                }
+            }
+            Ok(Ty::Unit)
+        }
         hir::Statement::Expr(expr) => expr.ty(tcx),
         hir::Statement::Error => Err(()),
     }

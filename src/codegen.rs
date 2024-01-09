@@ -249,6 +249,24 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             }
             None
         }
+        hir::Statement::While { condition, body } => {
+            let condition = compile_expression(&condition, cx).unwrap();
+            let after = cx.sprite.while_(condition);
+            for statement in body.unwrap().statements {
+                compile_statement(statement, cx);
+            }
+            cx.sprite.insert_at(after);
+            None
+        }
+        hir::Statement::Until { condition, body } => {
+            let condition = compile_expression(&condition, cx).unwrap();
+            let after = cx.sprite.repeat_until(condition);
+            for statement in body.unwrap().statements {
+                compile_statement(statement, cx);
+            }
+            cx.sprite.insert_at(after);
+            None
+        }
         hir::Statement::Expr(expr) => compile_expression(&expr, cx),
         hir::Statement::Error => unreachable!(),
     }

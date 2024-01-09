@@ -326,6 +326,14 @@ pub enum Statement {
         body: Result<Block>,
         span: Span,
     },
+    While {
+        condition: Expression,
+        body: Result<Block>,
+    },
+    Until {
+        condition: Expression,
+        body: Result<Block>,
+    },
     Expr(Expression),
     Error,
 }
@@ -400,8 +408,30 @@ impl Statement {
                     .ok_or(()),
                 span: span(file, ast.syntax().text_range()),
             },
-            ast::Statement::While(_) => todo!(),
-            ast::Statement::Until(_) => todo!(),
+            ast::Statement::While(while_) => Self::While {
+                body: while_
+                    .body()
+                    .map(|body| Block::lower(&body, file, diagnostics))
+                    .ok_or(()),
+                condition: Expression::lower_opt(
+                    while_.condition(),
+                    file,
+                    diagnostics,
+                    ast.syntax().text_range(),
+                ),
+            },
+            ast::Statement::Until(until_) => Self::Until {
+                body: until_
+                    .body()
+                    .map(|body| Block::lower(&body, file, diagnostics))
+                    .ok_or(()),
+                condition: Expression::lower_opt(
+                    until_.condition(),
+                    file,
+                    diagnostics,
+                    ast.syntax().text_range(),
+                ),
+            },
             ast::Statement::For(_) => todo!(),
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, diagnostics))
