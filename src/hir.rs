@@ -347,6 +347,11 @@ pub enum Statement {
         condition: Expression,
         body: Result<Block>,
     },
+    For {
+        variable: Result<SyntaxToken>,
+        times: Expression,
+        body: Result<Block>,
+    },
     Expr(Expression),
     Error,
 }
@@ -441,7 +446,16 @@ impl Statement {
                     ast.syntax().text_range(),
                 ),
             },
-            ast::Statement::For(_) => todo!(),
+            ast::Statement::For(for_) => Self::For {
+                variable: for_.variable().ok_or(()),
+                times: Expression::lower_opt(
+                    for_.times(),
+                    file,
+                    diagnostics,
+                    ast.syntax().text_range(),
+                ),
+                body: Block::lower_opt(for_.body(), file, diagnostics),
+            },
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, diagnostics))
             }

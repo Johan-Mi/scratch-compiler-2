@@ -72,6 +72,9 @@ pub trait Visitor {
             | Statement::Until {
                 condition: value,
                 body,
+            }
+            | Statement::For {
+                times: value, body, ..
             } => {
                 self.traverse_expression(value);
                 if let Ok(body) = body {

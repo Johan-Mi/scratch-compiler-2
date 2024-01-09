@@ -276,6 +276,24 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             cx.sprite.insert_at(after);
             None
         }
+        hir::Statement::For {
+            variable,
+            times,
+            body,
+        } => {
+            let var = cx.sprite.add_variable(Variable {
+                // TODO: generate unique variable names
+                name: "for loop".to_owned(),
+            });
+            cx.variables.insert(variable.unwrap(), var.clone());
+            let times = compile_expression(&times, cx).unwrap();
+            let after = cx.sprite.for_(var, times);
+            for statement in body.unwrap().statements {
+                compile_statement(statement, cx);
+            }
+            cx.sprite.insert_at(after);
+            None
+        }
         hir::Statement::Expr(expr) => compile_expression(&expr, cx),
         hir::Statement::Error => unreachable!(),
     }
