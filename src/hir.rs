@@ -322,6 +322,10 @@ pub enum Statement {
         then: Result<Block>,
         else_: Result<Block>,
     },
+    Repeat {
+        times: Expression,
+        body: Result<Block>,
+    },
     Forever {
         body: Result<Block>,
         span: Span,
@@ -400,7 +404,18 @@ impl Statement {
                     })
                     .ok_or(()),
             },
-            ast::Statement::Repeat(_) => todo!(),
+            ast::Statement::Repeat(repeat_) => Self::Repeat {
+                times: Expression::lower_opt(
+                    repeat_.times(),
+                    file,
+                    diagnostics,
+                    ast.syntax().text_range(),
+                ),
+                body: repeat_
+                    .body()
+                    .map(|body| Block::lower(&body, file, diagnostics))
+                    .ok_or(()),
+            },
             ast::Statement::Forever(forever) => Self::Forever {
                 body: forever
                     .body()

@@ -242,6 +242,15 @@ fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
             }
             None
         }
+        hir::Statement::Repeat { times, body } => {
+            let times = compile_expression(&times, cx).unwrap();
+            let after = cx.sprite.repeat(times);
+            for statement in body.unwrap().statements {
+                compile_statement(statement, cx);
+            }
+            cx.sprite.insert_at(after);
+            None
+        }
         hir::Statement::Forever { body, .. } => {
             cx.sprite.forever();
             for statement in body.unwrap().statements {

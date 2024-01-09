@@ -158,6 +158,25 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
+        hir::Statement::Repeat { times, body } => {
+            if let Ok(times_ty) = times.ty(tcx) {
+                if !times_ty.is_subtype_of(&Ty::Num) {
+                    tcx.diagnostics.error(
+                        "repetition count must be a number",
+                        [primary(
+                            times.span,
+                            format!("expected `Num`, got `{times_ty}`"),
+                        )],
+                    );
+                }
+            }
+            if let Ok(body) = body {
+                for statement in &body.statements {
+                    let _ = check_statement(statement, tcx);
+                }
+            }
+            Ok(Ty::Unit)
+        }
         hir::Statement::Forever { body, .. } => {
             if let Ok(body) = body {
                 for statement in &body.statements {

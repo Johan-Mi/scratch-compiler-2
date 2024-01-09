@@ -64,9 +64,16 @@ pub trait Visitor {
                     self.traverse_block(body);
                 }
             }
-            Statement::While { condition, body }
-            | Statement::Until { condition, body } => {
-                self.traverse_expression(condition);
+            Statement::Repeat { times: value, body }
+            | Statement::While {
+                condition: value,
+                body,
+            }
+            | Statement::Until {
+                condition: value,
+                body,
+            } => {
+                self.traverse_expression(value);
                 if let Ok(body) = body {
                     self.traverse_block(body);
                 }
