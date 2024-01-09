@@ -10,48 +10,7 @@ pub fn check(document: &hir::Document, diagnostics: &mut Diagnostics) {
         diagnostics.help("try creating a stage: `sprite Stage {}`", []);
     }
 
-    for sprite in document.sprites.values() {
-        for function in sprite.functions.values() {
-            check_function(function, false, diagnostics);
-        }
-    }
-    for function in document.functions.values() {
-        check_function(function, true, diagnostics);
-    }
-}
-
-fn check_function(
-    function: &hir::Function,
-    is_top_level: bool,
-    diagnostics: &mut Diagnostics,
-) {
-    if is_top_level && function.is_special() {
-        diagnostics.error(
-            format!(
-                "special function `{}` cannot be defined outside of a sprite",
-                *function.name
-            ),
-            [primary(function.name.span, "")],
-        );
-    }
-
-    match &**function.name {
-        "when-flag-clicked" => {
-            if !function.parameters.is_empty()
-                || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
-            {
-                diagnostics.error(
-                    "special function `when-flag-clicked` has incorrect signature",
-                    [primary(function.name.span, "")],
-                );
-                diagnostics
-                    .note("expected signature: `fn when-flag-clicked()`", []);
-            }
-        }
-        _ => {}
-    }
-
-    SemanticVisitor { diagnostics }.traverse_function(function);
+    SemanticVisitor { diagnostics }.traverse_document(document);
 }
 
 struct SemanticVisitor<'a> {
@@ -59,6 +18,39 @@ struct SemanticVisitor<'a> {
 }
 
 impl Visitor for SemanticVisitor<'_> {
+    fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
+        if is_top_level && function.is_special() {
+            self.diagnostics.error(
+                format!(
+                "special function `{}` cannot be defined outside of a sprite",
+                *function.name
+            ),
+                [primary(function.name.span, "")],
+            );
+        }
+
+        match &**function.name {
+            "when-flag-clicked" => {
+                if !function.parameters.is_empty()
+                    || function
+                        .return_ty
+                        .as_ref()
+                        .is_ok_and(|it| *it != Ty::Unit)
+                {
+                    self.diagnostics.error(
+                    "special function `when-flag-clicked` has incorrect signature",
+                    [primary(function.name.span, "")],
+                );
+                    self.diagnostics.note(
+                        "expected signature: `fn when-flag-clicked()`",
+                        [],
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+
     fn visit_block(&mut self, block: &hir::Block) {
         let Some(index) = block.statements.iter().position(|statement| {
             matches!(statement, hir::Statement::Forever { .. })

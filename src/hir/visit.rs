@@ -5,6 +5,8 @@ use super::{
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
 pub trait Visitor {
+    fn visit_function(&mut self, _function: &Function, _is_top_level: bool) {}
+
     fn visit_block(&mut self, _block: &Block) {}
 
     fn visit_statement(&mut self, _statement: &Statement) {}
@@ -16,17 +18,18 @@ pub trait Visitor {
             self.traverse_sprite(sprite);
         }
         for function in document.functions.values() {
-            self.traverse_function(function);
+            self.traverse_function(function, true);
         }
     }
 
     fn traverse_sprite(&mut self, sprite: &Sprite) {
         for function in sprite.functions.values() {
-            self.traverse_function(function);
+            self.traverse_function(function, false);
         }
     }
 
-    fn traverse_function(&mut self, function: &Function) {
+    fn traverse_function(&mut self, function: &Function, is_top_level: bool) {
+        self.visit_function(function, is_top_level);
         self.traverse_block(&function.body);
     }
 

@@ -22,7 +22,7 @@ pub fn perform(document: &mut Document, resolved_calls: &ResolvedCalls) {
 
     while let Some(index) = visitor.pending_top_level_functions.pop_last() {
         visitor.required_top_level_functions.insert(index);
-        visitor.traverse_function(&document.functions[&index]);
+        visitor.traverse_function(&document.functions[&index], true);
     }
     document.functions.retain(|index, _| {
         visitor.required_top_level_functions.contains(index)
@@ -48,7 +48,7 @@ impl DceVisitor<'_> {
         self.required_sprite_functions.clear();
         while let Some(index) = self.pending_sprite_functions.pop_last() {
             self.required_sprite_functions.insert(index);
-            self.traverse_function(&sprite.functions[&index]);
+            self.traverse_function(&sprite.functions[&index], false);
         }
         sprite
             .functions
