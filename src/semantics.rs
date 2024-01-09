@@ -22,9 +22,9 @@ impl Visitor for SemanticVisitor<'_> {
         if is_top_level && function.is_special() {
             self.diagnostics.error(
                 format!(
-                "special function `{}` cannot be defined outside of a sprite",
-                *function.name
-            ),
+                    "special function `{}` cannot be defined outside of a sprite",
+                    *function.name
+                ),
                 [primary(function.name.span, "")],
             );
         }
