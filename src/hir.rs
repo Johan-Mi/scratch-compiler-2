@@ -309,6 +309,15 @@ impl Block {
                 .collect(),
         }
     }
+
+    fn lower_opt(
+        ast: Option<ast::Block>,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Result<Self> {
+        ast.map(|block| Self::lower(&block, file, diagnostics))
+            .ok_or(())
+    }
 }
 
 #[derive(Debug)]
@@ -380,10 +389,7 @@ impl Statement {
                     diagnostics,
                     ast.syntax().text_range(),
                 ),
-                then: if_
-                    .then()
-                    .map(|then| Block::lower(&then, file, diagnostics))
-                    .ok_or(()),
+                then: Block::lower_opt(if_.then(), file, diagnostics),
                 else_: if_
                     .else_clause()
                     .and_then(|clause| {
@@ -411,23 +417,14 @@ impl Statement {
                     diagnostics,
                     ast.syntax().text_range(),
                 ),
-                body: repeat_
-                    .body()
-                    .map(|body| Block::lower(&body, file, diagnostics))
-                    .ok_or(()),
+                body: Block::lower_opt(repeat_.body(), file, diagnostics),
             },
             ast::Statement::Forever(forever) => Self::Forever {
-                body: forever
-                    .body()
-                    .map(|body| Block::lower(&body, file, diagnostics))
-                    .ok_or(()),
+                body: Block::lower_opt(forever.body(), file, diagnostics),
                 span: span(file, ast.syntax().text_range()),
             },
             ast::Statement::While(while_) => Self::While {
-                body: while_
-                    .body()
-                    .map(|body| Block::lower(&body, file, diagnostics))
-                    .ok_or(()),
+                body: Block::lower_opt(while_.body(), file, diagnostics),
                 condition: Expression::lower_opt(
                     while_.condition(),
                     file,
@@ -436,10 +433,7 @@ impl Statement {
                 ),
             },
             ast::Statement::Until(until_) => Self::Until {
-                body: until_
-                    .body()
-                    .map(|body| Block::lower(&body, file, diagnostics))
-                    .ok_or(()),
+                body: Block::lower_opt(until_.body(), file, diagnostics),
                 condition: Expression::lower_opt(
                     until_.condition(),
                     file,
