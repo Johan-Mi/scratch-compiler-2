@@ -52,18 +52,18 @@ impl Visitor for SemanticVisitor<'_> {
     }
 
     fn visit_block(&mut self, block: &hir::Block) {
-        let Some((index, span)) = block.statements.iter().enumerate().find_map(
-            |(index, statement)| match statement {
-                hir::Statement::Forever { span, .. } => Some((index, *span)),
+        let Some(span) = block
+            .statements
+            .iter()
+            // A `forever` loop at the end of the block is fine.
+            .take(block.statements.len().saturating_sub(1))
+            .find_map(|statement| match statement {
+                hir::Statement::Forever { span, .. } => Some(*span),
                 _ => None,
-            },
-        ) else {
+            })
+        else {
             return;
         };
-
-        if index == block.statements.len() - 1 {
-            return;
-        }
         self.diagnostics.error(
             "unreachable code",
             [primary(span, "any code after this loop is unreachable")],
