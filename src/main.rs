@@ -11,6 +11,7 @@ mod early_dce;
 mod function;
 mod hir;
 mod linter;
+mod mir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
