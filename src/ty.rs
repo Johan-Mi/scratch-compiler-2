@@ -98,13 +98,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
             )
         }));
 
-    let actual_return_ty = function
-        .body
-        .statements
-        .iter()
-        .map(|statement| check_statement(statement, tcx))
-        .last()
-        .unwrap_or(Ok(Ty::Unit));
+    let actual_return_ty = check_block(&function.body, tcx);
     if let (Ok(return_ty), Ok(actual_return_ty)) =
         (&function.return_ty, actual_return_ty)
     {
@@ -147,14 +141,10 @@ fn check_statement(
                 }
             }
             if let Ok(then) = then {
-                for statement in &then.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(then, tcx);
             }
             if let Ok(else_) = else_ {
-                for statement in &else_.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(else_, tcx);
             }
             Ok(Ty::Unit)
         }
@@ -171,17 +161,13 @@ fn check_statement(
                 }
             }
             if let Ok(body) = body {
-                for statement in &body.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
         hir::Statement::Forever { body, .. } => {
             if let Ok(body) = body {
-                for statement in &body.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
@@ -198,9 +184,7 @@ fn check_statement(
                 }
             }
             if let Ok(body) = body {
-                for statement in &body.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
@@ -217,15 +201,21 @@ fn check_statement(
                 }
             }
             if let Ok(body) = body {
-                for statement in &body.statements {
-                    let _ = check_statement(statement, tcx);
-                }
+                let _ = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
         hir::Statement::Expr(expr) => expr.ty(tcx),
         hir::Statement::Error => Err(()),
     }
+}
+
+fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
+    body.statements
+        .iter()
+        .map(|statement| check_statement(statement, tcx))
+        .last()
+        .unwrap_or(Ok(Ty::Unit))
 }
 
 pub struct Context<'a> {
