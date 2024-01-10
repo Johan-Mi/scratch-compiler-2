@@ -1,6 +1,7 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+mod optimization;
 mod visit;
 use visit::Visitor;
 
