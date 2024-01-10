@@ -45,3 +45,15 @@ pub(super) fn const_while_condition(block: &mut Block) -> bool {
     }
     true
 }
+
+pub(super) fn no_repeat(block: &mut Block) -> bool {
+    let Some(index) = block.ops.iter().position(|op| {
+        matches!(op,
+            Op::For { times: Value::Imm(Imm::Num(n)), .. } if *n < 0.5
+        )
+    }) else {
+        return false;
+    };
+    block.ops.remove(index);
+    true
+}
