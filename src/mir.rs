@@ -1,6 +1,8 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+mod visit;
+use visit::Visitor;
 
 use crate::comptime::Value as Imm;
 
