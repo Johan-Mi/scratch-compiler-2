@@ -3,6 +3,11 @@
 
 mod optimization;
 mod visit;
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
+
 use visit::Visitor;
 
 use crate::comptime::Value as Imm;
@@ -14,6 +19,7 @@ struct Function {
 
 #[derive(Default)]
 struct Block {
+    parent: Option<Weak<RefCell<Block>>>,
     ops: Vec<Op>,
 }
 
@@ -27,19 +33,19 @@ enum Value {
 enum Op {
     If {
         condition: Value,
-        then: Block,
-        else_: Block,
+        then: Rc<RefCell<Block>>,
+        else_: Rc<RefCell<Block>>,
     },
     Forever {
-        body: Block,
+        body: Rc<RefCell<Block>>,
     },
     While {
         condition: Value,
-        body: Block,
+        body: Rc<RefCell<Block>>,
     },
     For {
         variable: Option<SsaVar>,
         times: Value,
-        body: Block,
+        body: Rc<RefCell<Block>>,
     },
 }

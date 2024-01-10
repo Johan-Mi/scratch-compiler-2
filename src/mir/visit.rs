@@ -16,12 +16,14 @@ pub(super) trait Visitor {
     fn traverse_op(&mut self, op: &mut Op) {
         match op {
             Op::If { then, else_, .. } => {
-                self.traverse_block(then);
-                self.traverse_block(else_);
+                self.traverse_block(&mut then.borrow_mut());
+                self.traverse_block(&mut else_.borrow_mut());
             }
             Op::Forever { body }
             | Op::While { body, .. }
-            | Op::For { body, .. } => self.traverse_block(body),
+            | Op::For { body, .. } => {
+                self.traverse_block(&mut body.borrow_mut());
+            }
         }
     }
 }

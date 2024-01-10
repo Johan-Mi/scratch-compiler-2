@@ -1,5 +1,5 @@
 use crate::mir::{Block, Imm, Op, Value};
-use std::mem;
+use std::{mem, rc::Rc};
 
 pub(super) fn const_if_condition(block: &mut Block) -> bool {
     let Some((index, condition, then, else_)) = block
@@ -17,9 +17,14 @@ pub(super) fn const_if_condition(block: &mut Block) -> bool {
     else {
         return false;
     };
-    block
-        .ops
-        .splice(index..=index, if condition { then } else { else_ }.ops);
+    block.ops.splice(
+        index..=index,
+        Rc::try_unwrap(if condition { then } else { else_ })
+            .ok()
+            .unwrap()
+            .into_inner()
+            .ops,
+    );
     true
 }
 
