@@ -24,7 +24,7 @@ struct Block {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct SsaVar {}
+struct SsaVar(u16);
 
 #[derive(Clone)]
 enum Value {
