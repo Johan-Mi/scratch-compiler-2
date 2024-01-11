@@ -43,8 +43,8 @@ pub(super) trait Visitor {
 
 /// Replaces all uses of an SSA variable with the given value.
 pub(super) struct SsaVarReplacer {
-    variable: SsaVar,
-    replacement: Value,
+    pub variable: SsaVar,
+    pub replacement: Value,
 }
 
 impl Visitor for SsaVarReplacer {
