@@ -33,6 +33,7 @@ enum Value {
 }
 
 enum Op {
+    Return(Value),
     If {
         condition: Value,
         then: Rc<RefCell<Block>>,
