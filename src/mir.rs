@@ -50,21 +50,13 @@ enum Op {
         times: Value,
         body: Rc<RefCell<Block>>,
     },
-    IgnoreCall {
-        function: usize,
-        args: Vec<Value>,
-    },
-    IgnoreCallBuiltin {
-        name: String,
-        args: Vec<Value>,
-    },
     Call {
-        variable: SsaVar,
+        variable: Option<SsaVar>,
         function: usize,
         args: Vec<Value>,
     },
     CallBuiltin {
-        variable: SsaVar,
+        variable: Option<SsaVar>,
         name: String,
         args: Vec<Value>,
     },

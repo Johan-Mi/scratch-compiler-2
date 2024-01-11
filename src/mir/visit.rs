@@ -37,10 +37,7 @@ pub(super) trait Visitor {
                 self.visit_value(condition);
                 self.traverse_block(&mut body.borrow_mut());
             }
-            Op::IgnoreCall { args, .. }
-            | Op::IgnoreCallBuiltin { args, .. }
-            | Op::Call { args, .. }
-            | Op::CallBuiltin { args, .. } => {
+            Op::Call { args, .. } | Op::CallBuiltin { args, .. } => {
                 for arg in args {
                     self.visit_value(arg);
                 }
