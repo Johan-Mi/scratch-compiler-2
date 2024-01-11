@@ -8,7 +8,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use visit::Visitor;
+use visit::*;
 
 use crate::comptime::Value as Imm;
 
@@ -23,8 +23,10 @@ struct Block {
     ops: Vec<Op>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 struct SsaVar {}
 
+#[derive(Clone)]
 enum Value {
     Var(SsaVar),
     Imm(Imm),
