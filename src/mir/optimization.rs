@@ -23,6 +23,7 @@ impl super::Visitor for Visitor {
     }
 
     fn visit_block(&mut self, block: &mut super::Block) {
+        self.dirty |= dce::eliminate_useless_ops(block);
         self.dirty |= control_flow::const_if_condition(block);
         self.dirty |= control_flow::const_while_condition(block);
         self.dirty |= control_flow::no_repeat(block);

@@ -1,4 +1,4 @@
-use crate::mir::{Function, Op, SsaVar, Value, Visitor};
+use crate::mir::{Block, Function, Op, SsaVar, Value, Visitor};
 use std::collections::HashSet;
 
 pub(super) fn eliminate_unused_ssa_vars(function: &mut Function) -> bool {
@@ -41,4 +41,16 @@ impl Visitor for Eliminator {
             }
         }
     }
+}
+
+pub(super) fn eliminate_useless_ops(block: &mut Block) -> bool {
+    let len = block.ops.len();
+    block.ops.retain(|op| !is_useless(op));
+    block.ops.len() != len
+}
+
+fn is_useless(op: &Op) -> bool {
+    matches!(op, Op::CallBuiltin { name, .. } if matches!(&**name,
+        "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt"
+    ))
 }
