@@ -23,7 +23,7 @@ struct Block {
     ops: Vec<Op>,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct SsaVar {}
 
 #[derive(Clone)]

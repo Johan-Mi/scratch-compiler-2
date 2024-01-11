@@ -3,11 +3,16 @@ use super::{Block, Function, Op, SsaVar, Value};
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the MIR.
 pub(super) trait Visitor {
+    fn visit_function(&mut self, _function: &mut Function) {}
+
     fn visit_block(&mut self, _block: &mut Block) {}
+
+    fn visit_op(&mut self, _op: &mut Op) {}
 
     fn visit_value(&mut self, _value: &mut Value) {}
 
     fn traverse_function(&mut self, function: &mut Function) {
+        self.visit_function(function);
         self.traverse_block(&mut function.body);
     }
 
@@ -16,6 +21,7 @@ pub(super) trait Visitor {
     }
 
     fn traverse_op(&mut self, op: &mut Op) {
+        self.visit_op(op);
         match op {
             Op::If {
                 condition,
