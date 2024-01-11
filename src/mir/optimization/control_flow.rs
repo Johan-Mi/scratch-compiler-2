@@ -5,28 +5,28 @@ use crate::mir::{
 use std::{mem, rc::Rc};
 
 pub(super) fn const_if_condition(block: &mut Block) -> bool {
-    let Some((index, condition, then, else_)) = block
-        .ops
-        .iter_mut()
-        .enumerate()
-        .find_map(|(index, op)| match op {
-            Op::If {
-                condition: Value::Imm(Imm::Bool(condition)),
-                then,
-                else_,
-            } => Some((index, *condition, mem::take(then), mem::take(else_))),
-            _ => None,
-        })
+    let Some((index, branch)) =
+        block
+            .ops
+            .iter_mut()
+            .enumerate()
+            .find_map(|(index, op)| match op {
+                Op::If {
+                    condition: Value::Imm(Imm::Bool(condition)),
+                    then,
+                    else_,
+                } => Some((
+                    index,
+                    mem::take(if *condition { then } else { else_ }),
+                )),
+                _ => None,
+            })
     else {
         return false;
     };
     block.ops.splice(
         index..=index,
-        Rc::try_unwrap(if condition { then } else { else_ })
-            .ok()
-            .unwrap()
-            .into_inner()
-            .ops,
+        Rc::try_unwrap(branch).ok().unwrap().into_inner().ops,
     );
     true
 }
