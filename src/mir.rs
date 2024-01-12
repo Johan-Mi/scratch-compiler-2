@@ -15,6 +15,18 @@ use std::{
     rc::{Rc, Weak},
 };
 
+pub fn optimize(document: &mut Document) {
+    struct OptimizationVistior;
+
+    impl Visitor for OptimizationVistior {
+        fn visit_function(&mut self, function: &mut Function) {
+            optimization::optimize(function);
+        }
+    }
+
+    OptimizationVistior.traverse_document(document);
+}
+
 pub struct Document {
     sprites: HashMap<String, Sprite>,
     functions: HashMap<usize, Function>,
