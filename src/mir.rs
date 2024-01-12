@@ -28,36 +28,36 @@ pub fn optimize(document: &mut Document) {
 }
 
 pub struct Document {
-    sprites: HashMap<String, Sprite>,
-    functions: HashMap<usize, Function>,
+    pub sprites: HashMap<String, Sprite>,
+    pub functions: HashMap<usize, Function>,
 }
 
-struct Sprite {
-    costumes: Vec<Costume>,
-    functions: HashMap<usize, Function>,
+pub struct Sprite {
+    pub costumes: Vec<Costume>,
+    pub functions: HashMap<usize, Function>,
 }
 
-struct Function {
-    parameters: Vec<SsaVar>,
-    body: Block,
+pub struct Function {
+    pub parameters: Vec<SsaVar>,
+    pub body: Block,
 }
 
 #[derive(Default)]
-struct Block {
+pub struct Block {
     parent: Option<Weak<RefCell<Block>>>,
-    ops: Vec<Op>,
+    pub ops: Vec<Op>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct SsaVar(u16);
+pub struct SsaVar(u16);
 
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Var(SsaVar),
     Imm(Imm),
 }
 
-enum Op {
+pub enum Op {
     Return(Value),
     If {
         condition: Value,
