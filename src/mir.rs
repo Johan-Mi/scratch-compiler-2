@@ -1,16 +1,29 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+mod lowering;
 mod optimization;
 mod visit;
+
+pub use lowering::lower;
+use visit::*;
+
+use crate::{comptime::Value as Imm, function, hir::Costume};
 use std::{
     cell::RefCell,
+    collections::HashMap,
     rc::{Rc, Weak},
 };
 
-use visit::*;
+pub struct Document {
+    sprites: HashMap<String, Sprite>,
+    functions: HashMap<usize, Function>,
+}
 
-use crate::comptime::Value as Imm;
+struct Sprite {
+    costumes: Vec<Costume>,
+    functions: HashMap<usize, Function>,
+}
 
 struct Function {
     parameters: Vec<SsaVar>,
@@ -53,7 +66,7 @@ enum Op {
     },
     Call {
         variable: Option<SsaVar>,
-        function: usize,
+        function: function::Ref,
         args: Vec<Value>,
     },
     CallBuiltin {
