@@ -123,6 +123,7 @@ fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
 }
 
 fn lower_block(block: hir::Block, cx: &mut Context) -> Block {
+    let old_block = std::mem::take(&mut cx.block);
     if let Some(return_value) = block
         .statements
         .into_iter()
@@ -132,13 +133,14 @@ fn lower_block(block: hir::Block, cx: &mut Context) -> Block {
     {
         cx.block.ops.push(Op::Return(return_value));
     }
-    std::mem::take(&mut cx.block)
+    std::mem::replace(&mut cx.block, old_block)
 }
 
 fn lower_statement(
     statement: hir::Statement,
     cx: &mut Context,
 ) -> Option<Value> {
+    // TODO: assign parents
     match statement {
         hir::Statement::Let { variable, value } => {
             let value = lower_expression(value, cx).unwrap();
