@@ -29,6 +29,9 @@ pub(super) trait Visitor {
 
     fn traverse_block(&mut self, block: &mut Block) {
         self.visit_block(block);
+        for op in &mut block.ops {
+            self.traverse_op(op);
+        }
     }
 
     fn traverse_op(&mut self, op: &mut Op) {
