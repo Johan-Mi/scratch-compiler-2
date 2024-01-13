@@ -5,7 +5,7 @@ use crate::{
     ty::Ty,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Ty(Ty),
     Num(f64),

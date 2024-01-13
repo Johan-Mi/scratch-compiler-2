@@ -11,6 +11,7 @@ mod early_dce;
 mod function;
 mod hir;
 mod linter;
+mod mir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
@@ -66,9 +67,13 @@ fn real_main(
 
     early_dce::perform(&mut document, &resolved_calls);
 
-    codegen::generate(document, &resolved_calls, Path::new("project.sb3"))
-        .map_err(|err| {
-            diagnostics.error("failed to create project file", []);
-            diagnostics.note(err.to_string(), []);
-        })
+    let mut document = mir::lower(document, &resolved_calls);
+    mir::optimize(&mut document);
+    if std::env::var_os("DUMP_MIR").is_some() {
+        eprintln!("{document:#?}");
+    }
+    codegen::generate(document, Path::new("project.sb3")).map_err(|err| {
+        diagnostics.error("failed to create project file", []);
+        diagnostics.note(err.to_string(), []);
+    })
 }

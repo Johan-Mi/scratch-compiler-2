@@ -1,5 +1,6 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
+    function,
     hir::{self, Visitor},
     ty::Ty,
 };
@@ -19,7 +20,7 @@ struct SemanticVisitor<'a> {
 
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
-        if is_top_level && function.is_special() {
+        if is_top_level && function::name_is_special(&function.name) {
             self.diagnostics.error(
                 format!(
                     "special function `{}` cannot be defined outside of a sprite",

@@ -15,4 +15,7 @@
 - If no errors have occured, the compiler moves on to code generation:
   - An early dead code elimination step is performed, which removes unused
     functions to avoid wasting time on them.
-  - Finally, the HIR gets compiled to a Scratch project.
+  - The HIR gets lowered to MIR (the mid-level intermediate representation).
+  - Several optimizations are repeatedly applied to the MIR until a fixed point
+    is reached.
+  - Finally, the MIR gets compiled to a Scratch project.
