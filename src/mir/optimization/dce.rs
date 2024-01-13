@@ -56,5 +56,5 @@ fn is_useless(op: &Op) -> bool {
         Op::If {
             then, else_, ..
         } if then.ops.is_empty() && else_.ops.is_empty()
-    )
+    ) || matches!(op, Op::For { body, .. } if body.ops.is_empty())
 }
