@@ -1,4 +1,4 @@
-use super::{Block, Document, Function, Op, Sprite, SsaVar, Value};
+use super::{Block, Document, Function, Op, Parameter, Sprite, SsaVar, Value};
 use crate::{
     function::{self, ResolvedCalls},
     hir::{self, desugar_function_call_name},
@@ -41,7 +41,7 @@ pub fn lower(
 }
 
 #[derive(Clone, Copy)]
-struct FunctionSignature {
+pub struct FunctionSignature {
     returns_something: bool,
     is_builtin: bool,
 }
@@ -99,20 +99,25 @@ fn lower_sprite(sprite: hir::Sprite, cx: &mut Context) -> Sprite {
 fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
     let parameters = function
         .parameters
-        .iter()
+        .into_iter()
         .map(|param| {
-            let var = cx.new_ssa_var();
+            let ssa_var = cx.new_ssa_var();
             cx.vars.insert(
                 param.internal_name.text_range().start(),
-                Value::Var(var),
+                Value::Var(ssa_var),
             );
-            var
+            Parameter {
+                ssa_var,
+                ty: param.ty.unwrap(),
+            }
         })
         .collect();
 
     Function {
+        name: function.name.node,
         parameters,
         body: lower_block(function.body, cx),
+        returns_something: !function.return_ty.unwrap().is_zero_sized(),
     }
 }
 

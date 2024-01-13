@@ -8,7 +8,7 @@ mod visit;
 pub use lowering::lower;
 use visit::*;
 
-use crate::{comptime::Value as Imm, function, hir::Costume};
+use crate::{comptime::Value as Imm, function, hir::Costume, ty::Ty};
 use std::{collections::HashMap, fmt};
 
 pub fn optimize(document: &mut Document) {
@@ -34,8 +34,15 @@ pub struct Sprite {
 }
 
 pub struct Function {
-    pub parameters: Vec<SsaVar>,
+    pub name: String,
+    pub parameters: Vec<Parameter>,
     pub body: Block,
+    pub returns_something: bool,
+}
+
+pub struct Parameter {
+    pub ssa_var: SsaVar,
+    pub ty: Ty,
 }
 
 #[derive(Default)]
@@ -45,6 +52,12 @@ pub struct Block {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SsaVar(u16);
+
+impl fmt::Display for SsaVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(Clone)]
 pub enum Value {

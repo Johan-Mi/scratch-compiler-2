@@ -1,38 +1,20 @@
-use crate::{
-    comptime::Value,
-    function::{self, ResolvedCalls},
-    hir,
-    name::{self, Name},
-    parser::SyntaxToken,
-    ty::Ty,
-};
-use codemap::Pos;
+use crate::{comptime, function, mir, ty::Ty};
 use sb3_builder::{
     block, Costume, CustomBlock, InsertionPoint, Operand, Parameter,
     ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{hash_map::Entry, HashMap},
     path::Path,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub fn generate(
-    document: hir::Document,
-    resolved_calls: &ResolvedCalls,
-    output_path: &Path,
-) -> Result<()> {
+pub fn generate(document: mir::Document, output_path: &Path) -> Result<()> {
     let mut project = Project::default();
 
     for (name, sprite) in document.sprites {
-        compile_sprite(
-            sprite,
-            name,
-            &document.functions,
-            resolved_calls,
-            &mut project,
-        )?;
+        compile_sprite(sprite, name, &document.functions, &mut project)?;
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -40,10 +22,9 @@ pub fn generate(
 }
 
 fn compile_sprite(
-    hir: hir::Sprite,
+    mir: mir::Sprite,
     name: String,
-    top_level_functions: &BTreeMap<usize, hir::Function>,
-    resolved_calls: &ResolvedCalls,
+    top_level_functions: &HashMap<usize, mir::Function>,
     project: &mut Project,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
@@ -52,40 +33,41 @@ fn compile_sprite(
         project.add_sprite(name)
     };
 
-    for costume in hir.costumes {
+    for costume in mir.costumes {
         sprite.add_costume(Costume::from_file(
             costume.name,
             costume.path.as_ref(),
         )?);
     }
 
+    let mut compiled_ssa_vars = HashMap::new();
+
     let sprite_functions_refs =
-        hir.functions.iter().map(|(&index, function)| {
+        mir.functions.iter().map(|(&index, function)| {
             (function::Ref::SpriteLocal(index), function)
         });
     let top_level_functions_refs = top_level_functions
         .iter()
         .map(|(&index, function)| (function::Ref::TopLevel(index), function));
-    let mut custom_block_parameters = HashMap::new();
     let compiled_functions = sprite_functions_refs
         .chain(top_level_functions_refs)
         .filter_map(|(ref_, function)| {
             Some(ref_).zip(CompiledFunctionRef::new(
                 function,
                 &mut sprite,
-                &mut custom_block_parameters,
+                &mut compiled_ssa_vars,
             ))
         })
         .collect();
+
     let mut cx = Context {
         sprite,
-        variables: HashMap::new(),
-        custom_block_parameters,
-        resolved_calls,
+        compiled_ssa_vars,
         compiled_functions,
+        return_variable: None,
     };
 
-    for (index, function) in hir.functions {
+    for (index, function) in mir.functions {
         compile_function(function, function::Ref::SpriteLocal(index), &mut cx);
     }
 
@@ -94,287 +76,232 @@ fn compile_sprite(
 
 struct Context<'a> {
     sprite: Target<'a>,
-    variables: HashMap<SyntaxToken, VariableRef>,
-    custom_block_parameters: HashMap<SyntaxToken, Parameter>,
-    resolved_calls: &'a ResolvedCalls,
+    compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
+    return_variable: Option<VariableRef>,
 }
 
-enum CompiledFunctionRef {
-    User {
-        block: CustomBlock,
-        insertion_point: Option<InsertionPoint>,
-        return_variable: Option<VariableRef>,
-    },
-    Builtin,
+enum CompiledSsaVar {
+    Linear(Operand),
+    Relevant(VariableRef),
+    CustomBlockParameter(Parameter),
+}
+
+struct CompiledFunctionRef {
+    block: CustomBlock,
+    insertion_point: Option<InsertionPoint>,
+    return_variable: Option<VariableRef>,
 }
 
 impl CompiledFunctionRef {
     fn new(
-        function: &hir::Function,
+        function: &mir::Function,
         sprite: &mut Target,
-        custom_block_parameters: &mut HashMap<SyntaxToken, Parameter>,
+        compiled_ssa_vars: &mut HashMap<mir::SsaVar, CompiledSsaVar>,
     ) -> Option<Self> {
-        if function.is_builtin {
-            Some(Self::Builtin)
-        } else if function.is_special() {
-            None
-        } else {
-            let parameters = function
-                .parameters
-                .iter()
-                .filter_map(|parameter| match parameter.ty.as_ref().unwrap() {
-                    Ty::Unit => None,
-                    Ty::Num | Ty::String => Some(Parameter {
-                        name: parameter.internal_name.to_string(),
-                        kind: ParameterKind::StringOrNumber,
-                    }),
-                    Ty::Bool => Some(Parameter {
-                        name: parameter.internal_name.to_string(),
-                        kind: ParameterKind::Boolean,
-                    }),
-                    Ty::Ty | Ty::Var(_) => unreachable!(),
-                })
-                .collect::<Vec<_>>();
-
-            for (custom_block_param, function_param) in
-                std::iter::zip(&parameters, &function.parameters)
-            {
-                custom_block_parameters.insert(
-                    function_param.internal_name.clone(),
-                    custom_block_param.clone(),
-                );
-            }
-
-            let (block, insertion_point) =
-                sprite.add_custom_block(function.name.to_string(), parameters);
-
-            let return_variable =
-                (!function.return_ty.as_ref().unwrap().is_zero_sized()).then(
-                    || {
-                        sprite.add_variable(Variable {
-                            name: format!("return {}", *function.name),
-                        })
-                    },
-                );
-
-            Some(Self::User {
-                block,
-                insertion_point: Some(insertion_point),
-                return_variable,
-            })
+        if function::name_is_special(&function.name) {
+            return None;
         }
+
+        let parameters = function
+            .parameters
+            .iter()
+            .filter_map(|parameter| {
+                let kind = match parameter.ty {
+                    Ty::Unit => return None,
+                    Ty::Num | Ty::String => ParameterKind::StringOrNumber,
+                    Ty::Bool => ParameterKind::Boolean,
+                    Ty::Ty | Ty::Var(_) => unreachable!(),
+                };
+                Some(Parameter {
+                    name: parameter.ssa_var.to_string(),
+                    kind,
+                })
+            })
+            .collect::<Vec<_>>();
+
+        for (custom_block_param, function_param) in
+            std::iter::zip(&parameters, &function.parameters)
+        {
+            compiled_ssa_vars.insert(
+                function_param.ssa_var,
+                CompiledSsaVar::CustomBlockParameter(
+                    custom_block_param.clone(),
+                ),
+            );
+        }
+
+        let (block, insertion_point) =
+            sprite.add_custom_block(function.name.to_string(), parameters);
+
+        let return_variable = function.returns_something.then(|| {
+            sprite.add_variable(Variable {
+                name: format!("return {}", function.name),
+            })
+        });
+
+        Some(Self {
+            block,
+            insertion_point: Some(insertion_point),
+            return_variable,
+        })
     }
 }
 
-fn compile_function(hir: hir::Function, ref_: function::Ref, cx: &mut Context) {
-    let return_variable = match &**hir.name {
+fn compile_function(
+    function: mir::Function,
+    function_ref: function::Ref,
+    cx: &mut Context,
+) {
+    cx.return_variable = match &*function.name {
         "when-flag-clicked" => {
             cx.sprite.start_script(block::when_flag_clicked());
             None
         }
         _ => {
-            let (insertion_point, return_variable) = match cx
-                .compiled_functions
-                .get_mut(&ref_)
-                .unwrap()
-            {
-                CompiledFunctionRef::User {
-                    insertion_point,
-                    return_variable,
-                    ..
-                } => (insertion_point.take().unwrap(), return_variable.clone()),
-                CompiledFunctionRef::Builtin => return,
-            };
-            cx.sprite.insert_at(insertion_point);
-            return_variable
+            let compiled_ref =
+                cx.compiled_functions.get_mut(&function_ref).unwrap();
+            cx.sprite
+                .insert_at(compiled_ref.insertion_point.take().unwrap());
+            compiled_ref.return_variable.clone()
         }
     };
 
-    let return_value = hir
-        .body
-        .statements
-        .into_iter()
-        .filter_map(|it| compile_statement(it, cx))
-        .last();
-    if let Some(return_variable) = return_variable {
-        cx.sprite
-            .put(block::set_variable(return_variable, return_value.unwrap()));
+    compile_block(function.body, cx);
+}
+
+fn compile_block(block: mir::Block, cx: &mut Context) {
+    for op in block.ops {
+        compile_op(op, cx);
     }
 }
 
-fn compile_statement(hir: hir::Statement, cx: &mut Context) -> Option<Operand> {
-    match hir {
-        hir::Statement::Let {
-            variable: token,
-            value,
-        } => {
-            let value = compile_expression(&value, cx).unwrap();
-            let var = cx.sprite.add_variable(Variable {
-                name: token.to_string(),
-            });
-            cx.variables.insert(token, var.clone());
-            cx.sprite.put(block::set_variable(var, value));
-            None
+fn compile_op(op: mir::Op, cx: &mut Context) {
+    match op {
+        mir::Op::Return(value) => {
+            let value = compile_value(value, cx);
+            let return_variable = cx.return_variable.clone().unwrap();
+            cx.sprite.put(block::set_variable(return_variable, value));
         }
-        hir::Statement::If {
+        mir::Op::If {
             condition,
             then,
             else_,
         } => {
-            let condition = compile_expression(&condition, cx).unwrap();
-            if let Ok(else_) = else_ {
-                let [after, else_clause] = cx.sprite.if_else(condition);
-                for statement in then.unwrap().statements {
-                    compile_statement(statement, cx);
-                }
-                cx.sprite.insert_at(else_clause);
-                for statement in else_.statements {
-                    compile_statement(statement, cx);
-                }
-                cx.sprite.insert_at(after);
-            } else {
-                let after = cx.sprite.if_(condition);
-                for statement in then.unwrap().statements {
-                    compile_statement(statement, cx);
-                }
-                cx.sprite.insert_at(after);
-            }
-            None
-        }
-        hir::Statement::Repeat { times, body } => {
-            let times = compile_expression(&times, cx).unwrap();
-            let after = cx.sprite.repeat(times);
-            for statement in body.unwrap().statements {
-                compile_statement(statement, cx);
-            }
+            let condition = compile_value(condition, cx);
+            let [after, else_clause] = cx.sprite.if_else(condition);
+            compile_block(then, cx);
+            cx.sprite.insert_at(else_clause);
+            compile_block(else_, cx);
             cx.sprite.insert_at(after);
-            None
         }
-        hir::Statement::Forever { body, .. } => {
+        mir::Op::Forever { body } => {
             cx.sprite.forever();
-            for statement in body.unwrap().statements {
-                compile_statement(statement, cx);
-            }
-            None
+            compile_block(body, cx);
         }
-        hir::Statement::While { condition, body } => {
-            let condition = compile_expression(&condition, cx).unwrap();
+        mir::Op::While { condition, body } => {
+            let condition = compile_value(condition, cx);
             let after = cx.sprite.while_(condition);
-            for statement in body.unwrap().statements {
-                compile_statement(statement, cx);
-            }
+            compile_block(body, cx);
             cx.sprite.insert_at(after);
-            None
         }
-        hir::Statement::Until { condition, body } => {
-            let condition = compile_expression(&condition, cx).unwrap();
-            let after = cx.sprite.repeat_until(condition);
-            for statement in body.unwrap().statements {
-                compile_statement(statement, cx);
-            }
-            cx.sprite.insert_at(after);
-            None
-        }
-        hir::Statement::For {
+        mir::Op::For {
             variable,
             times,
             body,
         } => {
-            let var = cx.sprite.add_variable(Variable {
-                // TODO: generate unique variable names
-                name: "for loop".to_owned(),
-            });
-            cx.variables.insert(variable.unwrap(), var.clone());
-            let times = compile_expression(&times, cx).unwrap();
-            let after = cx.sprite.for_(var, times);
-            for statement in body.unwrap().statements {
-                compile_statement(statement, cx);
-            }
+            let times = compile_value(times, cx);
+            let after = if let Some(variable) = variable {
+                let var = cx.sprite.add_variable(Variable {
+                    name: variable.to_string(),
+                });
+                cx.compiled_ssa_vars
+                    .insert(variable, CompiledSsaVar::Relevant(var.clone()));
+                cx.sprite.for_(var, times)
+            } else {
+                cx.sprite.repeat(times)
+            };
+            compile_block(body, cx);
             cx.sprite.insert_at(after);
-            None
         }
-        hir::Statement::Expr(expr) => compile_expression(&expr, cx),
-        hir::Statement::Error => unreachable!(),
-    }
-}
-
-fn compile_expression(
-    hir: &hir::Expression,
-    cx: &mut Context,
-) -> Option<Operand> {
-    match &hir.kind {
-        hir::ExpressionKind::Variable(name) => match name {
-            Name::User(token) => {
-                Some(cx.variables.get(token).cloned().map_or_else(
-                    || {
-                        cx.sprite.custom_block_parameter(
-                            cx.custom_block_parameters[token].clone(),
-                        )
-                    },
-                    Operand::from,
-                ))
+        mir::Op::Call {
+            variable,
+            function,
+            args,
+        } => {
+            let args =
+                args.into_iter().map(|arg| compile_value(arg, cx)).collect();
+            let compiled_ref = &cx.compiled_functions[&function];
+            cx.sprite.use_custom_block(&compiled_ref.block, args);
+            if let Some(variable) = variable {
+                // FIXME: for now we assume that any expression may be used
+                // multiple times. This is really inefficient since it generates
+                // a bunch of useless variables.
+                let var = cx.sprite.add_variable(Variable {
+                    name: variable.to_string(),
+                });
+                cx.sprite.put(block::set_variable(
+                    var.clone(),
+                    compiled_ref.return_variable.clone().unwrap().into(),
+                ));
+                cx.compiled_ssa_vars
+                    .insert(variable, CompiledSsaVar::Relevant(var));
             }
-            Name::Builtin(builtin) => match builtin {
-                // TODO: emit an error for this during semantic analysis
-                name::Builtin::Unit
-                | name::Builtin::Num
-                | name::Builtin::String
-                | name::Builtin::Bool
-                | name::Builtin::Type => unreachable!(),
-            },
-        },
-        hir::ExpressionKind::Imm(value) => match value {
-            Value::Num(n) => Some((*n).into()),
-            Value::String(s) => Some(s.clone().into()),
-            // TODO: booleans are tricky since Scratch doesn't have literals,
-            // variables or lists for them. We'll probably need a parameter to
-            // specify what kind of slot the expression will be used in so we
-            // can choose between leaving it empty, using an empty `not` or the
-            // strings "false"/"true".
-            Value::Bool(_) => todo!(),
-            // TODO: emit an error for this during semantic analysis
-            Value::Ty(_) => unreachable!(),
-        },
-        hir::ExpressionKind::FunctionCall {
-            name_or_operator: name,
-            arguments,
-        } => {
-            let name = hir::desugar_function_call_name(name);
-            let arguments = arguments
-                .iter()
-                .map(|(_, arg)| {
-                    compile_expression(arg, cx)
-                        // TODO: write a pass that removes `Unit` parameters/arguments
-                        // since they don't exist at runtime
-                        .unwrap()
-                })
-                .collect();
-            compile_function_call(name, hir.span.low(), arguments, cx)
         }
-        hir::ExpressionKind::Error => unreachable!(),
+        mir::Op::CallBuiltin {
+            variable,
+            name,
+            args,
+        } => {
+            let args =
+                args.into_iter().map(|arg| compile_value(arg, cx)).collect();
+            let res = compile_builtin_function_call(&name, args, cx);
+            if let Some(variable) = variable {
+                // FIXME: for now we assume that any expression may be used
+                // multiple times. This is really inefficient since it generates
+                // a bunch of useless variables.
+                let var = cx.sprite.add_variable(Variable {
+                    name: variable.to_string(),
+                });
+                cx.sprite
+                    .put(block::set_variable(var.clone(), res.unwrap()));
+                cx.compiled_ssa_vars
+                    .insert(variable, CompiledSsaVar::Relevant(var));
+            }
+        }
     }
 }
 
-fn compile_function_call(
-    name: &str,
-    pos: Pos,
-    arguments: Vec<Operand>,
-    cx: &mut Context,
-) -> Option<Operand> {
-    let function = &cx.compiled_functions[&cx.resolved_calls[&pos]];
-    match function {
-        CompiledFunctionRef::User {
-            block,
-            return_variable,
-            ..
-        } => {
-            cx.sprite.use_custom_block(block, arguments);
-            return_variable.clone().map(Operand::from)
+fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
+    match value {
+        mir::Value::Var(var) => {
+            let Entry::Occupied(mut entry) = cx.compiled_ssa_vars.entry(var)
+            else {
+                unreachable!();
+            };
+            match entry.get_mut() {
+                CompiledSsaVar::Relevant(var_ref) => var_ref.clone().into(),
+                CompiledSsaVar::CustomBlockParameter(param) => {
+                    cx.sprite.custom_block_parameter(param.clone())
+                }
+                CompiledSsaVar::Linear(_) => {
+                    if let CompiledSsaVar::Linear(operand) = entry.remove() {
+                        operand
+                    } else {
+                        unreachable!()
+                    }
+                }
+            }
         }
-        CompiledFunctionRef::Builtin => {
-            compile_builtin_function_call(name, arguments, cx)
-        }
+        mir::Value::Imm(comptime::Value::Ty(_)) => unreachable!(),
+        mir::Value::Imm(comptime::Value::Num(n)) => n.into(),
+        mir::Value::Imm(comptime::Value::String(s)) => s.into(),
+        // TODO: booleans are tricky since Scratch doesn't have literals,
+        // variables or lists for them. We'll probably need a parameter to
+        // specify what kind of slot the expression will be used in so we
+        // can choose between leaving it empty, using an empty `not` or the
+        // strings "false"/"true".
+        mir::Value::Imm(comptime::Value::Bool(_)) => todo!(),
     }
 }
 

@@ -121,3 +121,7 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
             .collect::<Vec<_>>(),
     );
 }
+
+pub fn name_is_special(name: &str) -> bool {
+    name == "when-flag-clicked"
+}
