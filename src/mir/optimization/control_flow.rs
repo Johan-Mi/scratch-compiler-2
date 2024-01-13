@@ -65,7 +65,7 @@ pub(super) fn no_repeat(block: &mut Block) -> bool {
 
 pub(super) fn repeat_once(block: &mut Block) -> bool {
     #[allow(clippy::float_cmp)]
-    let Some((index, variable, body)) = block
+    let Some((index, variable, mut body)) = block
         .ops
         .iter_mut()
         .enumerate()
@@ -82,7 +82,6 @@ pub(super) fn repeat_once(block: &mut Block) -> bool {
     else {
         return false;
     };
-    let mut body = body;
     if let Some(variable) = variable {
         SsaVarReplacer {
             variable,
