@@ -35,6 +35,7 @@ pub fn lower(
         functions: document
             .functions
             .into_iter()
+            .filter(|(_, function)| !function.is_builtin)
             .map(|(index, function)| (index, lower_function(function, &mut cx)))
             .collect(),
     }
