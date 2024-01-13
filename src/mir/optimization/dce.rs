@@ -52,5 +52,9 @@ pub(super) fn eliminate_useless_ops(block: &mut Block) -> bool {
 fn is_useless(op: &Op) -> bool {
     matches!(op, Op::CallBuiltin { name, variable: None, .. } if matches!(&**name,
         "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt"
-    ))
+    )) || matches!(op,
+        Op::If {
+            then, else_, ..
+        } if then.ops.is_empty() && else_.ops.is_empty()
+    )
 }
