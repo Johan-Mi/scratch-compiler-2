@@ -189,6 +189,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             else_,
         } => {
             let condition = compile_value(condition, cx);
+            let condition = cx.sprite.eq(condition, "true".to_owned().into());
             let [after, else_clause] = cx.sprite.if_else(condition);
             compile_block(then, cx);
             cx.sprite.insert_at(else_clause);
@@ -201,6 +202,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         }
         mir::Op::While { condition, body } => {
             let condition = compile_value(condition, cx);
+            let condition = cx.sprite.eq(condition, "true".to_owned().into());
             let after = cx.sprite.while_(condition);
             compile_block(body, cx);
             cx.sprite.insert_at(after);
