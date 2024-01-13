@@ -23,16 +23,19 @@ pub fn optimize(document: &mut Document) {
     OptimizationVistior.traverse_document(document);
 }
 
+#[derive(Debug)]
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: HashMap<usize, Function>,
 }
 
+#[derive(Debug)]
 pub struct Sprite {
     pub costumes: Vec<Costume>,
     pub functions: HashMap<usize, Function>,
 }
 
+#[derive(Debug)]
 pub struct Function {
     pub name: String,
     pub parameters: Vec<Parameter>,
@@ -40,12 +43,13 @@ pub struct Function {
     pub returns_something: bool,
 }
 
+#[derive(Debug)]
 pub struct Parameter {
     pub ssa_var: SsaVar,
     pub ty: Ty,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Block {
     pub ops: Vec<Op>,
 }
@@ -53,18 +57,25 @@ pub struct Block {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SsaVar(u16);
 
+impl fmt::Debug for SsaVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "v{}", self.0)
+    }
+}
+
 impl fmt::Display for SsaVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Var(SsaVar),
     Imm(Imm),
 }
 
+#[derive(Debug)]
 pub enum Op {
     Return(Value),
     If {

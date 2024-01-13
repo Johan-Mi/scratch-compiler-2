@@ -69,6 +69,9 @@ fn real_main(
 
     let mut document = mir::lower(document, &resolved_calls);
     mir::optimize(&mut document);
+    if std::env::var_os("DUMP_MIR").is_some() {
+        eprintln!("{document:#?}");
+    }
     codegen::generate(document, Path::new("project.sb3")).map_err(|err| {
         diagnostics.error("failed to create project file", []);
         diagnostics.note(err.to_string(), []);
