@@ -9,11 +9,7 @@ pub use lowering::lower;
 use visit::*;
 
 use crate::{comptime::Value as Imm, function, hir::Costume};
-use std::{
-    cell::RefCell,
-    collections::HashMap,
-    rc::{Rc, Weak},
-};
+use std::{collections::HashMap, fmt};
 
 pub fn optimize(document: &mut Document) {
     struct OptimizationVistior;
@@ -44,7 +40,6 @@ pub struct Function {
 
 #[derive(Default)]
 pub struct Block {
-    parent: Option<Weak<RefCell<Block>>>,
     pub ops: Vec<Op>,
 }
 
@@ -61,20 +56,20 @@ pub enum Op {
     Return(Value),
     If {
         condition: Value,
-        then: Rc<RefCell<Block>>,
-        else_: Rc<RefCell<Block>>,
+        then: Block,
+        else_: Block,
     },
     Forever {
-        body: Rc<RefCell<Block>>,
+        body: Block,
     },
     While {
         condition: Value,
-        body: Rc<RefCell<Block>>,
+        body: Block,
     },
     For {
         variable: Option<SsaVar>,
         times: Value,
-        body: Rc<RefCell<Block>>,
+        body: Block,
     },
     Call {
         variable: Option<SsaVar>,

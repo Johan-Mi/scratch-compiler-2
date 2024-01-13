@@ -5,7 +5,7 @@ use crate::{
     name::{self, Name},
 };
 use rowan::TextSize;
-use std::{cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
 
 pub fn lower(
     document: hir::Document,
@@ -146,13 +146,10 @@ fn lower_statement(
             else_,
         } => {
             let condition = lower_expression(condition, cx).unwrap();
-            let then = RefCell::new(lower_block(then.unwrap(), cx)).into();
-            let else_ = RefCell::new(
-                else_
-                    .map(|else_| lower_block(else_, cx))
-                    .unwrap_or_default(),
-            )
-            .into();
+            let then = lower_block(then.unwrap(), cx);
+            let else_ = else_
+                .map(|else_| lower_block(else_, cx))
+                .unwrap_or_default();
             cx.block.ops.push(Op::If {
                 condition,
                 then,
@@ -162,7 +159,7 @@ fn lower_statement(
         }
         hir::Statement::Repeat { times, body } => {
             let times = lower_expression(times, cx).unwrap();
-            let body = RefCell::new(lower_block(body.unwrap(), cx)).into();
+            let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
                 variable: None,
                 times,
@@ -171,13 +168,13 @@ fn lower_statement(
             None
         }
         hir::Statement::Forever { body, .. } => {
-            let body = RefCell::new(lower_block(body.unwrap(), cx)).into();
+            let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::Forever { body });
             None
         }
         hir::Statement::While { condition, body } => {
             let condition = lower_expression(condition, cx).unwrap();
-            let body = RefCell::new(lower_block(body.unwrap(), cx)).into();
+            let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::While { condition, body });
             None
         }
@@ -191,7 +188,7 @@ fn lower_statement(
                 name: "not".to_owned(),
                 args: vec![condition],
             });
-            let body = RefCell::new(lower_block(body.unwrap(), cx)).into();
+            let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::While {
                 condition: Value::Var(not_condition),
                 body,
@@ -209,7 +206,7 @@ fn lower_statement(
                 variable.unwrap().text_range().start(),
                 Value::Var(var),
             );
-            let body = RefCell::new(lower_block(body.unwrap(), cx)).into();
+            let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
                 variable: Some(var),
                 times,

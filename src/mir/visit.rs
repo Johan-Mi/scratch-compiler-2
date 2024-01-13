@@ -41,19 +41,19 @@ pub(super) trait Visitor {
                 else_,
             } => {
                 self.visit_value(condition);
-                self.traverse_block(&mut then.borrow_mut());
-                self.traverse_block(&mut else_.borrow_mut());
+                self.traverse_block(then);
+                self.traverse_block(else_);
             }
             Op::Forever { body } => {
-                self.traverse_block(&mut body.borrow_mut());
+                self.traverse_block(body);
             }
             Op::For { times, body, .. } => {
                 self.visit_value(times);
-                self.traverse_block(&mut body.borrow_mut());
+                self.traverse_block(body);
             }
             Op::While { condition, body } => {
                 self.visit_value(condition);
-                self.traverse_block(&mut body.borrow_mut());
+                self.traverse_block(body);
             }
             Op::Call { args, .. } | Op::CallBuiltin { args, .. } => {
                 for arg in args {

@@ -2,7 +2,7 @@ use crate::mir::{
     visit::{SsaVarReplacer, Visitor},
     Block, Imm, Op, Value,
 };
-use std::{mem, rc::Rc};
+use std::mem;
 
 pub(super) fn const_if_condition(block: &mut Block) -> bool {
     let Some((index, branch)) =
@@ -24,10 +24,7 @@ pub(super) fn const_if_condition(block: &mut Block) -> bool {
     else {
         return false;
     };
-    block.ops.splice(
-        index..=index,
-        Rc::try_unwrap(branch).ok().unwrap().into_inner().ops,
-    );
+    block.ops.splice(index..=index, branch.ops);
     true
 }
 
@@ -85,7 +82,7 @@ pub(super) fn repeat_once(block: &mut Block) -> bool {
     else {
         return false;
     };
-    let mut body = Rc::try_unwrap(body).ok().unwrap().into_inner();
+    let mut body = body;
     if let Some(variable) = variable {
         SsaVarReplacer {
             variable,
