@@ -277,7 +277,7 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
         mir::Value::Var(var) => {
             let Entry::Occupied(mut entry) = cx.compiled_ssa_vars.entry(var)
             else {
-                unreachable!();
+                panic!("undefined SSA variable: {var:?}");
             };
             match entry.get_mut() {
                 CompiledSsaVar::Relevant(var_ref) => var_ref.clone().into(),
