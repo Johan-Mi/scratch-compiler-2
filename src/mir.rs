@@ -117,3 +117,11 @@ pub enum Op {
         args: Vec<Value>,
     },
 }
+
+impl Op {
+    fn is_pure(&self) -> bool {
+        matches!(self, Self::CallBuiltin { name, .. } if matches!(&**name,
+            "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt"
+        ))
+    }
+}
