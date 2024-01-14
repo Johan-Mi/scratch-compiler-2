@@ -41,43 +41,33 @@ struct Finder {
 
 impl Visitor for Finder {
     fn visit_block(&mut self, block: &mut Block) {
-        let mut steps = HashMap::<SsaVar, usize>::new();
+        let mut candidates = HashSet::new();
         for op in block.ops.iter().rev() {
-            let is_pure = op.is_pure();
-
-            if !is_pure {
-                for step in steps.values_mut() {
-                    *step += 1;
+            let this_is_linear = match *op {
+                Op::Call {
+                    variable: Some(variable),
+                    ..
                 }
-            }
-
-            for var in direct_args(op)
-                .iter()
-                .filter_map(Value::as_var)
-                .filter(|var| self.used_once[var])
-            {
-                steps.insert(var, 0);
-            }
-
-            if let Op::Call {
-                variable: Some(var),
-                ..
-            }
-            | Op::CallBuiltin {
-                variable: Some(var),
-                ..
-            } = *op
-            {
-                if steps.get(&var) == Some(&usize::from(!is_pure)) {
-                    self.is_linear.insert(var);
-                    steps.remove(&var);
-                    if !is_pure {
-                        for step in steps.values_mut() {
-                            *step += 1;
-                        }
-                    }
+                | Op::CallBuiltin {
+                    variable: Some(variable),
+                    ..
+                } if candidates.remove(&variable) => {
+                    self.is_linear.insert(variable);
+                    true
                 }
+                _ => false,
+            };
+
+            if !this_is_linear && !op.is_pure() {
+                candidates.clear();
             }
+
+            candidates.extend(
+                direct_args(op)
+                    .iter()
+                    .filter_map(Value::as_var)
+                    .filter(|var| self.used_once[var]),
+            );
         }
     }
 }
