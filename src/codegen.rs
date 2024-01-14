@@ -242,21 +242,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             if let Some(variable) = variable {
                 let return_variable =
                     compiled_ref.return_variable.clone().unwrap().into();
-
-                if cx.is_linear.contains(&variable) {
-                    cx.compiled_ssa_vars.insert(
-                        variable,
-                        CompiledSsaVar::Linear(return_variable),
-                    );
-                } else {
-                    let var = cx.sprite.add_variable(Variable {
-                        name: variable.to_string(),
-                    });
-                    cx.sprite
-                        .put(block::set_variable(var.clone(), return_variable));
-                    cx.compiled_ssa_vars
-                        .insert(variable, CompiledSsaVar::Relevant(var));
-                }
+                store_result(variable, return_variable, cx);
             }
         }
         mir::Op::CallBuiltin {
@@ -268,20 +254,23 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 args.into_iter().map(|arg| compile_value(arg, cx)).collect();
             let res = compile_builtin_function_call(&name, args, cx);
             if let Some(variable) = variable {
-                if cx.is_linear.contains(&variable) {
-                    cx.compiled_ssa_vars
-                        .insert(variable, CompiledSsaVar::Linear(res.unwrap()));
-                } else {
-                    let var = cx.sprite.add_variable(Variable {
-                        name: variable.to_string(),
-                    });
-                    cx.sprite
-                        .put(block::set_variable(var.clone(), res.unwrap()));
-                    cx.compiled_ssa_vars
-                        .insert(variable, CompiledSsaVar::Relevant(var));
-                }
+                store_result(variable, res.unwrap(), cx);
             }
         }
+    }
+}
+
+fn store_result(variable: mir::SsaVar, operand: Operand, cx: &mut Context) {
+    if cx.is_linear.contains(&variable) {
+        cx.compiled_ssa_vars
+            .insert(variable, CompiledSsaVar::Linear(operand));
+    } else {
+        let var = cx.sprite.add_variable(Variable {
+            name: variable.to_string(),
+        });
+        cx.sprite.put(block::set_variable(var.clone(), operand));
+        cx.compiled_ssa_vars
+            .insert(variable, CompiledSsaVar::Relevant(var));
     }
 }
 
