@@ -92,3 +92,15 @@ pub(super) fn repeat_once(block: &mut Block) -> bool {
     block.ops.splice(index..=index, body.ops);
     true
 }
+
+pub(super) fn remove_unreachable_ops(block: &mut Block) -> bool {
+    let Some(index) = block.ops.iter().position(Op::is_guaranteed_to_diverge)
+    else {
+        return false;
+    };
+    if index == block.ops.len() - 1 {
+        return false;
+    }
+    block.ops.truncate(index + 1);
+    true
+}

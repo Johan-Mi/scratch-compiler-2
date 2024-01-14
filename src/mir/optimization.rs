@@ -30,5 +30,6 @@ impl super::Visitor for Visitor {
         self.dirty |= control_flow::const_while_condition(block);
         self.dirty |= control_flow::no_repeat(block);
         self.dirty |= control_flow::repeat_once(block);
+        self.dirty |= control_flow::remove_unreachable_ops(block);
     }
 }

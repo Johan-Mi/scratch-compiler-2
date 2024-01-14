@@ -124,4 +124,8 @@ impl Op {
             "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt"
         ))
     }
+
+    const fn is_guaranteed_to_diverge(&self) -> bool {
+        matches!(self, Self::Forever { .. })
+    }
 }
