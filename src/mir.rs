@@ -1,6 +1,7 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+pub mod linearity;
 mod lowering;
 mod optimization;
 mod visit;
@@ -73,6 +74,16 @@ impl fmt::Display for SsaVar {
 pub enum Value {
     Var(SsaVar),
     Imm(Imm),
+}
+
+impl Value {
+    const fn as_var(&self) -> Option<SsaVar> {
+        if let Self::Var(v) = *self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug)]

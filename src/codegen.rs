@@ -4,7 +4,7 @@ use sb3_builder::{
     ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
     path::Path,
 };
 
@@ -65,6 +65,7 @@ fn compile_sprite(
         compiled_ssa_vars,
         compiled_functions,
         return_variable: None,
+        is_linear: HashSet::new(),
     };
 
     for (index, function) in mir.functions {
@@ -79,6 +80,7 @@ struct Context<'a> {
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,
+    is_linear: HashSet<mir::SsaVar>,
 }
 
 enum CompiledSsaVar {
@@ -149,7 +151,7 @@ impl CompiledFunctionRef {
 }
 
 fn compile_function(
-    function: mir::Function,
+    mut function: mir::Function,
     function_ref: function::Ref,
     cx: &mut Context,
 ) {
@@ -166,6 +168,8 @@ fn compile_function(
             compiled_ref.return_variable.clone()
         }
     };
+
+    cx.is_linear = mir::linearity::check(&mut function);
 
     compile_block(function.body, cx);
 }
@@ -236,18 +240,23 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             let compiled_ref = &cx.compiled_functions[&function];
             cx.sprite.use_custom_block(&compiled_ref.block, args);
             if let Some(variable) = variable {
-                // FIXME: for now we assume that any expression may be used
-                // multiple times. This is really inefficient since it generates
-                // a bunch of useless variables.
-                let var = cx.sprite.add_variable(Variable {
-                    name: variable.to_string(),
-                });
-                cx.sprite.put(block::set_variable(
-                    var.clone(),
-                    compiled_ref.return_variable.clone().unwrap().into(),
-                ));
-                cx.compiled_ssa_vars
-                    .insert(variable, CompiledSsaVar::Relevant(var));
+                let return_variable =
+                    compiled_ref.return_variable.clone().unwrap().into();
+
+                if cx.is_linear.contains(&variable) {
+                    cx.compiled_ssa_vars.insert(
+                        variable,
+                        CompiledSsaVar::Linear(return_variable),
+                    );
+                } else {
+                    let var = cx.sprite.add_variable(Variable {
+                        name: variable.to_string(),
+                    });
+                    cx.sprite
+                        .put(block::set_variable(var.clone(), return_variable));
+                    cx.compiled_ssa_vars
+                        .insert(variable, CompiledSsaVar::Relevant(var));
+                }
             }
         }
         mir::Op::CallBuiltin {
@@ -259,16 +268,18 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 args.into_iter().map(|arg| compile_value(arg, cx)).collect();
             let res = compile_builtin_function_call(&name, args, cx);
             if let Some(variable) = variable {
-                // FIXME: for now we assume that any expression may be used
-                // multiple times. This is really inefficient since it generates
-                // a bunch of useless variables.
-                let var = cx.sprite.add_variable(Variable {
-                    name: variable.to_string(),
-                });
-                cx.sprite
-                    .put(block::set_variable(var.clone(), res.unwrap()));
-                cx.compiled_ssa_vars
-                    .insert(variable, CompiledSsaVar::Relevant(var));
+                if cx.is_linear.contains(&variable) {
+                    cx.compiled_ssa_vars
+                        .insert(variable, CompiledSsaVar::Linear(res.unwrap()));
+                } else {
+                    let var = cx.sprite.add_variable(Variable {
+                        name: variable.to_string(),
+                    });
+                    cx.sprite
+                        .put(block::set_variable(var.clone(), res.unwrap()));
+                    cx.compiled_ssa_vars
+                        .insert(variable, CompiledSsaVar::Relevant(var));
+                }
             }
         }
     }
