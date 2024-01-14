@@ -55,6 +55,12 @@ pub struct Block {
     pub ops: Vec<Op>,
 }
 
+impl Block {
+    fn is_guaranteed_to_diverge(&self) -> bool {
+        self.ops.last().is_some_and(Op::is_guaranteed_to_diverge)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SsaVar(u16);
 
@@ -125,7 +131,9 @@ impl Op {
         ))
     }
 
-    const fn is_guaranteed_to_diverge(&self) -> bool {
+    fn is_guaranteed_to_diverge(&self) -> bool {
         matches!(self, Self::Forever { .. })
+            || matches!(self, Self::If { then, else_, .. }
+                if then.is_guaranteed_to_diverge() && else_.is_guaranteed_to_diverge())
     }
 }
