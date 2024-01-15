@@ -45,6 +45,7 @@ fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
             Some(Imm(Num(lhs.rem_euclid(*rhs))))
         }
         ("lt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs < rhs))),
+        #[allow(clippy::float_cmp)]
         ("eq", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs == rhs))),
         ("gt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs > rhs))),
         // FIXME: this should be case insensitive.
