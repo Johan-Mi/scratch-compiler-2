@@ -41,6 +41,9 @@ fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
         ("sub", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(lhs - rhs))),
         ("mul", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(lhs * rhs))),
         ("div", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(lhs / rhs))),
+        ("mod", [Imm(Num(lhs)), Imm(Num(rhs))]) => {
+            Some(Imm(Num(lhs.rem_euclid(*rhs))))
+        }
         _ => None,
     }
 }
