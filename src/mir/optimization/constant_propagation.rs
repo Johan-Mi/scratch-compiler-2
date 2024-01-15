@@ -33,7 +33,7 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
 }
 
 fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
-    use crate::mir::Imm::Num;
+    use crate::mir::Imm::{Bool, Num};
     use Value::Imm;
 
     match (name, args) {
@@ -44,6 +44,9 @@ fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
         ("mod", [Imm(Num(lhs)), Imm(Num(rhs))]) => {
             Some(Imm(Num(lhs.rem_euclid(*rhs))))
         }
+        ("lt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs < rhs))),
+        ("eq", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs == rhs))),
+        ("gt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs > rhs))),
         _ => None,
     }
 }
