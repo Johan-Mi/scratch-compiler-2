@@ -350,6 +350,12 @@ fn compile_builtin_function_call(
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
             Some(cx.sprite.gt(lhs, rhs))
         }
+        "not" => {
+            let [operand] = arguments.try_into().ok().unwrap();
+            // FIXME: actually use the `not` block
+            // (see the comment regarding boolean literals)
+            Some(cx.sprite.eq(operand, "false".to_owned().into()))
+        }
         _ => unreachable!(),
     }
 }

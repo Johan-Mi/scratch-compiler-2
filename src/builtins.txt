@@ -11,4 +11,6 @@ fn lt(_ lhs: String, _ rhs: String) -> Bool {}
 fn eq(_ lhs: String, _ rhs: String) -> Bool {}
 fn gt(_ lhs: String, _ rhs: String) -> Bool {}
 
+fn not(_ bool: Bool) -> Bool {}
+
 fn go-to(x _: Num, y _: Num) {}

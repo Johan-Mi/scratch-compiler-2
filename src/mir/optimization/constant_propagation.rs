@@ -60,6 +60,7 @@ fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
         ("gt", [Imm(String(lhs)), Imm(String(rhs))]) => {
             Some(Imm(Bool(lhs > rhs)))
         }
+        ("not", [Imm(Bool(operand))]) => Some(Imm(Bool(!*operand))),
         _ => None,
     }
 }
