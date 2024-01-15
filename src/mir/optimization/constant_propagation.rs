@@ -33,7 +33,7 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
 }
 
 fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
-    use crate::mir::Imm::{Bool, Num};
+    use crate::mir::Imm::{Bool, Num, String};
     use Value::Imm;
 
     match (name, args) {
@@ -47,6 +47,18 @@ fn evaluate_builtin_call(name: &str, args: &[Value]) -> Option<Value> {
         ("lt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs < rhs))),
         ("eq", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs == rhs))),
         ("gt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs > rhs))),
+        // FIXME: this should be case insensitive.
+        ("lt", [Imm(String(lhs)), Imm(String(rhs))]) => {
+            Some(Imm(Bool(lhs < rhs)))
+        }
+        // FIXME: this should be case insensitive.
+        ("eq", [Imm(String(lhs)), Imm(String(rhs))]) => {
+            Some(Imm(Bool(lhs == rhs)))
+        }
+        // FIXME: this should be case insensitive.
+        ("gt", [Imm(String(lhs)), Imm(String(rhs))]) => {
+            Some(Imm(Bool(lhs > rhs)))
+        }
         _ => None,
     }
 }
