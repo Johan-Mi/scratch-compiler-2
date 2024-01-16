@@ -82,6 +82,12 @@ pub enum Value {
     Imm(Imm),
 }
 
+impl Default for Value {
+    fn default() -> Self {
+        Self::Imm(Imm::Num(0.0))
+    }
+}
+
 impl Value {
     const fn as_var(&self) -> Option<SsaVar> {
         if let Self::Var(v) = *self {

@@ -104,3 +104,17 @@ pub(super) fn remove_unreachable_ops(block: &mut Block) -> bool {
     block.ops.truncate(index + 1);
     true
 }
+
+pub(super) fn divergent_while_body(op: &mut Op) -> bool {
+    match op {
+        Op::While { condition, body } if body.is_guaranteed_to_diverge() => {
+            *op = Op::If {
+                condition: mem::take(condition),
+                then: mem::take(body),
+                else_: Block::default(),
+            };
+            true
+        }
+        _ => false,
+    }
+}

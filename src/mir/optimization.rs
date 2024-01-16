@@ -2,7 +2,7 @@ mod constant_propagation;
 mod control_flow;
 mod dce;
 
-use super::{Function, Visitor as _};
+use super::{Function, Op, Visitor as _};
 
 pub(super) fn optimize(function: &mut Function) {
     let mut visitor = Visitor { dirty: false };
@@ -31,5 +31,9 @@ impl super::Visitor for Visitor {
         self.dirty |= control_flow::no_repeat(block);
         self.dirty |= control_flow::repeat_once(block);
         self.dirty |= control_flow::remove_unreachable_ops(block);
+    }
+
+    fn visit_op(&mut self, op: &mut Op) {
+        self.dirty |= control_flow::divergent_while_body(op);
     }
 }
