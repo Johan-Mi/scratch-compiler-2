@@ -2,18 +2,24 @@
 //! wasting time optimizing unused functions.
 
 use crate::{
+    diagnostics::{primary, Diagnostics},
     function::{self, ResolvedCalls},
-    hir::{Document, ExpressionKind, Sprite, Visitor},
+    hir::{Document, ExpressionKind, Function, Sprite, Visitor},
 };
 use std::collections::BTreeSet;
 
-pub fn perform(document: &mut Document, resolved_calls: &ResolvedCalls) {
+pub fn perform(
+    document: &mut Document,
+    resolved_calls: &ResolvedCalls,
+    diagnostics: &mut Diagnostics,
+) {
     let mut visitor = DceVisitor {
         resolved_calls,
         pending_sprite_functions: BTreeSet::new(),
         required_sprite_functions: BTreeSet::new(),
         pending_top_level_functions: BTreeSet::new(),
         required_top_level_functions: BTreeSet::new(),
+        diagnostics,
     };
 
     for sprite in document.sprites.values_mut() {
@@ -24,9 +30,19 @@ pub fn perform(document: &mut Document, resolved_calls: &ResolvedCalls) {
         visitor.required_top_level_functions.insert(index);
         visitor.traverse_function(&document.functions[&index], true);
     }
-    document.functions.retain(|index, _| {
-        visitor.required_top_level_functions.contains(index)
+    document.functions.retain(|index, function| {
+        visitor.required_top_level_functions.contains(index) || {
+            warn(diagnostics, function);
+            false
+        }
     });
+}
+
+fn warn(diagnostics: &mut Diagnostics, function: &Function) {
+    if !function.is_builtin {
+        diagnostics
+            .warning("unused function", [primary(function.name.span, "")]);
+    }
 }
 
 struct DceVisitor<'a> {
@@ -35,6 +51,7 @@ struct DceVisitor<'a> {
     required_sprite_functions: BTreeSet<usize>,
     pending_top_level_functions: BTreeSet<usize>,
     required_top_level_functions: BTreeSet<usize>,
+    diagnostics: &'a mut Diagnostics,
 }
 
 impl DceVisitor<'_> {
@@ -50,9 +67,12 @@ impl DceVisitor<'_> {
             self.required_sprite_functions.insert(index);
             self.traverse_function(&sprite.functions[&index], false);
         }
-        sprite
-            .functions
-            .retain(|index, _| self.required_sprite_functions.contains(index));
+        sprite.functions.retain(|index, function| {
+            self.required_sprite_functions.contains(index) || {
+                warn(self.diagnostics, function);
+                false
+            }
+        });
     }
 }
 

@@ -65,7 +65,7 @@ fn real_main(
         return Err(());
     }
 
-    early_dce::perform(&mut document, &resolved_calls);
+    early_dce::perform(&mut document, &resolved_calls, diagnostics);
 
     let mut document = mir::lower(document, &resolved_calls);
     mir::optimize(&mut document);
