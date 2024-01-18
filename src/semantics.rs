@@ -1,7 +1,7 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
     function,
-    hir::{self, Visitor},
+    hir::{self, ExpressionKind, Visitor},
     ty::Ty,
 };
 
@@ -69,5 +69,16 @@ impl Visitor for SemanticVisitor<'_> {
             "unreachable code",
             [primary(span, "any code after this loop is unreachable")],
         );
+    }
+
+    fn visit_expression(&mut self, expr: &hir::Expression) {
+        if let ExpressionKind::FunctionCall {
+            name_or_operator, ..
+        } = &expr.kind
+        {
+            if function::name_is_special(name_or_operator.text()) {
+                self.diagnostics.error(format!("special function `{name_or_operator}` cannot be called"), [primary(expr.span, "")]);
+            }
+        }
     }
 }
