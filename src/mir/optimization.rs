@@ -34,6 +34,6 @@ impl super::Visitor for Visitor {
     }
 
     fn visit_op(&mut self, op: &mut Op) {
-        self.dirty |= control_flow::divergent_while_body(op);
+        self.dirty |= control_flow::divergent_loop_body(op);
     }
 }

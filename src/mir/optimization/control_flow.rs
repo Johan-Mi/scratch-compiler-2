@@ -105,11 +105,20 @@ pub(super) fn remove_unreachable_ops(block: &mut Block) -> bool {
     true
 }
 
-pub(super) fn divergent_while_body(op: &mut Op) -> bool {
+pub(super) fn divergent_loop_body(op: &mut Op) -> bool {
     match op {
         Op::While { condition, body } if body.is_guaranteed_to_diverge() => {
             *op = Op::If {
                 condition: mem::take(condition),
+                then: mem::take(body),
+                else_: Block::default(),
+            };
+            true
+        }
+        Op::Forever { body } if body.is_guaranteed_to_diverge() => {
+            // This gets simplified by `const_if_condition`.
+            *op = Op::If {
+                condition: Value::Imm(Imm::Bool(true)),
                 then: mem::take(body),
                 else_: Block::default(),
             };
