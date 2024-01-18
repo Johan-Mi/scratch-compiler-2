@@ -140,7 +140,6 @@ fn lower_statement(
     statement: hir::Statement,
     cx: &mut Context,
 ) -> Option<Value> {
-    // TODO: assign parents
     match statement {
         hir::Statement::Let { variable, value } => {
             let value = lower_expression(value, cx).unwrap();
