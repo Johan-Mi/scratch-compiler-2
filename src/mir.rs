@@ -1,6 +1,7 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+mod late_dce;
 pub mod linearity;
 mod lowering;
 mod optimization;
@@ -22,6 +23,7 @@ pub fn optimize(document: &mut Document) {
     }
 
     OptimizationVistior.traverse_document(document);
+    late_dce::perform(document);
 }
 
 #[derive(Debug)]
