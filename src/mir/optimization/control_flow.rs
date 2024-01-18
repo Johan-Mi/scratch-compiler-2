@@ -124,11 +124,6 @@ pub(super) fn divergent_loop_body(op: &mut Op) -> bool {
             };
             true
         }
-        Op::For { times, body, .. } if body.is_guaranteed_to_diverge() => {
-            // This gets simplified by `repeat_once`.
-            *times = Value::Imm(Imm::Num(1.0));
-            true
-        }
         _ => false,
     }
 }
