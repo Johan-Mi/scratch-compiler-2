@@ -1,4 +1,4 @@
-use crate::mir::{Block, Function, Op, SsaVar, Value, Visitor};
+use crate::mir::{Block, Function, Imm, Op, SsaVar, Value, Visitor};
 use std::collections::HashSet;
 
 pub(super) fn eliminate_unused_ssa_vars(function: &mut Function) -> bool {
@@ -57,4 +57,11 @@ fn is_useless(op: &Op) -> bool {
             } if then.ops.is_empty() && else_.ops.is_empty()
         )
         || matches!(op, Op::For { body, .. } if body.ops.is_empty())
+        || matches!(
+            op,
+            Op::While {
+                condition: Value::Imm(Imm::Bool(false)),
+                ..
+            }
+        )
 }

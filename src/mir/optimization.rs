@@ -28,7 +28,6 @@ impl super::Visitor for Visitor {
         self.dirty |= constant_propagation::propagate_constants(block);
         self.dirty |= dce::eliminate_useless_ops(block);
         self.dirty |= control_flow::const_if_condition(block);
-        self.dirty |= control_flow::while_false(block);
         self.dirty |= control_flow::no_repeat(block);
         self.dirty |= control_flow::repeat_once(block);
         self.dirty |= control_flow::remove_unreachable_ops(block);

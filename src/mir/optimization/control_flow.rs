@@ -42,20 +42,6 @@ pub(super) fn while_true(op: &mut Op) -> bool {
     true
 }
 
-pub(super) fn while_false(block: &mut Block) -> bool {
-    let len = block.ops.len();
-    block.ops.retain(|op| {
-        !matches!(
-            op,
-            Op::While {
-                condition: Value::Imm(Imm::Bool(false)),
-                ..
-            }
-        )
-    });
-    block.ops.len() != len
-}
-
 pub(super) fn no_repeat(block: &mut Block) -> bool {
     let Some(index) = block.ops.iter().position(|op| {
         matches!(op,
