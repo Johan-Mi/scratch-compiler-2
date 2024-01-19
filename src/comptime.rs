@@ -4,13 +4,25 @@ use crate::{
     name::{Builtin, Name},
     ty::Ty,
 };
+use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Value {
     Ty(Ty),
     Num(f64),
     String(String),
     Bool(bool),
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ty(ty) => fmt::Debug::fmt(ty, f),
+            Self::Num(n) => fmt::Debug::fmt(n, f),
+            Self::String(s) => fmt::Debug::fmt(s, f),
+            Self::Bool(b) => fmt::Debug::fmt(b, f),
+        }
+    }
 }
 
 impl Value {

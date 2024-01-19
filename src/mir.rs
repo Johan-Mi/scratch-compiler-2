@@ -78,10 +78,19 @@ impl fmt::Display for SsaVar {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Value {
     Var(SsaVar),
     Imm(Imm),
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Var(var) => fmt::Debug::fmt(var, f),
+            Self::Imm(imm) => fmt::Debug::fmt(imm, f),
+        }
+    }
 }
 
 impl Default for Value {
