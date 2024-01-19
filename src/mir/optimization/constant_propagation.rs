@@ -38,10 +38,6 @@ fn evaluate_builtin_call(name: &str, args: &mut [Value]) -> Option<Value> {
     use crate::mir::Imm::{Bool, Num, String};
     use Value::Imm;
 
-    if matches!(name, "add" | "mul") && matches!(args, [Imm(_), _]) {
-        args.reverse();
-    }
-
     match (name, args) {
         ("add", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs + *rhs))),
         ("sub", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs - *rhs))),

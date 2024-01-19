@@ -1,3 +1,4 @@
+mod canon;
 mod constant_propagation;
 mod control_flow;
 mod dce;
@@ -34,6 +35,7 @@ impl super::Visitor for Visitor {
     }
 
     fn visit_op(&mut self, op: &mut Op) {
+        self.dirty |= canon::icalize(op);
         self.dirty |= control_flow::divergent_loop_body(op);
     }
 }
