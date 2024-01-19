@@ -33,7 +33,9 @@ struct Eliminator {
 
 impl Visitor for Eliminator {
     fn visit_op(&mut self, op: &mut Op) {
-        if let Op::Call { variable, .. } | Op::CallBuiltin { variable, .. } = op
+        if let Op::Call { variable, .. }
+        | Op::CallBuiltin { variable, .. }
+        | Op::For { variable, .. } = op
         {
             if matches!(variable, Some(var) if !self.used.contains(var)) {
                 *variable = None;
