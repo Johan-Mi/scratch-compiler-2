@@ -28,27 +28,32 @@ pub(super) fn const_if_condition(block: &mut Block) -> bool {
     true
 }
 
-pub(super) fn const_while_condition(block: &mut Block) -> bool {
-    let Some((index, condition, body)) = block
-        .ops
-        .iter_mut()
-        .enumerate()
-        .find_map(|(index, op)| match op {
-            Op::While {
-                condition: Value::Imm(Imm::Bool(condition)),
-                body,
-            } => Some((index, *condition, mem::take(body))),
-            _ => None,
-        })
+pub(super) fn while_true(op: &mut Op) -> bool {
+    let Op::While {
+        condition: Value::Imm(Imm::Bool(true)),
+        body,
+    } = op
     else {
         return false;
     };
-    if condition {
-        block.ops[index] = Op::Forever { body };
-    } else {
-        block.ops.remove(index);
-    }
+    *op = Op::Forever {
+        body: mem::take(body),
+    };
     true
+}
+
+pub(super) fn while_false(block: &mut Block) -> bool {
+    let len = block.ops.len();
+    block.ops.retain(|op| {
+        !matches!(
+            op,
+            Op::While {
+                condition: Value::Imm(Imm::Bool(false)),
+                ..
+            }
+        )
+    });
+    block.ops.len() != len
 }
 
 pub(super) fn no_repeat(block: &mut Block) -> bool {
