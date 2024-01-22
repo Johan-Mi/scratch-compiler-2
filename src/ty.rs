@@ -4,7 +4,7 @@ use crate::{
     hir,
 };
 use codemap::File;
-use rowan::TextSize;
+use rowan::{SyntaxToken, TextSize};
 use std::{
     collections::{BTreeMap, HashMap},
     fmt,
@@ -199,30 +199,37 @@ fn check_statement(
             variable,
             times,
             body,
-        } => {
-            if let Ok(times_ty) = times.ty(tcx) {
-                if !times_ty.is_subtype_of(&Ty::Num) {
-                    tcx.diagnostics.error(
-                        "repetition count must be a number",
-                        [primary(
-                            times.span,
-                            format!("expected `Num`, got `{times_ty}`"),
-                        )],
-                    );
-                }
-            }
-            if let Ok(variable) = variable {
-                tcx.variable_types
-                    .insert(variable.text_range().start(), Ok(Ty::Num));
-            }
-            if let Ok(body) = body {
-                let _ = check_block(body, tcx);
-            }
-            Ok(Ty::Unit)
-        }
+        } => Ok(check_for(variable, times, body, tcx)),
         hir::Statement::Expr(expr) => expr.ty(tcx),
         hir::Statement::Error => Err(()),
     }
+}
+
+fn check_for(
+    variable: &Result<SyntaxToken<crate::parser::Lang>, ()>,
+    times: &hir::Expression,
+    body: &Result<hir::Block, ()>,
+    tcx: &mut Context,
+) -> Ty {
+    if let Ok(times_ty) = times.ty(tcx) {
+        if !times_ty.is_subtype_of(&Ty::Num) {
+            tcx.diagnostics.error(
+                "repetition count must be a number",
+                [primary(
+                    times.span,
+                    format!("expected `Num`, got `{times_ty}`"),
+                )],
+            );
+        }
+    }
+    if let Ok(variable) = variable {
+        tcx.variable_types
+            .insert(variable.text_range().start(), Ok(Ty::Num));
+    }
+    if let Ok(body) = body {
+        let _ = check_block(body, tcx);
+    }
+    Ty::Unit
 }
 
 fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
