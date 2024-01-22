@@ -78,6 +78,19 @@ impl fmt::Display for SsaVar {
     }
 }
 
+#[derive(Default)]
+struct SsaVarGenerator {
+    counter: u16,
+}
+
+impl SsaVarGenerator {
+    fn new_ssa_var(&mut self) -> SsaVar {
+        let var = self.counter;
+        self.counter += 1;
+        SsaVar(var)
+    }
+}
+
 #[derive(Clone)]
 pub enum Value {
     Var(SsaVar),

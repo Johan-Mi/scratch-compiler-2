@@ -1,4 +1,6 @@
-use super::{Block, Document, Function, Op, Parameter, Sprite, SsaVar, Value};
+use super::{
+    Block, Document, Function, Op, Parameter, Sprite, SsaVarGenerator, Value,
+};
 use crate::{
     function::{self, ResolvedCalls},
     hir::{self, desugar_function_call_name},
@@ -19,7 +21,7 @@ pub fn lower(
 
     let mut cx = Context {
         vars: HashMap::new(),
-        next_ssa_var: SsaVar(0),
+        ssa_var_gen: SsaVarGenerator::default(),
         resolved_calls,
         sprite_functions: HashMap::new(),
         top_level_functions,
@@ -63,19 +65,11 @@ impl From<&hir::Function> for FunctionSignature {
 
 struct Context<'a> {
     vars: HashMap<TextSize, Value>,
-    next_ssa_var: SsaVar,
+    ssa_var_gen: SsaVarGenerator,
     resolved_calls: &'a ResolvedCalls,
     sprite_functions: HashMap<usize, FunctionSignature>,
     top_level_functions: HashMap<usize, FunctionSignature>,
     block: Block,
-}
-
-impl Context<'_> {
-    fn new_ssa_var(&mut self) -> SsaVar {
-        let var = self.next_ssa_var;
-        self.next_ssa_var.0 += 1;
-        var
-    }
 }
 
 fn lower_sprite(sprite: hir::Sprite, cx: &mut Context) -> Sprite {
@@ -102,7 +96,7 @@ fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
         .parameters
         .into_iter()
         .map(|param| {
-            let ssa_var = cx.new_ssa_var();
+            let ssa_var = cx.ssa_var_gen.new_ssa_var();
             cx.vars.insert(
                 param.internal_name.text_range().start(),
                 Value::Var(ssa_var),
@@ -188,7 +182,7 @@ fn lower_statement(
             // desugar `until condition { ... }`
             //    into `while not(condition) { ... }`
             let condition = lower_expression(condition, cx).unwrap();
-            let not_condition = cx.new_ssa_var();
+            let not_condition = cx.ssa_var_gen.new_ssa_var();
             cx.block.ops.push(Op::CallBuiltin {
                 variable: Some(not_condition),
                 name: "not".to_owned(),
@@ -207,7 +201,7 @@ fn lower_statement(
             body,
         } => {
             let times = lower_expression(times, cx).unwrap();
-            let var = cx.new_ssa_var();
+            let var = cx.ssa_var_gen.new_ssa_var();
             cx.vars.insert(
                 variable.unwrap().text_range().start(),
                 Value::Var(var),
@@ -260,8 +254,9 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 }
             };
 
-            let variable =
-                signature.returns_something.then(|| cx.new_ssa_var());
+            let variable = signature
+                .returns_something
+                .then(|| cx.ssa_var_gen.new_ssa_var());
             cx.block.ops.push(if signature.is_builtin {
                 Op::CallBuiltin {
                     variable,
