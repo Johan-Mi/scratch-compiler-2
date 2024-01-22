@@ -155,6 +155,13 @@ impl Function {
         file: &File,
         diagnostics: &mut Diagnostics,
     ) -> Result<Self> {
+        if let Some(kw_inline) = ast.kw_inline() {
+            diagnostics.warning(
+                "inline functions are not implemented yet",
+                [primary(span(file, kw_inline.text_range()), "")],
+            );
+        }
+
         let defined_here = || {
             [primary(
                 span(file, ast.syntax().text_range()),

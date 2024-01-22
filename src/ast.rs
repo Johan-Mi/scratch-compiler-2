@@ -94,6 +94,10 @@ impl Costume {
 ast_node!(Function: FN);
 
 impl Function {
+    pub fn kw_inline(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, KW_INLINE)
+    }
+
     pub fn name(&self) -> Option<SyntaxToken> {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }

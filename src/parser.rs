@@ -93,6 +93,8 @@ pub enum SyntaxKind {
 
     #[token("sprite")]
     KW_SPRITE,
+    #[token("inline")]
+    KW_INLINE,
     #[token("fn")]
     KW_FN,
     #[token("let")]
@@ -233,7 +235,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_anything(&mut self) {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
-            KW_FN => self.parse_function(),
+            KW_INLINE | KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
             KW_IF => self.parse_if(),
             KW_REPEAT => self.parse_repeat(),
@@ -501,8 +503,17 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 
     fn parse_function(&mut self) {
-        self.builder.start_node(FN.into());
-        self.bump(); // KW_FN
+        let checkpoint = self.builder.checkpoint();
+        self.eat(KW_INLINE);
+        if !self.eat(KW_FN) {
+            self.builder.start_node_at(checkpoint, ERROR.into());
+            self.builder.finish_node();
+            let span = self.peek_span();
+            self.diagnostics
+                .error("expected `fn` after `inline`", [primary(span, "")]);
+            return;
+        }
+        self.builder.start_node_at(checkpoint, FN.into());
         self.expect(IDENTIFIER);
         if self.at(LPAREN) {
             self.parse_function_parameters();
@@ -543,7 +554,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         let lbrace_span = self.expect(LBRACE);
         while !self.eat(RBRACE) {
             match self.peek() {
-                KW_FN => self.parse_function(),
+                KW_INLINE | KW_FN => self.parse_function(),
                 KW_COSTUMES => self.parse_costume_list(),
                 EOF | KW_SPRITE => {
                     let mut labels = vec![primary(kw_sprite_span, "")];
@@ -564,7 +575,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_top_level_item(&mut self) {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
-            KW_FN => self.parse_function(),
+            KW_INLINE | KW_FN => self.parse_function(),
             _ => self.error(),
         }
     }
