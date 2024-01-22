@@ -506,8 +506,6 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         let checkpoint = self.builder.checkpoint();
         self.eat(KW_INLINE);
         if !self.eat(KW_FN) {
-            self.builder.start_node_at(checkpoint, ERROR.into());
-            self.builder.finish_node();
             let span = self.peek_span();
             self.diagnostics
                 .error("expected `fn` after `inline`", [primary(span, "")]);
