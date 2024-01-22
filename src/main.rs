@@ -15,6 +15,7 @@ mod mir;
 mod name;
 #[allow(unsafe_code)]
 mod parser;
+mod recursive_inlining;
 mod semantics;
 mod syntax_errors;
 mod ty;
@@ -59,6 +60,7 @@ fn real_main(
     builtins::add_to_hir(&mut document, code_map);
     let resolved_calls = ty::check(&document, &file, diagnostics);
     semantics::check(&document, diagnostics);
+    recursive_inlining::check(&document, &resolved_calls, diagnostics);
     linter::lint(&document, &file, diagnostics);
 
     if !diagnostics.successful() {
