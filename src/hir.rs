@@ -147,6 +147,7 @@ pub struct Function {
     pub return_ty: Result<Ty>,
     pub body: Block,
     pub is_builtin: bool,
+    pub is_inline: bool,
 }
 
 impl Function {
@@ -216,6 +217,7 @@ impl Function {
             return_ty,
             body: Block::lower(&body, file, diagnostics),
             is_builtin: false,
+            is_inline: ast.kw_inline().is_some(),
         })
     }
 
