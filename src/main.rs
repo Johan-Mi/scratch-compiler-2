@@ -69,8 +69,9 @@ fn real_main(
 
     early_dce::perform(&mut document, &resolved_calls, diagnostics);
 
-    let mut document = mir::lower(document, &resolved_calls);
-    mir::optimize(&mut document);
+    let mut ssa_var_gen = mir::SsaVarGenerator::default();
+    let mut document = mir::lower(document, &resolved_calls, &mut ssa_var_gen);
+    mir::optimize(&mut document, &mut ssa_var_gen);
     if std::env::var_os("DUMP_MIR").is_some() {
         eprintln!("{document:#?}");
     }

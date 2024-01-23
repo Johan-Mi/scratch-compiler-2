@@ -12,6 +12,7 @@ use std::collections::HashMap;
 pub fn lower(
     document: hir::Document,
     resolved_calls: &ResolvedCalls,
+    ssa_var_gen: &mut SsaVarGenerator,
 ) -> Document {
     let top_level_functions = document
         .functions
@@ -21,7 +22,7 @@ pub fn lower(
 
     let mut cx = Context {
         vars: HashMap::new(),
-        ssa_var_gen: SsaVarGenerator::default(),
+        ssa_var_gen,
         resolved_calls,
         sprite_functions: HashMap::new(),
         top_level_functions,
@@ -65,7 +66,7 @@ impl From<&hir::Function> for FunctionSignature {
 
 struct Context<'a> {
     vars: HashMap<TextSize, Value>,
-    ssa_var_gen: SsaVarGenerator,
+    ssa_var_gen: &'a mut SsaVarGenerator,
     resolved_calls: &'a ResolvedCalls,
     sprite_functions: HashMap<usize, FunctionSignature>,
     top_level_functions: HashMap<usize, FunctionSignature>,

@@ -1,6 +1,7 @@
 //! The MIR (mid-level intermediate representation) is like SSA (static single
 //! assignment) except it uses structured control flow instead of basic blocks.
 
+mod inlining;
 mod late_dce;
 pub mod linearity;
 mod lowering;
@@ -13,7 +14,7 @@ use visit::*;
 use crate::{comptime::Value as Imm, function, hir::Costume, ty::Ty};
 use std::{collections::HashMap, fmt};
 
-pub fn optimize(document: &mut Document) {
+pub fn optimize(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
     struct OptimizationVistior;
 
     impl Visitor for OptimizationVistior {
@@ -22,6 +23,7 @@ pub fn optimize(document: &mut Document) {
         }
     }
 
+    inlining::inline(document, ssa_var_gen);
     OptimizationVistior.traverse_document(document);
     late_dce::perform(document);
 }
@@ -53,7 +55,7 @@ pub struct Parameter {
     pub ty: Ty,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Block {
     pub ops: Vec<Op>,
 }
@@ -80,7 +82,7 @@ impl fmt::Display for SsaVar {
 }
 
 #[derive(Default)]
-struct SsaVarGenerator {
+pub struct SsaVarGenerator {
     counter: u16,
 }
 
@@ -123,7 +125,7 @@ impl Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Op {
     Return(Value),
     If {
