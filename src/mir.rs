@@ -44,6 +44,7 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub body: Block,
     pub returns_something: bool,
+    pub is_inline: bool,
 }
 
 #[derive(Debug)]
