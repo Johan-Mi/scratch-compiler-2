@@ -16,6 +16,7 @@
   - An early dead code elimination step is performed, which removes unused
     functions to avoid wasting time on them.
   - The HIR gets lowered to MIR (the mid-level intermediate representation).
+  - Inlining is performed on the MIR.
   - Several optimizations are repeatedly applied to the MIR until a fixed point
     is reached.
   - Finally, the MIR gets compiled to a Scratch project.
