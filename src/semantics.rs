@@ -30,6 +30,16 @@ impl Visitor for SemanticVisitor<'_> {
             );
         }
 
+        if function.is_inline && function::name_is_special(&function.name) {
+            self.diagnostics.error(
+                format!(
+                    "special function `{}` cannot be inline",
+                    *function.name
+                ),
+                [primary(function.name.span, "")],
+            );
+        }
+
         match &**function.name {
             "when-flag-clicked" => {
                 if !function.parameters.is_empty()
