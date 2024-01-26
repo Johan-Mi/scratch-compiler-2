@@ -73,7 +73,7 @@ impl Visitor for CallGraphVisitor<'_> {
         };
         let index = match self.resolved_calls[&expr.span.low()] {
             function::Ref::SpriteLocal(index) if !self.is_top_level => index,
-            function::Ref::SpriteLocal(index) if self.is_top_level => index,
+            function::Ref::TopLevel(index) if self.is_top_level => index,
             _ => return,
         };
         self.graph.add_edge(self.caller, self.nodes[&index], ());
