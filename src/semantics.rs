@@ -20,6 +20,46 @@ struct SemanticVisitor<'a> {
 
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
+        self.check_special_function(is_top_level, function);
+    }
+
+    fn visit_block(&mut self, block: &hir::Block) {
+        let Some(span) = block
+            .statements
+            .iter()
+            // A `forever` loop at the end of the block is fine.
+            .take(block.statements.len().saturating_sub(1))
+            .find_map(|statement| match statement {
+                hir::Statement::Forever { span, .. } => Some(*span),
+                _ => None,
+            })
+        else {
+            return;
+        };
+        self.diagnostics.error(
+            "unreachable code",
+            [primary(span, "any code after this loop is unreachable")],
+        );
+    }
+
+    fn visit_expression(&mut self, expr: &hir::Expression) {
+        if let ExpressionKind::FunctionCall {
+            name_or_operator, ..
+        } = &expr.kind
+        {
+            if function::name_is_special(name_or_operator.text()) {
+                self.diagnostics.error(format!("special function `{name_or_operator}` cannot be called"), [primary(expr.span, "")]);
+            }
+        }
+    }
+}
+
+impl SemanticVisitor<'_> {
+    fn check_special_function(
+        &mut self,
+        is_top_level: bool,
+        function: &hir::Function,
+    ) {
         if is_top_level && function::name_is_special(&function.name) {
             self.diagnostics.error(
                 format!(
@@ -59,36 +99,6 @@ impl Visitor for SemanticVisitor<'_> {
                 }
             }
             _ => {}
-        }
-    }
-
-    fn visit_block(&mut self, block: &hir::Block) {
-        let Some(span) = block
-            .statements
-            .iter()
-            // A `forever` loop at the end of the block is fine.
-            .take(block.statements.len().saturating_sub(1))
-            .find_map(|statement| match statement {
-                hir::Statement::Forever { span, .. } => Some(*span),
-                _ => None,
-            })
-        else {
-            return;
-        };
-        self.diagnostics.error(
-            "unreachable code",
-            [primary(span, "any code after this loop is unreachable")],
-        );
-    }
-
-    fn visit_expression(&mut self, expr: &hir::Expression) {
-        if let ExpressionKind::FunctionCall {
-            name_or_operator, ..
-        } = &expr.kind
-        {
-            if function::name_is_special(name_or_operator.text()) {
-                self.diagnostics.error(format!("special function `{name_or_operator}` cannot be called"), [primary(expr.span, "")]);
-            }
         }
     }
 }
