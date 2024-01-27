@@ -21,6 +21,7 @@ struct SemanticVisitor<'a> {
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
         self.check_special_function(is_top_level, function);
+        self.check_function_staging(function);
     }
 
     fn visit_block(&mut self, block: &hir::Block) {
@@ -99,6 +100,26 @@ impl SemanticVisitor<'_> {
                 }
             }
             _ => {}
+        }
+    }
+
+    fn check_function_staging(&mut self, function: &hir::Function) {
+        for ty in function
+            .parameters
+            .iter()
+            .map(|param| &param.ty)
+            .chain([&function.return_ty])
+            .map(Result::as_ref)
+            .filter_map(Result::ok)
+        {
+            if !ty.has_runtime_repr() {
+                // FIXME: attach spans to types
+                let span = function.name.span;
+                self.diagnostics.error(
+                    format!("type `{ty}` cannot be used at runtime"),
+                    [primary(span, "")],
+                );
+            }
         }
     }
 }

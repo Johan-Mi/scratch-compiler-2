@@ -47,6 +47,11 @@ impl Ty {
     pub fn is_zero_sized(&self) -> bool {
         *self == Self::Unit
     }
+
+    pub fn has_runtime_repr(&self) -> bool {
+        matches!(self, Self::Num | Self::String | Self::Bool)
+            || self.is_zero_sized()
+    }
 }
 
 pub fn check(
