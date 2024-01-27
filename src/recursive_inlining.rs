@@ -11,15 +11,16 @@ pub fn check(
     resolved_calls: &ResolvedCalls,
     diagnostics: &mut Diagnostics,
 ) {
-    check_functions(&document.functions, resolved_calls, diagnostics);
+    check_functions(&document.functions, resolved_calls, true, diagnostics);
     for sprite in document.sprites.values() {
-        check_functions(&sprite.functions, resolved_calls, diagnostics);
+        check_functions(&sprite.functions, resolved_calls, false, diagnostics);
     }
 }
 
 pub fn check_functions(
     functions: &BTreeMap<usize, hir::Function>,
     resolved_calls: &ResolvedCalls,
+    is_top_level: bool,
     diagnostics: &mut Diagnostics,
 ) {
     let mut graph = Graph::new();
@@ -33,12 +34,12 @@ pub fn check_functions(
         if function.is_inline {
             CallGraphVisitor {
                 caller: nodes[&id],
-                is_top_level: true,
+                is_top_level,
                 nodes: &nodes,
                 graph: &mut graph,
                 resolved_calls,
             }
-            .traverse_function(function, true);
+            .traverse_function(function, is_top_level);
         }
     }
 
