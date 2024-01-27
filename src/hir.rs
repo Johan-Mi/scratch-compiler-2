@@ -144,7 +144,7 @@ impl Costume {
 pub struct Function {
     pub name: Spanned<String>,
     pub parameters: Vec<Parameter>,
-    pub return_ty: Result<Ty>,
+    pub return_ty: Spanned<Result<Ty>>,
     pub body: Block,
     pub is_builtin: bool,
     pub is_inline: bool,
@@ -186,16 +186,18 @@ impl Function {
             diagnostics.error("function has no body", defined_here());
         })?;
 
-        let return_ty = ast.return_ty().map_or(Ok(Ty::Unit), |ty| {
-            let expr = Expression::lower(&ty, file, diagnostics);
-            let span = expr.span;
+        let return_ty = ast
+            .return_ty()
+            .map(|it| Expression::lower(&it, file, diagnostics));
+        let return_ty_span = return_ty.as_ref().map_or(name.span, |it| it.span);
+        let return_ty = return_ty.map_or(Ok(Ty::Unit), |expr| {
             match comptime::evaluate(expr, diagnostics)? {
                 Value::Ty(ty) => Ok(ty),
                 value => {
                     diagnostics.error(
                         "function return type must be a type",
                         [primary(
-                            span,
+                            return_ty_span,
                             format!("expected `Type`, got `{}`", value.ty()),
                         )],
                     );
@@ -207,7 +209,10 @@ impl Function {
         Ok(Self {
             name,
             parameters,
-            return_ty,
+            return_ty: Spanned {
+                node: return_ty,
+                span: return_ty_span,
+            },
             body: Block::lower(&body, file, diagnostics),
             is_builtin: false,
             is_inline: ast.kw_inline().is_some(),
@@ -232,7 +237,7 @@ impl Function {
 pub struct Parameter {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
-    pub ty: Result<Ty>,
+    pub ty: Spanned<Result<Ty>>,
 }
 
 impl Parameter {
@@ -256,6 +261,7 @@ impl Parameter {
             );
         })?;
         let ty = Expression::lower(&ty, file, diagnostics);
+        let ty_span = ty.span;
         let ty = match comptime::evaluate(ty, diagnostics) {
             Ok(Value::Ty(ty)) => Ok(ty),
             _ => Err(()),
@@ -267,7 +273,10 @@ impl Parameter {
                 name => Some(name.to_owned()),
             },
             internal_name,
-            ty,
+            ty: Spanned {
+                node: ty,
+                span: ty_span,
+            },
         })
     }
 
@@ -277,7 +286,7 @@ impl Parameter {
         tcx: &mut Context,
     ) -> bool {
         self.external_name.as_deref() == argument_name.as_deref()
-            && match (&self.ty, value.ty(tcx)) {
+            && match (&self.ty.node, value.ty(tcx)) {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
                     argument_ty.is_subtype_of(parameter_ty)
                 }
@@ -628,7 +637,7 @@ impl Expression {
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
-                tcx.function(resolved).return_ty.clone()
+                tcx.function(resolved).return_ty.node.clone()
             }
             ExpressionKind::Error => Err(()),
         }

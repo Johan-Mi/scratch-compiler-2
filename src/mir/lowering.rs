@@ -104,7 +104,7 @@ fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
             );
             Parameter {
                 ssa_var,
-                ty: param.ty.unwrap(),
+                ty: param.ty.node.unwrap(),
             }
         })
         .collect();
@@ -113,7 +113,7 @@ fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
         name: function.name.node,
         parameters,
         body: lower_block(function.body, cx),
-        returns_something: !function.return_ty.unwrap().is_zero_sized(),
+        returns_something: !function.return_ty.node.unwrap().is_zero_sized(),
         is_inline: function.is_inline,
     }
 }

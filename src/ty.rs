@@ -99,13 +99,13 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
         .extend(function.parameters.iter().map(|parameter| {
             (
                 parameter.internal_name.text_range().start(),
-                parameter.ty.clone(),
+                parameter.ty.node.clone(),
             )
         }));
 
     let actual_return_ty = check_block(&function.body, tcx);
     if let (Ok(return_ty), Ok(actual_return_ty)) =
-        (&function.return_ty, actual_return_ty)
+        (&function.return_ty.node, actual_return_ty)
     {
         if !actual_return_ty.is_subtype_of(return_ty) {
             tcx.diagnostics.error(

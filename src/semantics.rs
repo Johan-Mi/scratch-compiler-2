@@ -109,12 +109,10 @@ impl SemanticVisitor<'_> {
             .iter()
             .map(|param| &param.ty)
             .chain([&function.return_ty])
-            .map(Result::as_ref)
-            .filter_map(Result::ok)
         {
+            let span = ty.span;
+            let Ok(ty) = &ty.node else { continue };
             if !ty.has_runtime_repr() {
-                // FIXME: attach spans to types
-                let span = function.name.span;
                 self.diagnostics.error(
                     format!("type `{ty}` cannot be used at runtime"),
                     [primary(span, "")],
