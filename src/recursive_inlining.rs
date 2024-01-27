@@ -52,11 +52,13 @@ pub fn check_functions(
                 .is_some()
     });
 
-    let scc = petgraph::algo::tarjan_scc(&graph);
-    for &node in scc.iter().flatten() {
-        let span = functions[&graph[node]].name.span;
-        diagnostics.error("inline function is recursive", [primary(span, "")]);
-    }
+    petgraph::algo::TarjanScc::new().run(&graph, |scc| {
+        for &node in scc {
+            let span = functions[&graph[node]].name.span;
+            diagnostics
+                .error("inline function is recursive", [primary(span, "")]);
+        }
+    });
 }
 
 struct CallGraphVisitor<'a> {
