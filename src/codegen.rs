@@ -109,12 +109,7 @@ impl CompiledFunctionRef {
             .parameters
             .iter()
             .filter_map(|parameter| {
-                let kind = match parameter.ty {
-                    Ty::Unit => return None,
-                    Ty::Num | Ty::String => ParameterKind::StringOrNumber,
-                    Ty::Bool => ParameterKind::Boolean,
-                    Ty::Ty | Ty::Var(_) => unreachable!(),
-                };
+                let kind = parameter_kind_for_ty(&parameter.ty)?;
                 Some(Parameter {
                     name: parameter.ssa_var.to_string(),
                     kind,
@@ -147,6 +142,15 @@ impl CompiledFunctionRef {
             insertion_point: Some(insertion_point),
             return_variable,
         })
+    }
+}
+
+fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
+    match ty {
+        Ty::Unit => None,
+        Ty::Num | Ty::String => Some(ParameterKind::StringOrNumber),
+        Ty::Bool => Some(ParameterKind::Boolean),
+        Ty::Ty | Ty::Var(_) => unreachable!(),
     }
 }
 
