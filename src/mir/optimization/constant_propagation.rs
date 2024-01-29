@@ -50,17 +50,14 @@ fn evaluate_builtin_call(name: &str, args: &mut [Value]) -> Option<Value> {
         #[allow(clippy::float_cmp)]
         ("eq", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs == rhs))),
         ("gt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs > rhs))),
-        // FIXME: this should be case insensitive.
         ("lt", [Imm(String(lhs)), Imm(String(rhs))]) => {
-            Some(Imm(Bool(lhs < rhs)))
+            Some(Imm(Bool(lhs.to_lowercase() < rhs.to_lowercase())))
         }
-        // FIXME: this should be case insensitive.
         ("eq", [Imm(String(lhs)), Imm(String(rhs))]) => {
-            Some(Imm(Bool(lhs == rhs)))
+            Some(Imm(Bool(lhs.to_lowercase() == rhs.to_lowercase())))
         }
-        // FIXME: this should be case insensitive.
         ("gt", [Imm(String(lhs)), Imm(String(rhs))]) => {
-            Some(Imm(Bool(lhs > rhs)))
+            Some(Imm(Bool(lhs.to_lowercase() > rhs.to_lowercase())))
         }
         ("not", [Imm(Bool(operand))]) => Some(Imm(Bool(!*operand))),
 
