@@ -13,4 +13,44 @@ fn gt(_ lhs: String, _ rhs: String) -> Bool {}
 
 fn not(_ bool: Bool) -> Bool {}
 
+fn ask(_ question: String) {}
+
+fn change-x(by amount: Num) {}
+
+fn change-y(by amount: Num) {}
+
+fn erase-all() {}
+
 fn go-to(x _: Num, y _: Num) {}
+
+fn hide() {}
+
+fn move(steps _: Num) {}
+
+fn pen-down() {}
+
+fn pen-up() {}
+
+fn reset-timer() {}
+
+fn say(message _: String) {}
+fn say(message _: String, seconds _: Num) {}
+
+fn set-costume(to costume: String) {}
+fn set-costume(to costume: Num) {}
+
+fn set-pen-color(to color: Num) {}
+
+fn set-pen-size(to size: Num) {}
+
+fn set-size(to size: Num) {}
+
+fn set-x(to _: Num) {}
+
+fn set-y(to _: Num) {}
+
+fn show() {}
+
+fn stamp() {}
+
+fn wait(seconds _: Num) {}

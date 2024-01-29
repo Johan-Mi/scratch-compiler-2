@@ -317,11 +317,6 @@ fn compile_builtin_function_call(
     cx: &mut Context,
 ) -> Option<Operand> {
     match name {
-        "go-to" => {
-            let [x, y] = arguments.try_into().ok().unwrap();
-            cx.sprite.put(block::go_to_xy(x, y));
-            None
-        }
         "add" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
             Some(cx.sprite.add(lhs, rhs))
@@ -359,6 +354,106 @@ fn compile_builtin_function_call(
             // FIXME: actually use the `not` block
             // (see the comment regarding boolean literals)
             Some(cx.sprite.eq(operand, "false".to_owned().into()))
+        }
+        "ask" => {
+            let [question] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::ask(question));
+            None
+        }
+        "change-x" => {
+            let [amount] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::change_x(amount));
+            None
+        }
+        "change-y" => {
+            let [amount] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::change_y(amount));
+            None
+        }
+        "erase-all" => {
+            cx.sprite.put(block::erase_all());
+            None
+        }
+        "go-to" => {
+            let [x, y] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::go_to_xy(x, y));
+            None
+        }
+        "hide" => {
+            cx.sprite.put(block::hide());
+            None
+        }
+        "move" => {
+            let [steps] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::move_steps(steps));
+            None
+        }
+        "pen-down" => {
+            cx.sprite.put(block::pen_down());
+            None
+        }
+        "pen-up" => {
+            cx.sprite.put(block::pen_up());
+            None
+        }
+        "reset-timer" => {
+            cx.sprite.put(block::reset_timer());
+            None
+        }
+        "say" => {
+            match <[Operand; 1]>::try_from(arguments) {
+                Ok([message]) => {
+                    cx.sprite.put(block::say(message));
+                }
+                Err(arguments) => {
+                    let [message, seconds] = arguments.try_into().ok().unwrap();
+                    cx.sprite.put(block::say_for_seconds(seconds, message));
+                }
+            }
+            None
+        }
+        "set-costume" => {
+            let [costume] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_costume(costume));
+            None
+        }
+        "set-pen-color" => {
+            let [color] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_pen_color(color));
+            None
+        }
+        "set-pen-size" => {
+            let [size] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_pen_size(size));
+            None
+        }
+        "set-size" => {
+            let [size] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_size(size));
+            None
+        }
+        "set-x" => {
+            let [x] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_x(x));
+            None
+        }
+        "set-y" => {
+            let [y] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::set_y(y));
+            None
+        }
+        "show" => {
+            cx.sprite.put(block::show());
+            None
+        }
+        "stamp" => {
+            cx.sprite.put(block::stamp());
+            None
+        }
+        "wait" => {
+            let [seconds] = arguments.try_into().ok().unwrap();
+            cx.sprite.put(block::wait(seconds));
+            None
         }
         _ => unreachable!(),
     }
