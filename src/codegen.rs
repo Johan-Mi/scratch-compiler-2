@@ -324,41 +324,24 @@ fn compile_builtin_function_call(
                 None
             }
         };
+
+        (= $block:ident($($param:ident),*)) => {
+            {
+                let [$($param),*] = arguments.try_into().ok().unwrap();
+                Some(cx.sprite.$block($($param),*))
+            }
+        };
     }
 
     match name {
-        "add" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.add(lhs, rhs))
-        }
-        "sub" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.sub(lhs, rhs))
-        }
-        "mul" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.mul(lhs, rhs))
-        }
-        "div" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.div(lhs, rhs))
-        }
-        "mod" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.modulo(lhs, rhs))
-        }
-        "lt" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.lt(lhs, rhs))
-        }
-        "eq" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.eq(lhs, rhs))
-        }
-        "gt" => {
-            let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            Some(cx.sprite.gt(lhs, rhs))
-        }
+        "add" => f! { = add(lhs, rhs) },
+        "sub" => f! { = sub(lhs, rhs) },
+        "mul" => f! { = mul(lhs, rhs) },
+        "div" => f! { = div(lhs, rhs) },
+        "mod" => f! { = modulo(lhs, rhs) },
+        "lt" => f! { = lt(lhs, rhs) },
+        "eq" => f! { = eq(lhs, rhs) },
+        "gt" => f! { = gt(lhs, rhs) },
         "not" => {
             let [operand] = arguments.try_into().ok().unwrap();
             // FIXME: actually use the `not` block
@@ -375,18 +358,8 @@ fn compile_builtin_function_call(
         "pen-down" => f! { pen_down() },
         "pen-up" => f! { pen_up() },
         "reset-timer" => f! { reset_timer() },
-        "say" => {
-            match <[Operand; 1]>::try_from(arguments) {
-                Ok([message]) => {
-                    cx.sprite.put(block::say(message));
-                }
-                Err(arguments) => {
-                    let [message, seconds] = arguments.try_into().ok().unwrap();
-                    cx.sprite.put(block::say_for_seconds(seconds, message));
-                }
-            }
-            None
-        }
+        "say" if arguments.len() == 1 => f! { say(message) },
+        "say" => f! { say_for_seconds(seconds, message) },
         "set-costume" => f! { set_costume(costume) },
         "set-pen-color" => f! { set_pen_color(color) },
         "set-pen-size" => f! { set_pen_size(size) },
