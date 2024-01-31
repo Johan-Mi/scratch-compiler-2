@@ -633,7 +633,10 @@ impl Expression {
                 let resolved = function::resolve(
                     name,
                     arguments,
-                    span(tcx.file, name_or_operator.text_range()),
+                    self.span.subspan(
+                        0,
+                        u32::from(name_or_operator.text_range().len()).into(),
+                    ),
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);

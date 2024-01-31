@@ -3,7 +3,6 @@ use crate::{
     function::ResolvedCalls,
     hir,
 };
-use codemap::File;
 use rowan::{SyntaxToken, TextSize};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -56,7 +55,6 @@ impl Ty {
 
 pub fn check(
     document: &hir::Document,
-    file: &File,
     diagnostics: &mut Diagnostics,
 ) -> ResolvedCalls {
     let mut resolved_calls = HashMap::new();
@@ -65,7 +63,6 @@ pub fn check(
         let mut tcx = Context {
             sprite: Some(sprite),
             top_level_functions: &document.functions,
-            file,
             diagnostics,
             variable_types: HashMap::new(),
             resolved_calls: &mut resolved_calls,
@@ -79,7 +76,6 @@ pub fn check(
     let mut tcx = Context {
         sprite: None,
         top_level_functions: &document.functions,
-        file,
         diagnostics,
         variable_types: HashMap::new(),
         resolved_calls: &mut resolved_calls,
@@ -248,7 +244,6 @@ fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
 pub struct Context<'a> {
     pub sprite: Option<&'a hir::Sprite>,
     pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
-    pub file: &'a File,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
     pub resolved_calls: &'a mut ResolvedCalls,

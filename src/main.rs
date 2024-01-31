@@ -58,7 +58,7 @@ fn real_main(
         eprintln!("{document:#?}");
     }
     builtins::add_to_hir(&mut document, code_map);
-    let resolved_calls = ty::check(&document, &file, diagnostics);
+    let resolved_calls = ty::check(&document, diagnostics);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
     linter::lint(&document, &file, diagnostics);
