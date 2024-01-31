@@ -67,6 +67,10 @@ fn real_main(
         return Err(());
     }
 
+    if std::env::var_os("CHECK").is_some() {
+        return Ok(());
+    }
+
     early_dce::perform(&mut document, &resolved_calls, diagnostics);
 
     let mut ssa_var_gen = mir::SsaVarGenerator::default();
