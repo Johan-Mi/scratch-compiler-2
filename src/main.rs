@@ -63,6 +63,8 @@ fn real_main(
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
     linter::lint(&document, &file, diagnostics);
 
+    early_dce::perform(&mut document, &resolved_calls, diagnostics);
+
     if !diagnostics.successful() {
         return Err(());
     }
@@ -70,8 +72,6 @@ fn real_main(
     if std::env::var_os("CHECK").is_some() {
         return Ok(());
     }
-
-    early_dce::perform(&mut document, &resolved_calls, diagnostics);
 
     let mut ssa_var_gen = mir::SsaVarGenerator::default();
     let mut document = mir::lower(document, &resolved_calls, &mut ssa_var_gen);
