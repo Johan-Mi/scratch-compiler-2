@@ -355,6 +355,14 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.bump();
                 continue;
             }
+            if self.at(ARROW) || self.at(LBRACE) {
+                let span = self.peek_span();
+                self.diagnostics.error(
+                    "unterminated parameter list",
+                    [primary(span, "expected parameter or `)`")],
+                );
+                break;
+            }
             if !self.at(IDENTIFIER) {
                 self.error();
                 continue;
