@@ -14,7 +14,15 @@ pub fn check(
             rowan::NodeOrToken::Node(node) => {
                 if node.kind() == ERROR {
                     let span = span(file, node.text_range());
-                    diagnostics.error("syntax error", [primary(span, "")]);
+                    let message = if node
+                        .first_token()
+                        .is_some_and(|it| it.kind() == ERROR)
+                    {
+                        "invalid token"
+                    } else {
+                        "syntax error"
+                    };
+                    diagnostics.error(message, [primary(span, "")]);
                 }
             }
             rowan::NodeOrToken::Token(token) => {
