@@ -346,6 +346,15 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.start_node(FUNCTION_PARAMETERS.into());
         self.bump(); // LPAREN
         while !self.at(EOF) && !self.eat(RPAREN) {
+            if self.at(COMMA) {
+                let span = self.peek_span();
+                self.diagnostics.error(
+                    "unexpected `,`",
+                    [primary(span, "expected parameter")],
+                );
+                self.bump();
+                continue;
+            }
             if !self.at(IDENTIFIER) {
                 self.error();
                 continue;
