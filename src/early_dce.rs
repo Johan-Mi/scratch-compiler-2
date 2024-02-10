@@ -81,7 +81,9 @@ impl Visitor for DceVisitor<'_> {
         if !matches!(expr.kind, ExpressionKind::FunctionCall { .. }) {
             return;
         }
-        let function = self.resolved_calls[&expr.span.low()];
+        let Some(&function) = self.resolved_calls.get(&expr.span.low()) else {
+            return;
+        };
         match function {
             function::Ref::SpriteLocal(index) => {
                 if !self.required_sprite_functions.contains(&index) {
