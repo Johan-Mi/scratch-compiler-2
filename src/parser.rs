@@ -376,7 +376,21 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.expect(IDENTIFIER);
             }
             self.expect(COLON);
-            self.parse_expression();
+            if self.at(COMMA) {
+                let span = self.peek_span();
+                self.diagnostics.error(
+                    "unexpected `,`",
+                    [primary(span, "expected expression")],
+                );
+            } else if self.at(RPAREN) {
+                let span = self.peek_span();
+                self.diagnostics.error(
+                    "unexpected end of parameter list",
+                    [primary(span, "expected expression")],
+                );
+            } else {
+                self.parse_expression();
+            }
             self.eat(COMMA);
             self.builder.finish_node();
         }
