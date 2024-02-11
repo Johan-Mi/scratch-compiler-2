@@ -20,7 +20,7 @@ fn format(source_code: String) -> String {
         output: String::with_capacity(capacity),
     };
     formatter.node(&cst);
-    formatter.output
+    formatter.finish()
 }
 
 type SyntaxElement = rowan::SyntaxElement<crate::parser::Lang>;
@@ -30,6 +30,13 @@ struct Formatter {
 }
 
 impl Formatter {
+    fn finish(mut self) -> String {
+        if self.output.ends_with("\n\n") {
+            self.output.pop();
+        }
+        self.output
+    }
+
     fn node(&mut self, node: &SyntaxNode) {
         for child in node.children_with_tokens() {
             self.element(&child);
