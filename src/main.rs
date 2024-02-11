@@ -29,10 +29,9 @@ fn main() -> ExitCode {
     let mut diagnostics = Diagnostics::default();
     let res = real_main(&mut code_map, &mut diagnostics);
     diagnostics.show(&code_map);
-    if res.is_ok() {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::FAILURE
+    match res {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(()) => ExitCode::FAILURE,
     }
 }
 
@@ -40,9 +39,37 @@ fn real_main(
     code_map: &mut CodeMap,
     diagnostics: &mut Diagnostics,
 ) -> Result<(), ()> {
-    let source_file = std::env::args()
-        .nth(1)
-        .ok_or_else(|| diagnostics.error("no source file provided", []))?;
+    let mut args = std::env::args().skip(1);
+    let command = args.next().ok_or_else(|| {
+        diagnostics.error("no command provided", []);
+        diagnostics.help("valid commands are `compile` or `check`", []);
+    })?;
+
+    match &*command {
+        "compile" | "check" => {
+            let source_file = args.next().ok_or_else(|| {
+                diagnostics.error("no source file provided", []);
+            })?;
+            if args.next().is_some() {
+                diagnostics.error("too many command line arguments", []);
+            }
+            let only_check = command == "check";
+            compile_or_check(source_file, diagnostics, code_map, only_check)
+        }
+        _ => {
+            diagnostics.error(format!("invalid command: `{command}`"), []);
+            diagnostics.help("valid commands are `compile` or `check`", []);
+            Err(())
+        }
+    }
+}
+
+fn compile_or_check(
+    source_file: String,
+    diagnostics: &mut Diagnostics,
+    code_map: &mut CodeMap,
+    only_check: bool,
+) -> Result<(), ()> {
     let source_code = std::fs::read_to_string(&source_file).map_err(|err| {
         diagnostics.error("failed to read source code", []);
         diagnostics.note(err.to_string(), []);
@@ -69,7 +96,7 @@ fn real_main(
         return Err(());
     }
 
-    if std::env::var_os("CHECK").is_some() {
+    if only_check {
         return Ok(());
     }
 
