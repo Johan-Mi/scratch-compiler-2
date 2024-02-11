@@ -8,6 +8,7 @@ mod codegen;
 mod comptime;
 mod diagnostics;
 mod early_dce;
+mod formatter;
 mod function;
 mod hir;
 mod linter;
@@ -42,7 +43,8 @@ fn real_main(
     let mut args = std::env::args().skip(1);
     let command = args.next().ok_or_else(|| {
         diagnostics.error("no command provided", []);
-        diagnostics.help("valid commands are `compile` or `check`", []);
+        diagnostics
+            .help("valid commands are `compile`, `check` or `format`", []);
     })?;
 
     match &*command {
@@ -56,9 +58,16 @@ fn real_main(
             let only_check = command == "check";
             compile_or_check(source_file, diagnostics, code_map, only_check)
         }
+        "format" => {
+            if args.next().is_some() {
+                diagnostics.error("too many command line arguments", []);
+            }
+            formatter::format_stdin_to_stdout(diagnostics)
+        }
         _ => {
             diagnostics.error(format!("invalid command: `{command}`"), []);
-            diagnostics.help("valid commands are `compile` or `check`", []);
+            diagnostics
+                .help("valid commands are `compile`, `check` or `format`", []);
             Err(())
         }
     }
