@@ -88,7 +88,8 @@ impl Formatter {
                 let end = text.find('\n').unwrap_or(text.len());
                 let (comment, after) = text.split_at(end);
                 self.leading_space();
-                self.output.push_str(comment);
+                self.output.push_str("# ");
+                self.output.push_str(comment[1..].trim_start());
                 text = after;
             } else {
                 text = text.trim_start();
