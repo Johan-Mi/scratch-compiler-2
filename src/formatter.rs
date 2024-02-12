@@ -63,7 +63,10 @@ impl Formatter {
             if self.output.ends_with('\n') {
                 self.output
                     .extend(std::iter::repeat(' ').take(self.indentation));
-            } else if token_wants_leading_space(token.kind()) {
+            } else if token_wants_leading_space(
+                token.kind(),
+                self.output.as_bytes().last().copied(),
+            ) {
                 self.leading_space();
             }
             self.output.push_str(token.text());
@@ -116,6 +119,7 @@ impl Formatter {
     }
 }
 
-const fn token_wants_leading_space(kind: SyntaxKind) -> bool {
+fn token_wants_leading_space(kind: SyntaxKind, last: Option<u8>) -> bool {
     !matches!(kind, RPAREN | COLON | COMMA)
+        && (kind, last) != (RBRACE, Some(b'{'))
 }
