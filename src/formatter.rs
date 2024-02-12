@@ -1,6 +1,9 @@
 use crate::{
     diagnostics::Diagnostics,
-    parser::{SyntaxNode, SyntaxToken},
+    parser::{
+        SyntaxKind::{self, *},
+        SyntaxNode, SyntaxToken,
+    },
 };
 use codemap::CodeMap;
 use rowan::NodeOrToken;
@@ -44,7 +47,43 @@ impl Formatter {
     }
 
     fn token(&mut self, token: &SyntaxToken) {
-        self.output.push_str(token.text());
+        if token.kind() == TRIVIA {
+            self.trivia(token.text());
+        } else {
+            if token_wants_leading_space(token.kind()) {
+                self.leading_space();
+            }
+            self.output.push_str(token.text());
+        }
+    }
+
+    fn trivia(&mut self, mut text: &str) {
+        while !text.is_empty() {
+            if let Some(t) = text.strip_prefix('\n') {
+                text = t;
+                self.newline();
+            } else if text.starts_with('#') {
+                let end = text.find('\n').unwrap_or(text.len());
+                let (comment, after) = text.split_at(end);
+                self.leading_space();
+                self.output.push_str(comment);
+                text = after;
+            } else {
+                text = text.trim_start();
+            }
+        }
+    }
+
+    fn newline(&mut self) {
+        if !self.output.is_empty() && !self.output.ends_with("\n\n") {
+            self.output.push('\n');
+        }
+    }
+
+    fn leading_space(&mut self) {
+        if self.output.ends_with(|c: char| !c.is_whitespace()) {
+            self.output.push(' ');
+        }
     }
 
     fn element(&mut self, element: &SyntaxElement) {
@@ -53,4 +92,8 @@ impl Formatter {
             NodeOrToken::Token(token) => self.token(token),
         }
     }
+}
+
+const fn token_wants_leading_space(kind: SyntaxKind) -> bool {
+    !matches!(kind, RPAREN | COLON | COMMA)
 }
