@@ -74,8 +74,7 @@ impl Formatter {
 
         // FIXME: indentation should be handled by the enclosing node.
         if matches!(token.kind(), LPAREN | LBRACE) {
-            self.indentation =
-                self.indentation.saturating_add(INDENTATION_SIZE);
+            self.indentation += INDENTATION_SIZE;
         }
     }
 
