@@ -67,10 +67,8 @@ impl Formatter {
         if token.kind() == TRIVIA {
             self.trivia(token.text());
         } else {
-            if self.output.ends_with('\n') {
-                self.output
-                    .extend(std::iter::repeat(' ').take(self.indentation));
-            } else if !immediately
+            self.indent();
+            if !immediately
                 && token_wants_leading_space(
                     token.kind(),
                     self.output.as_bytes().last().copied(),
@@ -87,6 +85,13 @@ impl Formatter {
         }
     }
 
+    fn indent(&mut self) {
+        if self.output.ends_with('\n') {
+            self.output
+                .extend(std::iter::repeat(' ').take(self.indentation));
+        }
+    }
+
     fn trivia(&mut self, mut text: &str) {
         while !text.is_empty() {
             if let Some(t) = text.strip_prefix('\n') {
@@ -95,6 +100,7 @@ impl Formatter {
             } else if text.starts_with('#') {
                 let end = text.find('\n').unwrap_or(text.len());
                 let (comment, after) = text.split_at(end);
+                self.indent();
                 self.leading_space();
                 let comment = comment[1..].trim();
                 self.output.push('#');
