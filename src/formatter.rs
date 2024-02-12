@@ -89,7 +89,7 @@ impl Formatter {
                 let (comment, after) = text.split_at(end);
                 self.leading_space();
                 self.output.push_str("# ");
-                self.output.push_str(comment[1..].trim_start());
+                self.output.push_str(comment[1..].trim());
                 text = after;
             } else {
                 text = text.trim_start();
