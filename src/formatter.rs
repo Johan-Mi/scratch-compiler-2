@@ -29,8 +29,6 @@ fn format(source_code: String) -> String {
     formatter.finish()
 }
 
-type SyntaxElement = rowan::SyntaxElement<crate::parser::Lang>;
-
 struct Formatter {
     output: String,
     indentation: usize,
@@ -46,11 +44,18 @@ impl Formatter {
 
     fn node(&mut self, node: &SyntaxNode) {
         for child in node.children_with_tokens() {
-            self.element(&child);
+            match child {
+                NodeOrToken::Node(node) => self.node(&node),
+                NodeOrToken::Token(token) => self.token(
+                    &token,
+                    matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
+                        && token.kind() == LPAREN,
+                ),
+            };
         }
     }
 
-    fn token(&mut self, token: &SyntaxToken) {
+    fn token(&mut self, token: &SyntaxToken, immediately: bool) {
         // FIXME: indentation should be handled by the enclosing node.
         if matches!(token.kind(), RPAREN | RBRACE) {
             self.indentation =
@@ -63,10 +68,12 @@ impl Formatter {
             if self.output.ends_with('\n') {
                 self.output
                     .extend(std::iter::repeat(' ').take(self.indentation));
-            } else if token_wants_leading_space(
-                token.kind(),
-                self.output.as_bytes().last().copied(),
-            ) {
+            } else if !immediately
+                && token_wants_leading_space(
+                    token.kind(),
+                    self.output.as_bytes().last().copied(),
+                )
+            {
                 self.leading_space();
             }
             self.output.push_str(token.text());
@@ -112,13 +119,6 @@ impl Formatter {
             .ends_with(|c: char| !c.is_whitespace() && c != '(')
         {
             self.output.push(' ');
-        }
-    }
-
-    fn element(&mut self, element: &SyntaxElement) {
-        match element {
-            NodeOrToken::Node(node) => self.node(node),
-            NodeOrToken::Token(token) => self.token(token),
         }
     }
 }
