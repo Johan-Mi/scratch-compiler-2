@@ -38,6 +38,8 @@ impl Formatter {
     fn finish(mut self) -> String {
         if self.output.ends_with("\n\n") {
             self.output.pop();
+        } else if self.output.ends_with(|c: char| c != '\n') {
+            self.output.push('\n');
         }
         self.output
     }
