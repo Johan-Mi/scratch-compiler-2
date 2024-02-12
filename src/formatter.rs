@@ -8,6 +8,8 @@ use crate::{
 use codemap::CodeMap;
 use rowan::NodeOrToken;
 
+const INDENTATION_SIZE: usize = 4;
+
 pub fn format_stdin_to_stdout(diagnostics: &mut Diagnostics) -> Result<(), ()> {
     let source_code = std::io::read_to_string(std::io::stdin())
         .map_err(|err| diagnostics.error(err.to_string(), []))?;
@@ -21,6 +23,7 @@ fn format(source_code: String) -> String {
     let cst = crate::parser::parse(&file, &mut Diagnostics::default());
     let mut formatter = Formatter {
         output: String::with_capacity(capacity),
+        indentation: 0,
     };
     formatter.node(&cst);
     formatter.finish()
@@ -30,6 +33,7 @@ type SyntaxElement = rowan::SyntaxElement<crate::parser::Lang>;
 
 struct Formatter {
     output: String,
+    indentation: usize,
 }
 
 impl Formatter {
@@ -47,13 +51,28 @@ impl Formatter {
     }
 
     fn token(&mut self, token: &SyntaxToken) {
+        // FIXME: indentation should be handled by the enclosing node.
+        if matches!(token.kind(), RPAREN | RBRACE) {
+            self.indentation =
+                self.indentation.saturating_sub(INDENTATION_SIZE);
+        }
+
         if token.kind() == TRIVIA {
             self.trivia(token.text());
         } else {
-            if token_wants_leading_space(token.kind()) {
+            if self.output.ends_with('\n') {
+                self.output
+                    .extend(std::iter::repeat(' ').take(self.indentation));
+            } else if token_wants_leading_space(token.kind()) {
                 self.leading_space();
             }
             self.output.push_str(token.text());
+        }
+
+        // FIXME: indentation should be handled by the enclosing node.
+        if matches!(token.kind(), LPAREN | LBRACE) {
+            self.indentation =
+                self.indentation.saturating_add(INDENTATION_SIZE);
         }
     }
 
