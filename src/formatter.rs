@@ -11,8 +11,11 @@ use rowan::NodeOrToken;
 const INDENTATION_SIZE: usize = 4;
 
 pub fn format_stdin_to_stdout(diagnostics: &mut Diagnostics) -> Result<(), ()> {
-    let source_code = std::io::read_to_string(std::io::stdin())
-        .map_err(|err| diagnostics.error(err.to_string(), []))?;
+    let source_code =
+        std::io::read_to_string(std::io::stdin()).map_err(|err| {
+            diagnostics.error("failed to read source code", []);
+            diagnostics.note(err.to_string(), []);
+        })?;
     print!("{}", format(source_code));
     Ok(())
 }
