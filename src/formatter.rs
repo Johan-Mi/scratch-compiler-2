@@ -107,13 +107,10 @@ impl Formatter {
                 self.leading_space();
                 let comment = comment[1..].trim_end();
                 self.output.push('#');
-                if !comment.starts_with(char::is_whitespace) {
+                if comment.starts_with(|c: char| !c.is_whitespace()) {
                     self.output.push(' ');
                 }
-                if !comment.is_empty() {
-                    self.output.push(' ');
-                    self.output.push_str(comment);
-                }
+                self.output.push_str(comment);
                 text = after;
             } else {
                 text = text.trim_start();
