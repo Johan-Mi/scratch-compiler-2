@@ -102,8 +102,11 @@ impl Formatter {
                 let (comment, after) = text.split_at(end);
                 self.indent();
                 self.leading_space();
-                let comment = comment[1..].trim();
+                let comment = comment[1..].trim_end();
                 self.output.push('#');
+                if !comment.starts_with(char::is_whitespace) {
+                    self.output.push(' ');
+                }
                 if !comment.is_empty() {
                     self.output.push(' ');
                     self.output.push_str(comment);
