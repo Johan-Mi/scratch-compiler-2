@@ -124,7 +124,9 @@ impl Formatter {
                 self.output.push_str(comment);
                 text = after;
             } else {
-                text = text.trim_start();
+                text = text.trim_start_matches(|c: char| {
+                    c.is_whitespace() && c != '\n'
+                });
             }
         }
     }
