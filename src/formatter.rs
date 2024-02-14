@@ -48,25 +48,35 @@ impl Formatter {
     }
 
     fn node(&mut self, node: &SyntaxNode) {
+        let mut indented = false;
         for child in node.children_with_tokens() {
             match child {
                 NodeOrToken::Node(node) => self.node(&node),
-                NodeOrToken::Token(token) => self.token(
-                    &token,
-                    matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
-                        && token.kind() == LPAREN,
-                ),
+                NodeOrToken::Token(token) => {
+                    if indented && matches!(token.kind(), RPAREN | RBRACE) {
+                        self.indentation =
+                            self.indentation.saturating_sub(INDENTATION_SIZE);
+                        indented = false;
+                    }
+                    self.token(
+                        &token,
+                        matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
+                            && token.kind() == LPAREN,
+                    );
+                    if matches!(token.kind(), LPAREN | LBRACE) {
+                        self.indentation += INDENTATION_SIZE;
+                        indented = true;
+                    }
+                }
             };
+        }
+        if indented {
+            self.indentation =
+                self.indentation.saturating_sub(INDENTATION_SIZE);
         }
     }
 
     fn token(&mut self, token: &SyntaxToken, immediately: bool) {
-        // FIXME: indentation should be handled by the enclosing node.
-        if matches!(token.kind(), RPAREN | RBRACE) {
-            self.indentation =
-                self.indentation.saturating_sub(INDENTATION_SIZE);
-        }
-
         if token.kind() == TRIVIA {
             self.trivia(token.text());
         } else {
@@ -86,11 +96,6 @@ impl Formatter {
                 self.leading_space();
             }
             self.output.push_str(token.text());
-        }
-
-        // FIXME: indentation should be handled by the enclosing node.
-        if matches!(token.kind(), LPAREN | LBRACE) {
-            self.indentation += INDENTATION_SIZE;
         }
     }
 
