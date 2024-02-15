@@ -150,7 +150,7 @@ fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
         Ty::Unit => None,
         Ty::Num | Ty::String => Some(ParameterKind::StringOrNumber),
         Ty::Bool => Some(ParameterKind::Boolean),
-        Ty::Ty | Ty::Var(_) => unreachable!(),
+        Ty::Sprite | Ty::Ty | Ty::Var(_) => unreachable!(),
     }
 }
 
@@ -299,7 +299,9 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
                 }
             }
         }
-        mir::Value::Imm(comptime::Value::Ty(_)) => unreachable!(),
+        mir::Value::Imm(
+            comptime::Value::Sprite { .. } | comptime::Value::Ty(_),
+        ) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => n.into(),
         mir::Value::Imm(comptime::Value::String(s)) => s.into(),
         // TODO: booleans are tricky since Scratch doesn't have literals,

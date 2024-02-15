@@ -2,6 +2,7 @@ use crate::{
     diagnostics::{primary, Diagnostics},
     hir::{Expression, ExpressionKind},
     name::{Builtin, Name},
+    parser::SyntaxKind,
     ty::Ty,
 };
 use std::fmt;
@@ -12,6 +13,7 @@ pub enum Value {
     Num(f64),
     String(String),
     Bool(bool),
+    Sprite { name: String },
 }
 
 impl fmt::Debug for Value {
@@ -21,6 +23,9 @@ impl fmt::Debug for Value {
             Self::Num(n) => fmt::Debug::fmt(n, f),
             Self::String(s) => fmt::Debug::fmt(s, f),
             Self::Bool(b) => fmt::Debug::fmt(b, f),
+            Self::Sprite { name } => {
+                f.debug_struct("Sprite").field("name", name).finish()
+            }
         }
     }
 }
@@ -32,6 +37,7 @@ impl Value {
             Self::Num(_) => Ty::Num,
             Self::String(_) => Ty::String,
             Self::Bool(_) => Ty::Bool,
+            Self::Sprite { .. } => Ty::Sprite,
         }
     }
 }
@@ -46,8 +52,19 @@ pub fn evaluate(
     };
 
     match expr.kind {
-        ExpressionKind::Variable(Name::User(_)) => {
-            error("user-defined variables are not supported at compile-time")
+        ExpressionKind::Variable(Name::User(token)) => {
+            if token
+                .parent()
+                .is_some_and(|it| it.kind() == SyntaxKind::SPRITE)
+            {
+                Ok(Value::Sprite {
+                    name: token.to_string(),
+                })
+            } else {
+                error(
+                    "user-defined variables are not supported at compile-time",
+                )
+            }
         }
         ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
             Builtin::Unit => Ok(Value::Ty(Ty::Unit)),

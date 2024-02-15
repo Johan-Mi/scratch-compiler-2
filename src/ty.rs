@@ -15,6 +15,7 @@ pub enum Ty {
     Num,
     String,
     Bool,
+    Sprite,
     #[allow(clippy::enum_variant_names)]
     Ty,
     Var(Box<Self>),
@@ -27,6 +28,7 @@ impl fmt::Display for Ty {
             Self::Num => write!(f, "Num"),
             Self::String => write!(f, "String"),
             Self::Bool => write!(f, "Bool"),
+            Self::Sprite => write!(f, "Sprite"),
             Self::Ty => write!(f, "Type"),
             Self::Var(inner) => write!(f, "Var[{inner}]"),
         }
