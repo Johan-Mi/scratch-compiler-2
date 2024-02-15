@@ -61,20 +61,6 @@ pub fn check(
 ) -> ResolvedCalls {
     let mut resolved_calls = HashMap::new();
 
-    for sprite in document.sprites.values() {
-        let mut tcx = Context {
-            sprite: Some(sprite),
-            top_level_functions: &document.functions,
-            diagnostics,
-            variable_types: HashMap::new(),
-            resolved_calls: &mut resolved_calls,
-        };
-
-        for function in sprite.functions.values() {
-            check_function(function, &mut tcx);
-        }
-    }
-
     let mut tcx = Context {
         sprite: None,
         top_level_functions: &document.functions,
@@ -83,6 +69,14 @@ pub fn check(
         resolved_calls: &mut resolved_calls,
     };
 
+    for sprite in document.sprites.values() {
+        tcx.sprite = Some(sprite);
+        for function in sprite.functions.values() {
+            check_function(function, &mut tcx);
+        }
+    }
+
+    tcx.sprite = None;
     for function in document.functions.values() {
         if !function.is_builtin {
             check_function(function, &mut tcx);
