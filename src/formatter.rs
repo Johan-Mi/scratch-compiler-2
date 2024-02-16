@@ -84,10 +84,10 @@ impl Formatter {
         if token.kind() == TRIVIA {
             self.trivia(token.text());
         } else {
-            if matches!(token.kind(), COMMA | COLON)
-                && self.output.ends_with('\n')
-            {
-                self.output.pop();
+            if matches!(token.kind(), COMMA | COLON) {
+                while self.output.ends_with('\n') {
+                    self.output.pop();
+                }
             }
 
             self.indent();
