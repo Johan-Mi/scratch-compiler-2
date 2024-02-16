@@ -53,17 +53,14 @@ pub fn evaluate(
 
     match expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
-            if token
-                .parent()
-                .is_some_and(|it| it.kind() == SyntaxKind::SPRITE)
-            {
-                Ok(Value::Sprite {
+            match token.parent().map(|it| it.kind()) {
+                Some(SyntaxKind::SPRITE) => Ok(Value::Sprite {
                     name: token.to_string(),
-                })
-            } else {
-                error(
+                }),
+                Some(SyntaxKind::GENERICS) => Ok(Value::Ty(Ty::Generic(token))),
+                _ => error(
                     "user-defined variables are not supported at compile-time",
-                )
+                ),
             }
         }
         ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {

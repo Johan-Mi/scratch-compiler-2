@@ -2,8 +2,9 @@ use crate::{
     diagnostics::{primary, Diagnostics},
     function::ResolvedCalls,
     hir,
+    parser::SyntaxToken,
 };
-use rowan::{SyntaxToken, TextSize};
+use rowan::TextSize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt,
@@ -19,6 +20,7 @@ pub enum Ty {
     #[allow(clippy::enum_variant_names)]
     Ty,
     Var(Box<Self>),
+    Generic(SyntaxToken),
 }
 
 impl fmt::Display for Ty {
@@ -31,6 +33,7 @@ impl fmt::Display for Ty {
             Self::Sprite => write!(f, "Sprite"),
             Self::Ty => write!(f, "Type"),
             Self::Var(inner) => write!(f, "Var[{inner}]"),
+            Self::Generic(token) => write!(f, "{token}"),
         }
     }
 }
@@ -203,7 +206,7 @@ fn check_statement(
 }
 
 fn check_for(
-    variable: &Result<SyntaxToken<crate::parser::Lang>, ()>,
+    variable: &Result<SyntaxToken, ()>,
     times: &hir::Expression,
     body: &Result<hir::Block, ()>,
     tcx: &mut Context,
