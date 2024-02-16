@@ -53,7 +53,9 @@ impl Formatter {
             match child {
                 NodeOrToken::Node(node) => self.node(&node),
                 NodeOrToken::Token(token) => {
-                    if indented && matches!(token.kind(), RPAREN | RBRACE) {
+                    if indented
+                        && matches!(token.kind(), RPAREN | RBRACE | RBRACKET)
+                    {
                         self.indentation =
                             self.indentation.saturating_sub(INDENTATION_SIZE);
                         indented = false;
