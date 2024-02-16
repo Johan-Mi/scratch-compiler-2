@@ -102,6 +102,10 @@ impl Function {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
 
+    pub fn generics(&self) -> Option<Generics> {
+        rowan::ast::support::child(&self.syntax)
+    }
+
     pub fn parameters(&self) -> Option<FunctionParameters> {
         rowan::ast::support::child(&self.syntax)
     }
@@ -112,6 +116,17 @@ impl Function {
 
     pub fn body(&self) -> Option<Block> {
         rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(Generics: GENERICS);
+
+impl Generics {
+    pub fn iter(&self) -> impl Iterator<Item = SyntaxToken> {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(NodeOrToken::into_token)
+            .filter(|it| it.kind() == IDENTIFIER)
     }
 }
 
