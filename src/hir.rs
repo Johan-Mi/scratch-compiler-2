@@ -220,19 +220,6 @@ impl Function {
             is_inline: ast.kw_inline().is_some(),
         })
     }
-
-    pub fn can_be_called_with(
-        &self,
-        arguments: &[Argument],
-        tcx: &mut Context,
-    ) -> bool {
-        self.parameters.len() == arguments.len()
-            && std::iter::zip(&self.parameters, arguments).all(
-                |(parameter, argument)| {
-                    parameter.is_compatible_with(argument, tcx)
-                },
-            )
-    }
 }
 
 #[derive(Debug)]
@@ -280,21 +267,6 @@ impl Parameter {
                 span: ty_span,
             },
         })
-    }
-
-    fn is_compatible_with(
-        &self,
-        (argument_name, value): &Argument,
-        tcx: &mut Context,
-    ) -> bool {
-        self.external_name.as_deref() == argument_name.as_deref()
-            && match (&self.ty.node, value.ty(tcx)) {
-                (Ok(parameter_ty), Ok(argument_ty)) => {
-                    argument_ty.is_subtype_of(parameter_ty)
-                }
-                // A type error has already occured; don't let it cascade.
-                _ => true,
-            }
     }
 }
 

@@ -244,6 +244,38 @@ fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
         .unwrap_or(Ok(Ty::Unit))
 }
 
+impl hir::Function {
+    pub fn can_be_called_with(
+        &self,
+        arguments: &[hir::Argument],
+        tcx: &mut Context,
+    ) -> bool {
+        self.parameters.len() == arguments.len()
+            && std::iter::zip(&self.parameters, arguments).all(
+                |(parameter, argument)| {
+                    parameter.is_compatible_with(argument, tcx)
+                },
+            )
+    }
+}
+
+impl hir::Parameter {
+    fn is_compatible_with(
+        &self,
+        (argument_name, value): &hir::Argument,
+        tcx: &mut Context,
+    ) -> bool {
+        self.external_name.as_deref() == argument_name.as_deref()
+            && match (&self.ty.node, value.ty(tcx)) {
+                (Ok(parameter_ty), Ok(argument_ty)) => {
+                    argument_ty.is_subtype_of(parameter_ty)
+                }
+                // A type error has already occured; don't let it cascade.
+                _ => true,
+            }
+    }
+}
+
 pub struct Context<'a> {
     pub sprite: Option<&'a hir::Sprite>,
     pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
