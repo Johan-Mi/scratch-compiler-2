@@ -61,14 +61,17 @@ fn all_in_exact_scope_at(
                 .functions()
                 .filter_map(|func| func.name()),
         ),
-        FN => Box::new(
-            ast::Function::cast(scope)
-                .unwrap()
+        FN => {
+            let function = ast::Function::cast(scope).unwrap();
+            let generics =
+                function.generics().into_iter().flat_map(|it| it.iter());
+            let parameters = function
                 .parameters()
                 .into_iter()
                 .flat_map(|p| p.parameters())
-                .filter_map(|parameter| parameter.internal_name()),
-        ),
+                .filter_map(|parameter| parameter.internal_name());
+            Box::new(generics.chain(parameters))
+        }
         BLOCK => Box::new(
             ast::Block::cast(scope)
                 .unwrap()
