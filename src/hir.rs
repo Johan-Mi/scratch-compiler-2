@@ -143,6 +143,7 @@ impl Costume {
 #[derive(Debug)]
 pub struct Function {
     pub name: Spanned<String>,
+    pub generics: Option<Vec<SyntaxToken>>,
     pub parameters: Vec<Parameter>,
     pub return_ty: Spanned<Result<Ty>>,
     pub body: Block,
@@ -208,6 +209,7 @@ impl Function {
 
         Ok(Self {
             name,
+            generics: ast.generics().map(|it| it.iter().collect()),
             parameters,
             return_ty: Spanned {
                 node: return_ty,

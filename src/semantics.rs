@@ -20,6 +20,7 @@ struct SemanticVisitor<'a> {
 
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
+        self.check_generics(function);
         self.check_special_function(is_top_level, function);
         self.check_function_staging(function);
     }
@@ -118,6 +119,15 @@ impl SemanticVisitor<'_> {
                     [primary(span, "")],
                 );
             }
+        }
+    }
+
+    fn check_generics(&mut self, function: &hir::Function) {
+        if !function.is_builtin && function.generics.is_some() {
+            self.diagnostics.error(
+                "only builtin functions can use generics",
+                [primary(function.name.span, "")],
+            );
         }
     }
 }
