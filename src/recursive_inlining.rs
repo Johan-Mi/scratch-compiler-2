@@ -74,7 +74,11 @@ impl Visitor for CallGraphVisitor<'_> {
         if !matches!(expr.kind, ExpressionKind::FunctionCall { .. }) {
             return;
         };
-        let index = match self.resolved_calls[&expr.span.low()] {
+        let Some(function_ref) = self.resolved_calls.get(&expr.span.low())
+        else {
+            return;
+        };
+        let index = match function_ref {
             function::Ref::SpriteLocal(index) if !self.is_top_level => index,
             function::Ref::TopLevel(index) if self.is_top_level => index,
             _ => return,
