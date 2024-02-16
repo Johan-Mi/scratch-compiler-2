@@ -38,6 +38,7 @@ pub enum SyntaxKind {
     COSTUME_LIST,
     COSTUME,
     FN,
+    GENERICS,
     FUNCTION_PARAMETERS,
     PARAMETER,
     EXTERNAL_PARAMETER_NAME,
@@ -554,6 +555,9 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         }
         self.builder.start_node_at(checkpoint, FN.into());
         self.expect(IDENTIFIER);
+        if self.at(LBRACKET) {
+            self.parse_generics();
+        }
         if self.at(LPAREN) {
             self.parse_function_parameters();
         }
@@ -561,6 +565,16 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             self.parse_expression();
         }
         self.parse_block();
+        self.builder.finish_node();
+    }
+
+    fn parse_generics(&mut self) {
+        self.builder.start_node(GENERICS.into());
+        self.bump(); // LBRACKET
+        while !self.at(EOF) && !self.eat(RBRACKET) {
+            self.expect(IDENTIFIER);
+            self.eat(COMMA);
+        }
         self.builder.finish_node();
     }
 
