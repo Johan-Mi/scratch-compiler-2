@@ -63,7 +63,7 @@ impl Formatter {
                         matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
                             && token.kind() == LPAREN,
                     );
-                    if matches!(token.kind(), LPAREN | LBRACE) {
+                    if matches!(token.kind(), LPAREN | LBRACE | LBRACKET) {
                         self.indentation += INDENTATION_SIZE;
                         indented = true;
                     }
@@ -140,7 +140,7 @@ impl Formatter {
     fn leading_space(&mut self) {
         if self
             .output
-            .ends_with(|c: char| !c.is_whitespace() && c != '(')
+            .ends_with(|c: char| !c.is_whitespace() && !matches!(c, '(' | '['))
         {
             self.output.push(' ');
         }
@@ -148,6 +148,6 @@ impl Formatter {
 }
 
 fn token_wants_leading_space(kind: SyntaxKind, last: Option<u8>) -> bool {
-    !matches!(kind, RPAREN | COLON | COMMA)
+    !matches!(kind, RPAREN | RBRACKET | COLON | COMMA)
         && (kind, last) != (RBRACE, Some(b'{'))
 }
