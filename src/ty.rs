@@ -53,8 +53,12 @@ impl Ty {
     }
 
     pub fn has_runtime_repr(&self) -> bool {
-        matches!(self, Self::Num | Self::String | Self::Bool)
-            || self.is_zero_sized()
+        matches!(
+            self,
+            Self::Num | Self::String | Self::Bool
+            // Generics are limited to runtime types for now.
+            | Self::Generic(_)
+        ) || self.is_zero_sized()
     }
 }
 
