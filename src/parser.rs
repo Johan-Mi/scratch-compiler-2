@@ -66,6 +66,10 @@ pub enum SyntaxKind {
     LBRACE,
     #[token("}")]
     RBRACE,
+    #[token("[")]
+    LBRACKET,
+    #[token("]")]
+    RBRACKET,
     #[token("->")]
     ARROW,
     #[token(":")]
@@ -252,6 +256,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             LBRACE => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RBRACE) {
+                    self.parse_anything();
+                }
+            }
+            LBRACKET => {
+                self.bump();
+                while !self.at(EOF) && !self.eat(RBRACKET) {
                     self.parse_anything();
                 }
             }
