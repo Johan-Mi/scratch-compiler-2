@@ -39,15 +39,6 @@ impl fmt::Display for Ty {
 }
 
 impl Ty {
-    pub fn is_subtype_of(&self, other: &Self) -> bool {
-        //          v <: t
-        // ------   -----------
-        // t <: t   Var[v] <: t
-
-        self == other
-            || matches!(self, Self::Var(inner) if inner.is_subtype_of(other))
-    }
-
     pub fn is_zero_sized(&self) -> bool {
         *self == Self::Unit
     }
@@ -78,7 +69,7 @@ impl Ty {
         other: Self,
         constraints: &mut Constraints,
     ) -> bool {
-        self.is_subtype_of(&other)
+        *self == other
             || match (self, other) {
                 (_, Self::Generic(name)) => {
                     constraints.insert(name, self.clone());
@@ -136,7 +127,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
     if let (Ok(return_ty), Ok(actual_return_ty)) =
         (&function.return_ty.node, actual_return_ty)
     {
-        if !actual_return_ty.is_subtype_of(return_ty) {
+        if actual_return_ty != *return_ty {
             tcx.diagnostics.error(
                 "function has wrong return type",
                 [primary(
@@ -154,7 +145,7 @@ fn check_statement(
 ) -> Result<Ty, ()> {
     match statement {
         hir::Statement::Let { variable, value } => {
-            let ty = value.ty(tcx).map(Box::new).map(Ty::Var);
+            let ty = value.ty(tcx);
             tcx.variable_types.insert(variable.text_range().start(), ty);
             Ok(Ty::Unit)
         }
@@ -164,7 +155,7 @@ fn check_statement(
             else_,
         } => {
             if let Ok(condition_ty) = condition.ty(tcx) {
-                if !condition_ty.is_subtype_of(&Ty::Bool) {
+                if condition_ty != Ty::Bool {
                     tcx.diagnostics.error(
                         "`if` condition must be a `Bool`",
                         [primary(
@@ -184,7 +175,7 @@ fn check_statement(
         }
         hir::Statement::Repeat { times, body } => {
             if let Ok(times_ty) = times.ty(tcx) {
-                if !times_ty.is_subtype_of(&Ty::Num) {
+                if times_ty != Ty::Num {
                     tcx.diagnostics.error(
                         "repetition count must be a number",
                         [primary(
@@ -208,7 +199,7 @@ fn check_statement(
         hir::Statement::While { condition, body }
         | hir::Statement::Until { condition, body } => {
             if let Ok(condition_ty) = condition.ty(tcx) {
-                if !condition_ty.is_subtype_of(&Ty::Bool) {
+                if condition_ty != Ty::Bool {
                     let message =
                         if matches!(statement, hir::Statement::While { .. }) {
                             "`while` condition must be a `Bool`"
@@ -246,7 +237,7 @@ fn check_for(
     tcx: &mut Context,
 ) -> Ty {
     if let Ok(times_ty) = times.ty(tcx) {
-        if !times_ty.is_subtype_of(&Ty::Num) {
+        if times_ty != Ty::Num {
             tcx.diagnostics.error(
                 "repetition count must be a number",
                 [primary(
