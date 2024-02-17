@@ -27,6 +27,7 @@ fn format(source_code: String) -> String {
     let mut formatter = Formatter {
         output: String::with_capacity(capacity),
         indentation: 0,
+        newlines: 2,
     };
     formatter.node(&cst);
     formatter.finish()
@@ -35,14 +36,15 @@ fn format(source_code: String) -> String {
 struct Formatter {
     output: String,
     indentation: usize,
+    newlines: u8,
 }
 
 impl Formatter {
     fn finish(mut self) -> String {
-        if self.output.ends_with("\n\n") {
-            self.output.pop();
-        } else if self.output.ends_with(|c: char| c != '\n') {
-            self.output.push('\n');
+        match self.newlines {
+            0 => self.output.push('\n'),
+            2 => _ = self.output.pop(),
+            _ => {}
         }
         self.output
     }
@@ -85,12 +87,13 @@ impl Formatter {
             self.trivia(token.text());
         } else {
             if matches!(token.kind(), COMMA | COLON) {
-                while self.output.ends_with('\n') {
-                    self.output.pop();
-                }
+                self.output
+                    .truncate(self.output.len() - usize::from(self.newlines));
+                self.newlines = 0;
             }
 
             self.indent();
+            self.newlines = 0;
             if !immediately
                 && token_wants_leading_space(
                     token.kind(),
@@ -104,7 +107,7 @@ impl Formatter {
     }
 
     fn indent(&mut self) {
-        if self.output.ends_with('\n') {
+        if self.newlines != 0 {
             self.output
                 .extend(std::iter::repeat(' ').take(self.indentation));
         }
@@ -127,6 +130,7 @@ impl Formatter {
                 }
                 self.output.push_str(comment);
                 text = after;
+                self.newlines = 0;
             } else {
                 text = text.trim_start_matches(|c: char| {
                     c.is_whitespace() && c != '\n'
@@ -136,8 +140,9 @@ impl Formatter {
     }
 
     fn newline(&mut self) {
-        if !self.output.is_empty() && !self.output.ends_with("\n\n") {
+        if self.newlines < 2 {
             self.output.push('\n');
+            self.newlines += 1;
         }
     }
 
