@@ -28,6 +28,7 @@ fn format(source_code: String) -> String {
         output: String::with_capacity(capacity),
         indentation: 0,
         newlines: 2,
+        comment: false,
     };
     formatter.node(&cst);
     formatter.finish()
@@ -37,6 +38,7 @@ struct Formatter {
     output: String,
     indentation: usize,
     newlines: u8,
+    comment: bool,
 }
 
 impl Formatter {
@@ -87,13 +89,12 @@ impl Formatter {
             self.trivia(token.text());
         } else {
             if matches!(token.kind(), COMMA | COLON) {
-                self.output
-                    .truncate(self.output.len() - usize::from(self.newlines));
-                self.newlines = 0;
+                self.remove_newlines();
             }
 
             self.indent();
             self.newlines = 0;
+            self.comment = false;
             if !immediately
                 && token_wants_leading_space(
                     token.kind(),
@@ -104,6 +105,12 @@ impl Formatter {
             }
             self.output.push_str(token.text());
         }
+    }
+
+    fn remove_newlines(&mut self) {
+        let to_remove = usize::from(self.newlines - u8::from(self.comment));
+        self.output.truncate(self.output.len() - to_remove);
+        self.newlines = u8::from(self.comment);
     }
 
     fn indent(&mut self) {
@@ -131,6 +138,7 @@ impl Formatter {
                 self.output.push_str(comment);
                 text = after;
                 self.newlines = 0;
+                self.comment = true;
             } else {
                 text = text.trim_start_matches(|c: char| {
                     c.is_whitespace() && c != '\n'
