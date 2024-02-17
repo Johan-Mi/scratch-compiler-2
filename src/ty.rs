@@ -60,6 +60,36 @@ impl Ty {
             | Self::Generic(_)
         ) || self.is_zero_sized()
     }
+
+    fn apply_constraints(&mut self, constraints: &Constraints) {
+        match self {
+            Self::Generic(generic) => {
+                if let Some(ty) = constraints.get(generic) {
+                    *self = ty.clone();
+                }
+            }
+            Self::Var(inner) => inner.apply_constraints(constraints),
+            _ => {}
+        }
+    }
+
+    fn pattern_match(
+        &self,
+        other: Self,
+        constraints: &mut Constraints,
+    ) -> bool {
+        self.is_subtype_of(&other)
+            || match (self, other) {
+                (_, Self::Generic(name)) => {
+                    constraints.insert(name, self.clone());
+                    true
+                }
+                (Self::Var(this), Self::Var(other)) => {
+                    this.pattern_match(*other, constraints)
+                }
+                _ => false,
+            }
+    }
 }
 
 pub fn check(
@@ -245,17 +275,27 @@ fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
 }
 
 impl hir::Function {
-    pub fn can_be_called_with(
+    pub fn call_with(
         &self,
         arguments: &[hir::Argument],
         tcx: &mut Context,
-    ) -> bool {
-        self.parameters.len() == arguments.len()
-            && std::iter::zip(&self.parameters, arguments).all(
-                |(parameter, argument)| {
-                    parameter.is_compatible_with(argument, tcx)
-                },
-            )
+    ) -> Option<Result<Ty, ()>> {
+        if self.parameters.len() != arguments.len() {
+            return None;
+        }
+        let mut constraints = Constraints::new();
+        if !std::iter::zip(&self.parameters, arguments).all(
+            |(parameter, argument)| {
+                parameter.is_compatible_with(argument, &mut constraints, tcx)
+            },
+        ) {
+            return None;
+        }
+
+        Some(self.return_ty.node.clone().map(|mut return_ty| {
+            return_ty.apply_constraints(&constraints);
+            return_ty
+        }))
     }
 }
 
@@ -263,18 +303,23 @@ impl hir::Parameter {
     fn is_compatible_with(
         &self,
         (argument_name, value): &hir::Argument,
+        constraints: &mut Constraints,
         tcx: &mut Context,
     ) -> bool {
         self.external_name.as_deref() == argument_name.as_deref()
             && match (&self.ty.node, value.ty(tcx)) {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
-                    argument_ty.is_subtype_of(parameter_ty)
+                    let mut parameter_ty = parameter_ty.clone();
+                    parameter_ty.apply_constraints(constraints);
+                    argument_ty.pattern_match(parameter_ty, constraints)
                 }
                 // A type error has already occured; don't let it cascade.
                 _ => true,
             }
     }
 }
+
+type Constraints = HashMap<SyntaxToken, Ty>;
 
 pub struct Context<'a> {
     pub sprite: Option<&'a hir::Sprite>,

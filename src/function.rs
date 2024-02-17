@@ -1,7 +1,7 @@
 use crate::{
     diagnostics::primary,
     hir::{Argument, Function},
-    ty::Context,
+    ty::{Context, Ty},
 };
 use codemap::{Pos, Span};
 use std::collections::HashMap;
@@ -34,7 +34,7 @@ pub fn resolve(
     arguments: &[Argument],
     span: Span,
     tcx: &mut Context,
-) -> Result<Ref> {
+) -> Result<(Ref, Result<Ty>)> {
     let sprite_local_overloads = tcx
         .sprite
         .iter()
@@ -52,22 +52,15 @@ pub fn resolve(
         .chain(top_level_overloads)
         .collect::<Vec<_>>();
 
-    let viable_overloads = all_overloads
+    let mut viable_overloads = all_overloads
         .iter()
         .copied()
-        .filter(|&overload| {
-            tcx.function(overload).can_be_called_with(arguments, tcx)
+        .filter_map(|overload| {
+            Some(overload).zip(tcx.function(overload).call_with(arguments, tcx))
         })
         .collect::<Vec<_>>();
 
-    let spans = |tcx: &Context, overloads: &[Ref]| {
-        overloads
-            .iter()
-            .map(|&overload| primary(tcx.function(overload).name.span, ""))
-            .collect::<Vec<_>>()
-    };
-
-    match *viable_overloads {
+    match &*viable_overloads {
         [] => {
             if all_overloads.is_empty() {
                 tcx.diagnostics
@@ -78,23 +71,33 @@ pub fn resolve(
                     "function call has no viable overload",
                     [primary(span, "")],
                 );
+                let spans = all_overloads
+                    .iter()
+                    .map(|&overload| {
+                        primary(tcx.function(overload).name.span, "")
+                    })
+                    .collect::<Vec<_>>();
                 tcx.diagnostics.note(
                     "following are all of the non-viable overloads:",
-                    spans(tcx, &all_overloads),
+                    spans,
                 );
             }
             Err(())
         }
-        [overload] => Ok(overload),
+        [_] => Ok(viable_overloads.pop().unwrap()),
         _ => {
             tcx.diagnostics.error(
                 "function call has more than one viable overload",
                 [primary(span, "")],
             );
-            tcx.diagnostics.note(
-                "following are all of the viable overloads:",
-                spans(tcx, &viable_overloads),
-            );
+            let spans = viable_overloads
+                .iter()
+                .map(|&(overload, _)| {
+                    primary(tcx.function(overload).name.span, "")
+                })
+                .collect::<Vec<_>>();
+            tcx.diagnostics
+                .note("following are all of the viable overloads:", spans);
             Err(())
         }
     }

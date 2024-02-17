@@ -611,7 +611,7 @@ impl Expression {
                 arguments,
             } => {
                 let name = desugar_function_call_name(name_or_operator);
-                let resolved = function::resolve(
+                let (resolved, return_ty) = function::resolve(
                     name,
                     arguments,
                     self.span.subspan(
@@ -621,7 +621,7 @@ impl Expression {
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
-                tcx.function(resolved).return_ty.node.clone()
+                return_ty
             }
             ExpressionKind::Error => Err(()),
         }
