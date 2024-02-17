@@ -1,6 +1,6 @@
 #![deny(unsafe_code)]
 #![warn(clippy::nursery, clippy::pedantic)]
-#![allow(clippy::enum_glob_use)]
+#![allow(clippy::enum_glob_use, clippy::option_if_let_else)]
 
 mod ast;
 mod builtins;
