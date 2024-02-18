@@ -68,8 +68,10 @@ impl Formatter {
                         &token,
                         matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
                             && token.kind() == LPAREN
-                            || node.kind() == GENERICS
-                                && token.kind() == LBRACKET,
+                            || matches!(
+                                node.kind(),
+                                GENERICS | TYPE_PARAMETERS
+                            ) && token.kind() == LBRACKET,
                     );
                     if matches!(token.kind(), LPAREN | LBRACE | LBRACKET) {
                         self.indentation += INDENTATION_SIZE;
