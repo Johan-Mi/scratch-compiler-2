@@ -2,6 +2,7 @@ use crate::{
     diagnostics::{primary, Diagnostics},
     function::ResolvedCalls,
     hir,
+    name::{self, Name},
     parser::SyntaxToken,
 };
 use rowan::TextSize;
@@ -80,6 +81,24 @@ impl Ty {
                 }
                 _ => false,
             }
+    }
+}
+
+#[derive(Debug)]
+pub enum Generic {
+    Var,
+}
+
+impl TryFrom<hir::Expression> for Generic {
+    type Error = ();
+
+    fn try_from(expr: hir::Expression) -> Result<Self, ()> {
+        match expr.kind {
+            hir::ExpressionKind::Variable(Name::Builtin(
+                name::Builtin::Var,
+            )) => Ok(Self::Var),
+            _ => Err(()),
+        }
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
     function,
     name::{self, Name},
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
-    ty::{Context, Ty},
+    ty::{self, Context, Ty},
 };
 use codemap::{File, Span, Spanned};
 use rowan::{ast::AstNode, TextRange, TextSize};
@@ -459,6 +459,10 @@ pub enum ExpressionKind {
         arguments: Vec<Argument>,
     },
     Lvalue(TextSize),
+    GenericTypeInstantiation {
+        generic: ty::Generic,
+        arguments: Vec<Expression>,
+    },
     Error,
 }
 
@@ -568,6 +572,13 @@ impl Expression {
                 file,
                 diagnostics,
             ),
+            ast::Expression::GenericTypeInstantiation(instantiation) => {
+                lower_generic_type_instantiation(
+                    instantiation,
+                    file,
+                    diagnostics,
+                )
+            }
         };
 
         Self {
@@ -639,6 +650,7 @@ impl Expression {
             ExpressionKind::Lvalue(var) => {
                 tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
             }
+            ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
             ExpressionKind::Error => Err(()),
         }
     }
@@ -662,6 +674,31 @@ fn lower_lvalue(
         return ExpressionKind::Error;
     };
     ExpressionKind::Lvalue(var.text_range().start())
+}
+
+fn lower_generic_type_instantiation(
+    instantiation: &ast::GenericTypeInstantiation,
+    file: &File,
+    diagnostics: &mut Diagnostics,
+) -> ExpressionKind {
+    let generic =
+        Expression::lower(&instantiation.generic(), file, diagnostics);
+    let span = generic.span;
+    let Ok(generic) = ty::Generic::try_from(generic) else {
+        diagnostics.error(
+            "type parameters can only be applied to generic types",
+            [primary(span, "this is not a generic type")],
+        );
+        return ExpressionKind::Error;
+    };
+
+    let arguments = instantiation
+        .type_parameters()
+        .iter()
+        .map(|it| Expression::lower(&it, file, diagnostics))
+        .collect::<Vec<_>>();
+
+    ExpressionKind::GenericTypeInstantiation { generic, arguments }
 }
 
 fn lower_literal(lit: &ast::Literal) -> ExpressionKind {

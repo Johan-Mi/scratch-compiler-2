@@ -97,6 +97,11 @@ pub trait Visitor {
                     self.traverse_expression(arg);
                 }
             }
+            ExpressionKind::GenericTypeInstantiation { arguments, .. } => {
+                for arg in arguments {
+                    self.traverse_expression(arg);
+                }
+            }
         }
     }
 }

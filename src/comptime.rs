@@ -80,6 +80,7 @@ pub fn evaluate(
         ExpressionKind::Lvalue(_) => {
             error("mutable variables are not supported at compile-time")
         }
+        ExpressionKind::GenericTypeInstantiation { .. } => todo!(),
         ExpressionKind::Error => Err(()),
     }
 }

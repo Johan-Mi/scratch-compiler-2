@@ -323,6 +323,7 @@ pub enum Expression {
     NamedArgument(NamedArgument),
     Literal(Literal),
     Lvalue(Lvalue),
+    GenericTypeInstantiation(GenericTypeInstantiation),
 }
 
 impl AstNode for Expression {
@@ -336,6 +337,7 @@ impl AstNode for Expression {
             || NamedArgument::can_cast(kind)
             || Literal::can_cast(kind)
             || Lvalue::can_cast(kind)
+            || GenericTypeInstantiation::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
@@ -349,6 +351,9 @@ impl AstNode for Expression {
             NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
             LITERAL => AstNode::cast(node).map(Self::Literal),
             LVALUE => AstNode::cast(node).map(Self::Lvalue),
+            GENERIC_TYPE_INSTANTIATION => {
+                AstNode::cast(node).map(Self::GenericTypeInstantiation)
+            }
             _ => None,
         }
     }
@@ -362,6 +367,7 @@ impl AstNode for Expression {
             Self::NamedArgument(inner) => &inner.syntax,
             Self::Literal(inner) => &inner.syntax,
             Self::Lvalue(inner) => &inner.syntax,
+            Self::GenericTypeInstantiation(inner) => &inner.syntax,
         }
     }
 }
@@ -449,5 +455,25 @@ ast_node!(Lvalue: LVALUE);
 impl Lvalue {
     pub fn inner(&self) -> Option<Expression> {
         rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(GenericTypeInstantiation: GENERIC_TYPE_INSTANTIATION);
+
+impl GenericTypeInstantiation {
+    pub fn generic(&self) -> Expression {
+        rowan::ast::support::child(&self.syntax).unwrap()
+    }
+
+    pub fn type_parameters(&self) -> TypeParameters {
+        rowan::ast::support::child(&self.syntax).unwrap()
+    }
+}
+
+ast_node!(TypeParameters: TYPE_PARAMETERS);
+
+impl TypeParameters {
+    pub fn iter(&self) -> impl Iterator<Item = Expression> {
+        rowan::ast::support::children(&self.syntax)
     }
 }
