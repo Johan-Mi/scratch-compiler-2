@@ -321,7 +321,8 @@ impl hir::Parameter {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
                     let mut parameter_ty = parameter_ty.clone();
                     parameter_ty.apply_constraints(constraints);
-                    argument_ty.pattern_match(parameter_ty, constraints)
+                    (self.is_comptime || parameter_ty.has_runtime_repr())
+                        && argument_ty.pattern_match(parameter_ty, constraints)
                 }
                 // A type error has already occured; don't let it cascade.
                 _ => true,
