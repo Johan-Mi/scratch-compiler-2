@@ -155,10 +155,9 @@ impl Formatter {
     }
 
     fn leading_space(&mut self) {
-        if self
-            .output
-            .ends_with(|c: char| !c.is_whitespace() && !matches!(c, '(' | '['))
-        {
+        if self.output.ends_with(|c: char| {
+            !c.is_whitespace() && !matches!(c, '(' | '[' | '&')
+        }) {
             self.output.push(' ');
         }
     }
