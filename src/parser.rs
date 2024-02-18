@@ -95,6 +95,8 @@ pub enum SyntaxKind {
     EQ_EQ,
     #[token(">")]
     GT,
+    #[token("&")]
+    AMPERSAND,
 
     #[token("sprite")]
     KW_SPRITE,
