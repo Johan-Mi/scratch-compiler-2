@@ -90,6 +90,7 @@ pub trait Visitor {
         match &expr.kind {
             ExpressionKind::Variable(_)
             | ExpressionKind::Imm(_)
+            | ExpressionKind::Lvalue(_)
             | ExpressionKind::Error => {}
             ExpressionKind::FunctionCall { arguments, .. } => {
                 for (_, arg) in arguments {

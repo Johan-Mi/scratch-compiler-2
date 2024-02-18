@@ -275,6 +275,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
 
             variable.map(Value::Var)
         }
+        hir::ExpressionKind::Lvalue(_) => todo!(),
         hir::ExpressionKind::Error => unreachable!(),
     }
 }

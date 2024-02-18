@@ -74,6 +74,9 @@ pub fn evaluate(
         ExpressionKind::FunctionCall { .. } => {
             error("function calls are not supported at compile-time")
         }
+        ExpressionKind::Lvalue(_) => {
+            error("mutable variables are not supported at compile-time")
+        }
         ExpressionKind::Error => Err(()),
     }
 }

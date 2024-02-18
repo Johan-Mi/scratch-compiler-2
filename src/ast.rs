@@ -444,3 +444,9 @@ impl NamedArgument {
 ast_node!(Literal: LITERAL);
 
 ast_node!(Lvalue: LVALUE);
+
+impl Lvalue {
+    pub fn inner(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}

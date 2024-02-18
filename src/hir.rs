@@ -11,7 +11,7 @@ use crate::{
     ty::{Context, Ty},
 };
 use codemap::{File, Span, Spanned};
-use rowan::{ast::AstNode, TextRange};
+use rowan::{ast::AstNode, TextRange, TextSize};
 use std::collections::{BTreeMap, HashMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
@@ -458,6 +458,7 @@ pub enum ExpressionKind {
         name_or_operator: SyntaxToken,
         arguments: Vec<Argument>,
     },
+    Lvalue(TextSize),
     Error,
 }
 
@@ -561,12 +562,20 @@ impl Expression {
                 ExpressionKind::Error
             }
             ast::Expression::Literal(lit) => lower_literal(lit),
-            ast::Expression::Lvalue(_) => {
-                diagnostics.error(
-                    "mutable variables are not supported yet",
-                    [primary(span(file, ast.syntax().text_range()), "")],
-                );
-                ExpressionKind::Error
+            ast::Expression::Lvalue(lvalue) => 'block: {
+                let Some(inner) = lvalue.inner() else {
+                    break 'block ExpressionKind::Error;
+                };
+                let inner = Self::lower(&inner, file, diagnostics);
+                let ExpressionKind::Variable(Name::User(var)) = inner.kind
+                else {
+                    diagnostics.error(
+                        "`&` can only be applied to variables declared with `let`",
+                        [primary(span(file, ast.syntax().text_range()), "")],
+                    );
+                    break 'block ExpressionKind::Error;
+                };
+                ExpressionKind::Lvalue(var.text_range().start())
             }
         };
 
@@ -629,6 +638,9 @@ impl Expression {
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
                 return_ty
+            }
+            ExpressionKind::Lvalue(var) => {
+                tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
             }
             ExpressionKind::Error => Err(()),
         }
