@@ -640,6 +640,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             match self.peek() {
                 KW_INLINE | KW_FN => self.parse_function(),
                 KW_COSTUMES => self.parse_costume_list(),
+                KW_LET => self.parse_let(),
                 EOF | KW_SPRITE => {
                     let mut labels = vec![primary(kw_sprite_span, "")];
                     if let Some(lbrace_span) = lbrace_span {
@@ -660,6 +661,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
+            KW_LET => self.parse_let(),
             _ => self.error(),
         }
     }
