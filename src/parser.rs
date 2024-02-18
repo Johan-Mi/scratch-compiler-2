@@ -59,6 +59,8 @@ pub enum SyntaxKind {
     BINARY_EXPRESSION,
     LITERAL,
     LVALUE,
+    GENERIC_TYPE_INSTANTIATION,
+    TYPE_PARAMETERS,
 
     #[token("(")]
     LPAREN,
@@ -348,6 +350,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     fn parse_recursive_expression(&mut self, left: SyntaxKind) {
         let checkpoint = self.builder.checkpoint();
         self.parse_atom();
+        while self.at(LBRACKET) {
+            self.builder
+                .start_node_at(checkpoint, GENERIC_TYPE_INSTANTIATION.into());
+            self.parse_type_parameters();
+            self.builder.finish_node();
+        }
 
         loop {
             let right = self.peek();
@@ -360,6 +368,16 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             self.parse_recursive_expression(right);
             self.builder.finish_node();
         }
+    }
+
+    fn parse_type_parameters(&mut self) {
+        self.builder.start_node(TYPE_PARAMETERS.into());
+        self.bump(); // LBRACKET
+        while !self.at(EOF) && !self.eat(RBRACKET) {
+            self.parse_expression();
+            self.eat(COMMA);
+        }
+        self.builder.finish_node();
     }
 
     fn parse_function_parameters(&mut self) {
