@@ -58,6 +58,7 @@ pub enum SyntaxKind {
     PARENTHESIZED_EXPRESSION,
     BINARY_EXPRESSION,
     LITERAL,
+    LVALUE,
 
     #[token("(")]
     LPAREN,
@@ -328,6 +329,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             NUMBER | STRING | KW_FALSE | KW_TRUE => {
                 self.builder.start_node(LITERAL.into());
                 self.bump();
+                self.builder.finish_node();
+            }
+            AMPERSAND => {
+                self.builder.start_node(LVALUE.into());
+                self.bump();
+                self.parse_atom();
                 self.builder.finish_node();
             }
             _ => self.error(),

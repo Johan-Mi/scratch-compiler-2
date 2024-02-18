@@ -322,6 +322,7 @@ pub enum Expression {
     BinaryOperation(BinaryOperation),
     NamedArgument(NamedArgument),
     Literal(Literal),
+    Lvalue(Lvalue),
 }
 
 impl AstNode for Expression {
@@ -346,6 +347,7 @@ impl AstNode for Expression {
             BINARY_EXPRESSION => AstNode::cast(node).map(Self::BinaryOperation),
             NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
             LITERAL => AstNode::cast(node).map(Self::Literal),
+            LVALUE => AstNode::cast(node).map(Self::Lvalue),
             _ => None,
         }
     }
@@ -358,6 +360,7 @@ impl AstNode for Expression {
             Self::Parenthesized(inner) => &inner.syntax,
             Self::NamedArgument(inner) => &inner.syntax,
             Self::Literal(inner) => &inner.syntax,
+            Self::Lvalue(inner) => &inner.syntax,
         }
     }
 }
@@ -439,3 +442,5 @@ impl NamedArgument {
 }
 
 ast_node!(Literal: LITERAL);
+
+ast_node!(Lvalue: LVALUE);

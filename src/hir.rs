@@ -561,6 +561,13 @@ impl Expression {
                 ExpressionKind::Error
             }
             ast::Expression::Literal(lit) => lower_literal(lit),
+            ast::Expression::Lvalue(_) => {
+                diagnostics.error(
+                    "mutable variables are not supported yet",
+                    [primary(span(file, ast.syntax().text_range()), "")],
+                );
+                ExpressionKind::Error
+            }
         };
 
         Self {
