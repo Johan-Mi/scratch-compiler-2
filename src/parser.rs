@@ -412,6 +412,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             self.builder.start_node(EXTERNAL_PARAMETER_NAME.into());
             self.bump();
             self.builder.finish_node();
+            self.eat(KW_COMPTIME);
             if !self.at(COLON) {
                 self.expect(IDENTIFIER);
             }
