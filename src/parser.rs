@@ -129,6 +129,8 @@ pub enum SyntaxKind {
     KW_UNTIL,
     #[token("for")]
     KW_FOR,
+    #[token("comptime")]
+    KW_COMPTIME,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
