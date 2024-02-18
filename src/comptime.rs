@@ -3,7 +3,7 @@ use crate::{
     hir::{Expression, ExpressionKind},
     name::{Builtin, Name},
     parser::SyntaxKind,
-    ty::Ty,
+    ty::{self, Ty},
 };
 use std::fmt;
 
@@ -80,7 +80,35 @@ pub fn evaluate(
         ExpressionKind::Lvalue(_) => {
             error("mutable variables are not supported at compile-time")
         }
-        ExpressionKind::GenericTypeInstantiation { .. } => todo!(),
+        ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
+            let ty::Generic::Var = generic;
+
+            let arg_count = arguments.len();
+            let Ok([arg]) = <[Expression; 1]>::try_from(arguments) else {
+                diagnostics.error(
+                    "wrong number of arguments for generic type `Var`",
+                    [primary(
+                        expr.span,
+                        format!("expected 1 argument, got {arg_count}",),
+                    )],
+                );
+                return Err(());
+            };
+
+            let arg = evaluate(arg, diagnostics)?;
+            let Value::Ty(ty) = arg else {
+                diagnostics.error(
+                    "type mismatch for argument of generic type `Var`",
+                    [primary(
+                        expr.span,
+                        format!("expected `Type`, got `{}`", arg.ty()),
+                    )],
+                );
+                return Err(());
+            };
+
+            Ok(Value::Ty(Ty::Var(Box::new(ty))))
+        }
         ExpressionKind::Error => Err(()),
     }
 }
