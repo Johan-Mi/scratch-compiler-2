@@ -335,6 +335,7 @@ impl AstNode for Expression {
             || BinaryOperation::can_cast(kind)
             || NamedArgument::can_cast(kind)
             || Literal::can_cast(kind)
+            || Lvalue::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
