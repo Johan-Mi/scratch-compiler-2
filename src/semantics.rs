@@ -108,6 +108,7 @@ impl SemanticVisitor<'_> {
         for ty in function
             .parameters
             .iter()
+            .filter(|param| !param.is_comptime)
             .map(|param| &param.ty)
             .chain([&function.return_ty])
         {

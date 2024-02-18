@@ -227,7 +227,7 @@ pub struct Parameter {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
     pub ty: Spanned<Result<Ty>>,
-    is_comptime: bool,
+    pub is_comptime: bool,
 }
 
 impl Parameter {
