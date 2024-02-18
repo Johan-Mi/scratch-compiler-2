@@ -562,21 +562,12 @@ impl Expression {
                 ExpressionKind::Error
             }
             ast::Expression::Literal(lit) => lower_literal(lit),
-            ast::Expression::Lvalue(lvalue) => 'block: {
-                let Some(inner) = lvalue.inner() else {
-                    break 'block ExpressionKind::Error;
-                };
-                let inner = Self::lower(&inner, file, diagnostics);
-                let ExpressionKind::Variable(Name::User(var)) = inner.kind
-                else {
-                    diagnostics.error(
-                        "`&` can only be applied to variables declared with `let`",
-                        [primary(span(file, ast.syntax().text_range()), "")],
-                    );
-                    break 'block ExpressionKind::Error;
-                };
-                ExpressionKind::Lvalue(var.text_range().start())
-            }
+            ast::Expression::Lvalue(lvalue) => lower_lvalue(
+                lvalue,
+                ast.syntax().text_range(),
+                file,
+                diagnostics,
+            ),
         };
 
         Self {
@@ -651,6 +642,26 @@ impl Expression {
             ExpressionKind::Error => Err(()),
         }
     }
+}
+
+fn lower_lvalue(
+    lvalue: &ast::Lvalue,
+    text_range: TextRange,
+    file: &File,
+    diagnostics: &mut Diagnostics,
+) -> ExpressionKind {
+    let Some(inner) = lvalue.inner() else {
+        return ExpressionKind::Error;
+    };
+    let inner = Expression::lower(&inner, file, diagnostics);
+    let ExpressionKind::Variable(Name::User(var)) = inner.kind else {
+        diagnostics.error(
+            "`&` can only be applied to variables declared with `let`",
+            [primary(span(file, text_range), "")],
+        );
+        return ExpressionKind::Error;
+    };
+    ExpressionKind::Lvalue(var.text_range().start())
 }
 
 fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
