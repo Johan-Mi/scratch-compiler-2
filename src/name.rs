@@ -16,6 +16,7 @@ pub enum Builtin {
     Num,
     String,
     Bool,
+    Var,
     Type,
 }
 
@@ -26,6 +27,7 @@ impl Builtin {
             "Num" => Some(Self::Num),
             "String" => Some(Self::String),
             "Bool" => Some(Self::Bool),
+            "Var" => Some(Self::Var),
             "Type" => Some(Self::Type),
             _ => None,
         }

@@ -620,6 +620,12 @@ impl Expression {
                 | name::Builtin::String
                 | name::Builtin::Bool
                 | name::Builtin::Type => Ok(Ty::Ty),
+                name::Builtin::Var => {
+                    tcx.diagnostics.error(
+                        "generic type `Var` must have one type parameter applied",
+                        [primary(self.span, "")]);
+                    Err(())
+                }
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::FunctionCall {

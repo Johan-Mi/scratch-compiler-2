@@ -232,6 +232,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 | name::Builtin::Num
                 | name::Builtin::String
                 | name::Builtin::Bool
+                | name::Builtin::Var
                 | name::Builtin::Type => unreachable!(),
             }
         }

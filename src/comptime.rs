@@ -68,6 +68,9 @@ pub fn evaluate(
             Builtin::Num => Ok(Value::Ty(Ty::Num)),
             Builtin::String => Ok(Value::Ty(Ty::String)),
             Builtin::Bool => Ok(Value::Ty(Ty::Bool)),
+            Builtin::Var => {
+                error("generic type `Var` must have one type parameter applied")
+            }
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
