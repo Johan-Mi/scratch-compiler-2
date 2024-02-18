@@ -249,6 +249,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
+            KW_LET => self.parse_let(),
             KW_IF => self.parse_if(),
             KW_REPEAT => self.parse_repeat(),
             KW_FOREVER => self.parse_forever(),
