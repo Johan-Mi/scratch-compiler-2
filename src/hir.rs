@@ -227,6 +227,7 @@ pub struct Parameter {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
     pub ty: Spanned<Result<Ty>>,
+    is_comptime: bool,
 }
 
 impl Parameter {
@@ -266,6 +267,7 @@ impl Parameter {
                 node: ty,
                 span: ty_span,
             },
+            is_comptime: ast.is_comptime(),
         })
     }
 }

@@ -152,6 +152,10 @@ impl Parameter {
     pub fn ty(&self) -> Option<Expression> {
         rowan::ast::support::child(&self.syntax)
     }
+
+    pub fn is_comptime(&self) -> bool {
+        rowan::ast::support::token(&self.syntax, KW_COMPTIME).is_some()
+    }
 }
 
 ast_node!(ExternalParameterName: EXTERNAL_PARAMETER_NAME);
