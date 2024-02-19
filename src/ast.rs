@@ -328,6 +328,7 @@ pub enum Expression {
     Literal(Literal),
     Lvalue(Lvalue),
     GenericTypeInstantiation(GenericTypeInstantiation),
+    ListLiteral(ListLiteral),
 }
 
 impl AstNode for Expression {
@@ -342,6 +343,7 @@ impl AstNode for Expression {
             || Literal::can_cast(kind)
             || Lvalue::can_cast(kind)
             || GenericTypeInstantiation::can_cast(kind)
+            || ListLiteral::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
@@ -358,6 +360,7 @@ impl AstNode for Expression {
             GENERIC_TYPE_INSTANTIATION => {
                 AstNode::cast(node).map(Self::GenericTypeInstantiation)
             }
+            LIST_LITERAL => AstNode::cast(node).map(Self::ListLiteral),
             _ => None,
         }
     }
@@ -372,6 +375,7 @@ impl AstNode for Expression {
             Self::Literal(inner) => &inner.syntax,
             Self::Lvalue(inner) => &inner.syntax,
             Self::GenericTypeInstantiation(inner) => &inner.syntax,
+            Self::ListLiteral(inner) => &inner.syntax,
         }
     }
 }
@@ -481,3 +485,5 @@ impl TypeParameters {
         rowan::ast::support::children(&self.syntax)
     }
 }
+
+ast_node!(ListLiteral: LIST_LITERAL);

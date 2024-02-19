@@ -581,6 +581,13 @@ impl Expression {
                     diagnostics,
                 )
             }
+            ast::Expression::ListLiteral(list) => {
+                diagnostics.error(
+                    "list literals are not implemented yet",
+                    [primary(span(file, list.syntax().text_range()), "")],
+                );
+                ExpressionKind::Error
+            }
         };
 
         Self {
