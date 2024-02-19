@@ -228,6 +228,7 @@ pub struct Parameter {
     pub internal_name: SyntaxToken,
     pub ty: Spanned<Result<Ty>>,
     pub is_comptime: bool,
+    pub span: Span,
 }
 
 impl Parameter {
@@ -268,6 +269,7 @@ impl Parameter {
                 span: ty_span,
             },
             is_comptime: ast.is_comptime(),
+            span: span(file, ast.syntax().text_range()),
         })
     }
 }
@@ -639,7 +641,13 @@ impl Expression {
                     if param.is_comptime && !comptime::is_known(arg) {
                         tcx.diagnostics.error(
                             "function argument is not comptime-known",
-                            [primary(arg.span, "")],
+                            [
+                                primary(arg.span, ""),
+                                secondary(
+                                    param.span,
+                                    "comptime parameter declared here",
+                                ),
+                            ],
                         );
                     }
                 }
