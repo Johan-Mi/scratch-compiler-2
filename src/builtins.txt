@@ -1,3 +1,5 @@
+fn set[T](_ comptime var: Var[T], _ value: T) {}
+
 fn add(_ lhs: Num, _ rhs: Num) -> Num {}
 fn sub(_ lhs: Num, _ rhs: Num) -> Num {}
 fn mul(_ lhs: Num, _ rhs: Num) -> Num {}
