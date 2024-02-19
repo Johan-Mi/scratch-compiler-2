@@ -647,6 +647,19 @@ impl Expression {
                     tcx,
                 )?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
+
+                for (param, (_, arg)) in std::iter::zip(
+                    &tcx.function(resolved).parameters,
+                    arguments,
+                ) {
+                    if param.is_comptime && !comptime::is_known(arg) {
+                        tcx.diagnostics.error(
+                            "function argument is not comptime-known",
+                            [primary(arg.span, "")],
+                        );
+                    }
+                }
+
                 return_ty
             }
             ExpressionKind::Lvalue(var) => {

@@ -112,3 +112,10 @@ pub fn evaluate(
         ExpressionKind::Error => Err(()),
     }
 }
+
+pub const fn is_known(expr: &Expression) -> bool {
+    matches!(
+        expr.kind,
+        ExpressionKind::Imm(_) | ExpressionKind::Lvalue(_)
+    )
+}
