@@ -109,9 +109,9 @@ fn compile_or_check(
         return Ok(());
     }
 
-    let mut ssa_var_gen = mir::SsaVarGenerator::default();
-    let mut document = mir::lower(document, &resolved_calls, &mut ssa_var_gen);
-    mir::optimize(&mut document, &mut ssa_var_gen);
+    let mut generator = mir::Generator::default();
+    let mut document = mir::lower(document, &resolved_calls, &mut generator);
+    mir::optimize(&mut document, &mut generator);
     if std::env::var_os("DUMP_MIR").is_some() {
         eprintln!("{document:#?}");
     }

@@ -1,13 +1,13 @@
 use crate::{
     function,
     mir::{
-        visit::SsaVarReplacer, Block, Document, Function, Op, SsaVar,
-        SsaVarGenerator, Value, Visitor,
+        visit::SsaVarReplacer, Block, Document, Function, Generator, Op,
+        SsaVar, Value, Visitor,
     },
 };
 use std::{collections::HashMap, mem};
 
-pub fn inline(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
+pub fn inline(document: &mut Document, generator: &mut Generator) {
     while let Some(id) = document
         .functions
         .iter()
@@ -21,7 +21,7 @@ pub fn inline(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
         Inliner {
             function,
             function_ref: function::Ref::TopLevel(id),
-            ssa_var_gen,
+            generator,
         }
         .traverse_document(document);
     }
@@ -40,7 +40,7 @@ pub fn inline(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
             Inliner {
                 function,
                 function_ref: function::Ref::SpriteLocal(id),
-                ssa_var_gen,
+                generator,
             }
             .traverse_sprite(sprite);
         }
@@ -48,7 +48,7 @@ pub fn inline(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
 }
 
 struct SsaVarRefresher<'a> {
-    ssa_var_gen: &'a mut SsaVarGenerator,
+    generator: &'a mut Generator,
     renames: HashMap<SsaVar, SsaVar>,
 }
 
@@ -65,7 +65,7 @@ impl Visitor for SsaVarRefresher<'_> {
         else {
             return;
         };
-        let new_var = self.ssa_var_gen.new_ssa_var();
+        let new_var = self.generator.new_ssa_var();
         self.renames.insert(*variable, new_var);
         *variable = new_var;
     }
@@ -81,7 +81,7 @@ impl Visitor for SsaVarRefresher<'_> {
 struct Inliner<'a> {
     function: Function,
     function_ref: function::Ref,
-    ssa_var_gen: &'a mut SsaVarGenerator,
+    generator: &'a mut Generator,
 }
 
 impl Visitor for Inliner<'_> {
@@ -112,7 +112,7 @@ impl Visitor for Inliner<'_> {
                 .traverse_block(&mut cloned_body);
             }
             SsaVarRefresher {
-                ssa_var_gen: self.ssa_var_gen,
+                generator: self.generator,
                 renames: HashMap::new(),
             }
             .traverse_block(&mut cloned_body);

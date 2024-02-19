@@ -14,7 +14,7 @@ use visit::*;
 use crate::{comptime::Value as Imm, function, hir::Costume, ty::Ty};
 use std::{collections::HashMap, fmt};
 
-pub fn optimize(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
+pub fn optimize(document: &mut Document, generator: &mut Generator) {
     struct OptimizationVistior;
 
     impl Visitor for OptimizationVistior {
@@ -23,7 +23,7 @@ pub fn optimize(document: &mut Document, ssa_var_gen: &mut SsaVarGenerator) {
         }
     }
 
-    inlining::inline(document, ssa_var_gen);
+    inlining::inline(document, generator);
     OptimizationVistior.traverse_document(document);
     late_dce::perform(document);
 }
@@ -82,11 +82,11 @@ impl fmt::Display for SsaVar {
 }
 
 #[derive(Default)]
-pub struct SsaVarGenerator {
+pub struct Generator {
     counter: u16,
 }
 
-impl SsaVarGenerator {
+impl Generator {
     fn new_ssa_var(&mut self) -> SsaVar {
         let var = self.counter;
         self.counter += 1;
