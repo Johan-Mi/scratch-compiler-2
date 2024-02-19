@@ -144,7 +144,6 @@ fn lower_statement(
             if let Some(&real_var) =
                 cx.real_vars.get(&variable.text_range().start())
             {
-                // TODO: implement `set`
                 cx.block.ops.push(Op::CallBuiltin {
                     variable: None,
                     name: "set".to_owned(),
@@ -240,7 +239,6 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             if let Some(&real_var) =
                 cx.real_vars.get(&variable.text_range().start())
             {
-                // TODO: implement `get`
                 let ssa_var = cx.generator.new_ssa_var();
                 cx.block.ops.push(Op::CallBuiltin {
                     variable: Some(ssa_var),
