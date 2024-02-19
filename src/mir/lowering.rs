@@ -141,7 +141,18 @@ fn lower_statement(
     match statement {
         hir::Statement::Let { variable, value } => {
             let value = lower_expression(value, cx).unwrap();
-            cx.vars.insert(variable.text_range().start(), value);
+            if let Some(&real_var) =
+                cx.real_vars.get(&variable.text_range().start())
+            {
+                // TODO: implement `set`
+                cx.block.ops.push(Op::CallBuiltin {
+                    variable: None,
+                    name: "set".to_owned(),
+                    args: vec![Value::Lvalue(real_var), value],
+                });
+            } else {
+                cx.vars.insert(variable.text_range().start(), value);
+            }
             None
         }
         hir::Statement::If {
@@ -226,7 +237,20 @@ fn lower_statement(
 fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
     match expr.kind {
         hir::ExpressionKind::Variable(Name::User(variable)) => {
-            Some(cx.vars[&variable.text_range().start()].clone())
+            if let Some(&real_var) =
+                cx.real_vars.get(&variable.text_range().start())
+            {
+                // TODO: implement `get`
+                let ssa_var = cx.generator.new_ssa_var();
+                cx.block.ops.push(Op::CallBuiltin {
+                    variable: Some(ssa_var),
+                    name: "get".to_owned(),
+                    args: vec![Value::Lvalue(real_var)],
+                });
+                Some(Value::Var(ssa_var))
+            } else {
+                Some(cx.vars[&variable.text_range().start()].clone())
+            }
         }
         hir::ExpressionKind::Variable(Name::Builtin(builtin)) => {
             match builtin {
