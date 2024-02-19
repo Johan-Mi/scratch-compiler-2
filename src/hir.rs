@@ -491,30 +491,7 @@ impl Expression {
                 )
             }
             ast::Expression::FunctionCall(call) => {
-                ExpressionKind::FunctionCall {
-                    name_or_operator: call.name(),
-                    arguments: call
-                        .args()
-                        .iter()
-                        .map(|arg| {
-                            if let ast::Expression::NamedArgument(named_arg) =
-                                arg
-                            {
-                                (
-                                    Some(named_arg.name().to_string()),
-                                    Self::lower_opt(
-                                        named_arg.value(),
-                                        file,
-                                        diagnostics,
-                                        named_arg.syntax().text_range(),
-                                    ),
-                                )
-                            } else {
-                                (None, Self::lower(&arg, file, diagnostics))
-                            }
-                        })
-                        .collect(),
-                }
+                lower_function_call(call, file, diagnostics)
             }
             ast::Expression::BinaryOperation(op) => {
                 let operator = op.operator();
@@ -675,6 +652,35 @@ impl Expression {
             ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
             ExpressionKind::Error => Err(()),
         }
+    }
+}
+
+fn lower_function_call(
+    call: &ast::FunctionCall,
+    file: &File,
+    diagnostics: &mut Diagnostics,
+) -> ExpressionKind {
+    ExpressionKind::FunctionCall {
+        name_or_operator: call.name(),
+        arguments: call
+            .args()
+            .iter()
+            .map(|arg| {
+                if let ast::Expression::NamedArgument(named_arg) = arg {
+                    (
+                        Some(named_arg.name().to_string()),
+                        Expression::lower_opt(
+                            named_arg.value(),
+                            file,
+                            diagnostics,
+                            named_arg.syntax().text_range(),
+                        ),
+                    )
+                } else {
+                    (None, Expression::lower(&arg, file, diagnostics))
+                }
+            })
+            .collect(),
     }
 }
 
