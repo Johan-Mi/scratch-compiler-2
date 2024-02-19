@@ -152,7 +152,7 @@ impl SyntaxKind {
     pub const fn is_binary_operator(self) -> bool {
         matches!(
             self,
-            PLUS | MINUS | STAR | SLASH | PERCENT | LT | EQ_EQ | GT
+            PLUS | MINUS | STAR | SLASH | PERCENT | LT | EQ_EQ | GT | EQ
         )
     }
 }
@@ -676,8 +676,12 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 }
 
-const PRECEDENCE_TABLE: &[&[SyntaxKind]] =
-    &[&[LT, EQ_EQ, GT], &[PLUS, MINUS], &[STAR, SLASH, PERCENT]];
+const PRECEDENCE_TABLE: &[&[SyntaxKind]] = &[
+    &[EQ],
+    &[LT, EQ_EQ, GT],
+    &[PLUS, MINUS],
+    &[STAR, SLASH, PERCENT],
+];
 
 fn binding_power(kind: SyntaxKind) -> Option<usize> {
     PRECEDENCE_TABLE

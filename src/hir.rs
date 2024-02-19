@@ -756,6 +756,7 @@ pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
         LT => "lt",
         EQ_EQ => "eq",
         GT => "gt",
+        EQ => "set",
         _ => token.text(),
     }
 }
