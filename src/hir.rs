@@ -668,14 +668,16 @@ fn lower_lvalue(
         return ExpressionKind::Error;
     };
     let inner = Expression::lower(&inner, file, diagnostics);
-    let ExpressionKind::Variable(Name::User(var)) = inner.kind else {
-        diagnostics.error(
-            "`&` can only be applied to variables declared with `let`",
-            [primary(span(file, text_range), "")],
-        );
-        return ExpressionKind::Error;
-    };
-    ExpressionKind::Lvalue(var.text_range().start())
+    if let ExpressionKind::Variable(Name::User(var)) = inner.kind {
+        if var.parent().is_some_and(|it| it.kind() == SyntaxKind::LET) {
+            return ExpressionKind::Lvalue(var.text_range().start());
+        }
+    }
+    diagnostics.error(
+        "`&` can only be applied to variables declared with `let`",
+        [primary(span(file, text_range), "")],
+    );
+    ExpressionKind::Error
 }
 
 fn lower_generic_type_instantiation(
