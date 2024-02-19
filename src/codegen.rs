@@ -301,7 +301,8 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
         }
         mir::Value::Imm(
             comptime::Value::Sprite { .. } | comptime::Value::Ty(_),
-        ) => unreachable!(),
+        )
+        | mir::Value::Lvalue(_) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => n.into(),
         mir::Value::Imm(comptime::Value::String(s)) => s.into(),
         // TODO: booleans are tricky since Scratch doesn't have literals,

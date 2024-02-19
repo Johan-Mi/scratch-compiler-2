@@ -1,5 +1,5 @@
 use super::{
-    Block, Document, Function, Generator, Op, Parameter, Sprite, Value,
+    Block, Document, Function, Generator, Op, Parameter, RealVar, Sprite, Value,
 };
 use crate::{
     function::{self, ResolvedCalls},
@@ -22,6 +22,7 @@ pub fn lower(
 
     let mut cx = Context {
         vars: HashMap::new(),
+        real_vars: super::mutability::real_vars(&document, generator),
         generator,
         resolved_calls,
         sprite_functions: HashMap::new(),
@@ -66,6 +67,7 @@ impl From<&hir::Function> for FunctionSignature {
 
 struct Context<'a> {
     vars: HashMap<TextSize, Value>,
+    real_vars: HashMap<TextSize, RealVar>,
     generator: &'a mut Generator,
     resolved_calls: &'a ResolvedCalls,
     sprite_functions: HashMap<usize, FunctionSignature>,
@@ -276,7 +278,9 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
 
             variable.map(Value::Var)
         }
-        hir::ExpressionKind::Lvalue(_) => todo!(),
+        hir::ExpressionKind::Lvalue(var) => {
+            Some(Value::Lvalue(cx.real_vars[&var]))
+        }
         hir::ExpressionKind::GenericTypeInstantiation { .. }
         | hir::ExpressionKind::Error => unreachable!(),
     }

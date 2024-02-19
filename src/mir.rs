@@ -5,6 +5,7 @@ mod inlining;
 mod late_dce;
 pub mod linearity;
 mod lowering;
+mod mutability;
 mod optimization;
 mod visit;
 
@@ -81,6 +82,15 @@ impl fmt::Display for SsaVar {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RealVar(u16);
+
+impl fmt::Debug for RealVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "r{}", self.0)
+    }
+}
+
 #[derive(Default)]
 pub struct Generator {
     counter: u16,
@@ -92,12 +102,19 @@ impl Generator {
         self.counter += 1;
         SsaVar(var)
     }
+
+    fn new_real_var(&mut self) -> RealVar {
+        let var = self.counter;
+        self.counter += 1;
+        RealVar(var)
+    }
 }
 
 #[derive(Clone)]
 pub enum Value {
     Var(SsaVar),
     Imm(Imm),
+    Lvalue(RealVar),
 }
 
 impl fmt::Debug for Value {
@@ -105,6 +122,7 @@ impl fmt::Debug for Value {
         match self {
             Self::Var(var) => fmt::Debug::fmt(var, f),
             Self::Imm(imm) => fmt::Debug::fmt(imm, f),
+            Self::Lvalue(var) => write!(f, "&{var:?}"),
         }
     }
 }
