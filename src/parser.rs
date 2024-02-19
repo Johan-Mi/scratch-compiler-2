@@ -61,6 +61,7 @@ pub enum SyntaxKind {
     LVALUE,
     GENERIC_TYPE_INSTANTIATION,
     TYPE_PARAMETERS,
+    LIST_LITERAL,
 
     #[token("(")]
     LPAREN,
@@ -305,6 +306,16 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
         self.builder.finish_node();
     }
 
+    fn parse_list_literal(&mut self) {
+        self.builder.start_node(LIST_LITERAL.into());
+        self.bump(); // LBRACKET
+        while !self.at(EOF) && !self.eat(RBRACKET) {
+            self.parse_expression();
+            self.eat(COMMA);
+        }
+        self.builder.finish_node();
+    }
+
     fn parse_atom(&mut self) {
         match self.peek() {
             IDENTIFIER => {
@@ -342,6 +353,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.parse_atom();
                 self.builder.finish_node();
             }
+            LBRACKET => self.parse_list_literal(),
             _ => self.error(),
         }
     }
