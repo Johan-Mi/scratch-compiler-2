@@ -97,6 +97,21 @@ impl fmt::Display for RealVar {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RealList(u16);
+
+impl fmt::Debug for RealList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "l{}", self.0)
+    }
+}
+
+impl fmt::Display for RealList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Default)]
 pub struct Generator {
     counter: u16,
@@ -114,6 +129,12 @@ impl Generator {
         self.counter += 1;
         RealVar(var)
     }
+
+    fn new_real_list(&mut self) -> RealList {
+        let list = self.counter;
+        self.counter += 1;
+        RealList(list)
+    }
 }
 
 #[derive(Clone)]
@@ -121,6 +142,7 @@ pub enum Value {
     Var(SsaVar),
     Imm(Imm),
     Lvalue(RealVar),
+    List(RealList),
 }
 
 impl fmt::Debug for Value {
@@ -129,6 +151,7 @@ impl fmt::Debug for Value {
             Self::Var(var) => fmt::Debug::fmt(var, f),
             Self::Imm(imm) => fmt::Debug::fmt(imm, f),
             Self::Lvalue(var) => write!(f, "&{var:?}"),
+            Self::List(list) => fmt::Debug::fmt(list, f),
         }
     }
 }

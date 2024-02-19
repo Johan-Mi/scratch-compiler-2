@@ -304,7 +304,19 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         hir::ExpressionKind::Lvalue(var) => {
             Some(Value::Lvalue(cx.real_vars[&var]))
         }
-        hir::ExpressionKind::ListLiteral(_) => todo!(),
+        hir::ExpressionKind::ListLiteral(elements) => {
+            let list = cx.generator.new_real_list();
+            // TODO: clear list first
+            for element in elements {
+                let element = lower_expression(element, cx).unwrap();
+                cx.block.ops.push(Op::CallBuiltin {
+                    variable: None,
+                    name: "push".to_owned(),
+                    args: vec![Value::List(list), element],
+                });
+            }
+            Some(Value::List(list))
+        }
         hir::ExpressionKind::GenericTypeInstantiation { .. }
         | hir::ExpressionKind::Error => unreachable!(),
     }

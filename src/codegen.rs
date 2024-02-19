@@ -1,7 +1,7 @@
 use crate::{comptime, function, mir, ty::Ty};
 use sb3_builder::{
-    block, Costume, CustomBlock, InsertionPoint, Operand, Parameter,
-    ParameterKind, Project, Target, Variable, VariableRef,
+    block, Costume, CustomBlock, InsertionPoint, List, ListRef, Operand,
+    Parameter, ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
@@ -64,6 +64,7 @@ fn compile_sprite(
         sprite,
         compiled_ssa_vars,
         compiled_real_vars: HashMap::new(),
+        compiled_real_lists: HashMap::new(),
         compiled_functions,
         return_variable: None,
         is_linear: HashSet::new(),
@@ -80,6 +81,7 @@ struct Context<'a> {
     sprite: Target<'a>,
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
     compiled_real_vars: HashMap<mir::RealVar, VariableRef>,
+    compiled_real_lists: HashMap<mir::RealList, ListRef>,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,
     is_linear: HashSet<mir::SsaVar>,
@@ -92,6 +94,17 @@ impl Context<'_> {
             .or_insert_with(|| {
                 self.sprite.add_variable(Variable {
                     name: var.to_string(),
+                })
+            })
+            .clone()
+    }
+
+    fn compile_real_list(&mut self, list: mir::RealList) -> ListRef {
+        self.compiled_real_lists
+            .entry(list)
+            .or_insert_with(|| {
+                self.sprite.add_list(List {
+                    name: list.to_string(),
                 })
             })
             .clone()
@@ -286,6 +299,14 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 let value = compile_value(args.pop().unwrap(), cx);
                 cx.sprite.put(block::set_variable(var, value));
             }
+            "push" => {
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let value = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.put(block::append(list, value));
+            }
             _ => {
                 let args = args
                     .into_iter()
@@ -338,7 +359,8 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
         mir::Value::Imm(
             comptime::Value::Sprite { .. } | comptime::Value::Ty(_),
         )
-        | mir::Value::Lvalue(_) => unreachable!(),
+        | mir::Value::Lvalue(_)
+        | mir::Value::List(_) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => n.into(),
         mir::Value::Imm(comptime::Value::String(s)) => s.into(),
         // TODO: booleans are tricky since Scratch doesn't have literals,
