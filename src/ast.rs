@@ -487,3 +487,9 @@ impl TypeParameters {
 }
 
 ast_node!(ListLiteral: LIST_LITERAL);
+
+impl ListLiteral {
+    pub fn iter(&self) -> impl Iterator<Item = Expression> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}

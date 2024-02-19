@@ -97,7 +97,8 @@ pub trait Visitor {
                     self.traverse_expression(arg);
                 }
             }
-            ExpressionKind::GenericTypeInstantiation { arguments, .. } => {
+            ExpressionKind::GenericTypeInstantiation { arguments, .. }
+            | ExpressionKind::ListLiteral(arguments) => {
                 for arg in arguments {
                     self.traverse_expression(arg);
                 }

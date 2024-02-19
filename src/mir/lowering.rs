@@ -305,6 +305,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         hir::ExpressionKind::Lvalue(var) => {
             Some(Value::Lvalue(cx.real_vars[&var]))
         }
+        hir::ExpressionKind::ListLiteral(_) => todo!(),
         hir::ExpressionKind::GenericTypeInstantiation { .. }
         | hir::ExpressionKind::Error => unreachable!(),
     }

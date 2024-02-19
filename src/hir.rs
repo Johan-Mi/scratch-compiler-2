@@ -467,6 +467,7 @@ pub enum ExpressionKind {
         generic: ty::Generic,
         arguments: Vec<Expression>,
     },
+    ListLiteral(Vec<Expression>),
     Error,
 }
 
@@ -560,13 +561,11 @@ impl Expression {
                     diagnostics,
                 )
             }
-            ast::Expression::ListLiteral(list) => {
-                diagnostics.error(
-                    "list literals are not implemented yet",
-                    [primary(span(file, list.syntax().text_range()), "")],
-                );
-                ExpressionKind::Error
-            }
+            ast::Expression::ListLiteral(list) => ExpressionKind::ListLiteral(
+                list.iter()
+                    .map(|it| Self::lower(&it, file, diagnostics))
+                    .collect(),
+            ),
         };
 
         Self {
@@ -658,6 +657,33 @@ impl Expression {
                 tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
             }
             ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
+            ExpressionKind::ListLiteral(list) => {
+                let [first, rest @ ..] = &**list else {
+                    tcx.diagnostics.error(
+                        "cannot infer type of empty list literal",
+                        [primary(self.span, "")],
+                    );
+                    tcx.diagnostics.note("sorry!", []);
+                    return Err(());
+                };
+                let first_ty = first.ty(tcx)?;
+
+                for element in rest {
+                    let ty = element.ty(tcx)?;
+                    if ty != first_ty {
+                        tcx.diagnostics.error(
+                            "conflicting types in list literal",
+                            [
+                                primary(first.span, format!("expected element type `{first_ty}` because of because of the first item...")),
+                                primary(element.span, format!("...but this has type `{ty}`")),
+                            ]
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(Ty::List(Box::new(first_ty)))
+            }
             ExpressionKind::Error => Err(()),
         }
     }

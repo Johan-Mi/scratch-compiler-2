@@ -21,6 +21,7 @@ pub enum Ty {
     #[allow(clippy::enum_variant_names)]
     Ty,
     Var(Box<Self>),
+    List(Box<Self>),
     Generic(SyntaxToken),
 }
 
@@ -34,6 +35,7 @@ impl fmt::Display for Ty {
             Self::Sprite => write!(f, "Sprite"),
             Self::Ty => write!(f, "Type"),
             Self::Var(inner) => write!(f, "Var[{inner}]"),
+            Self::List(inner) => write!(f, "List[{inner}]"),
             Self::Generic(token) => write!(f, "{token}"),
         }
     }

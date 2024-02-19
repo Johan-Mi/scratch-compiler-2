@@ -109,6 +109,9 @@ pub fn evaluate(
 
             Ok(Value::Ty(Ty::Var(Box::new(ty))))
         }
+        ExpressionKind::ListLiteral(_) => {
+            error("list literals are not supported at compile-time")
+        }
         ExpressionKind::Error => Err(()),
     }
 }
