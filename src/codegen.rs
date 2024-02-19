@@ -63,6 +63,7 @@ fn compile_sprite(
     let mut cx = Context {
         sprite,
         compiled_ssa_vars,
+        compiled_real_vars: HashMap::new(),
         compiled_functions,
         return_variable: None,
         is_linear: HashSet::new(),
@@ -78,9 +79,23 @@ fn compile_sprite(
 struct Context<'a> {
     sprite: Target<'a>,
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
+    compiled_real_vars: HashMap<mir::RealVar, VariableRef>,
     compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,
     is_linear: HashSet<mir::SsaVar>,
+}
+
+impl Context<'_> {
+    fn compile_real_var(&mut self, var: mir::RealVar) -> VariableRef {
+        self.compiled_real_vars
+            .entry(var)
+            .or_insert_with(|| {
+                self.sprite.add_variable(Variable {
+                    name: var.to_string(),
+                })
+            })
+            .clone()
+    }
 }
 
 enum CompiledSsaVar {
@@ -252,15 +267,34 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         mir::Op::CallBuiltin {
             variable,
             name,
-            args,
-        } => {
-            let args =
-                args.into_iter().map(|arg| compile_value(arg, cx)).collect();
-            let res = compile_builtin_function_call(&name, args, cx);
-            if let Some(variable) = variable {
-                store_result(variable, res.unwrap(), cx);
+            mut args,
+        } => match &*name {
+            "get" => {
+                let Some(variable) = variable else { return };
+                let [mir::Value::Lvalue(var)] = *args else {
+                    unreachable!()
+                };
+                store_result(variable, cx.compile_real_var(var).into(), cx);
             }
-        }
+            "set" => {
+                let mir::Value::Lvalue(var) = args[0] else {
+                    unreachable!()
+                };
+                let var = cx.compile_real_var(var);
+                let value = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.put(block::set_variable(var, value));
+            }
+            _ => {
+                let args = args
+                    .into_iter()
+                    .map(|arg| compile_value(arg, cx))
+                    .collect();
+                let res = compile_builtin_function_call(&name, args, cx);
+                if let Some(variable) = variable {
+                    store_result(variable, res.unwrap(), cx);
+                }
+            }
+        },
     }
 }
 

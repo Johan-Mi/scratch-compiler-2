@@ -91,6 +91,12 @@ impl fmt::Debug for RealVar {
     }
 }
 
+impl fmt::Display for RealVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Default)]
 pub struct Generator {
     counter: u16,
