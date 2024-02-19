@@ -71,6 +71,9 @@ pub fn evaluate(
             Builtin::Var => {
                 error("generic type `Var` must have one type parameter applied")
             }
+            Builtin::List => error(
+                "generic type `List` must have one type parameter applied",
+            ),
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
@@ -81,12 +84,10 @@ pub fn evaluate(
             error("mutable variables are not supported at compile-time")
         }
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
-            let ty::Generic::Var = generic;
-
             let arg_count = arguments.len();
             let Ok([arg]) = <[Expression; 1]>::try_from(arguments) else {
                 diagnostics.error(
-                    "wrong number of arguments for generic type `Var`",
+                    format!("wrong number of arguments for generic type `{generic}`"),
                     [primary(
                         expr.span,
                         format!("expected 1 argument, got {arg_count}",),
@@ -98,7 +99,7 @@ pub fn evaluate(
             let arg = evaluate(arg, diagnostics)?;
             let Value::Ty(ty) = arg else {
                 diagnostics.error(
-                    "type mismatch for argument of generic type `Var`",
+                    format!("type mismatch for argument of generic type `{generic}`"),
                     [primary(
                         expr.span,
                         format!("expected `Type`, got `{}`", arg.ty()),
@@ -107,7 +108,10 @@ pub fn evaluate(
                 return Err(());
             };
 
-            Ok(Value::Ty(Ty::Var(Box::new(ty))))
+            Ok(Value::Ty(match generic {
+                ty::Generic::Var => Ty::Var(Box::new(ty)),
+                ty::Generic::List => Ty::List(Box::new(ty)),
+            }))
         }
         ExpressionKind::ListLiteral(_) => {
             error("list literals are not supported at compile-time")

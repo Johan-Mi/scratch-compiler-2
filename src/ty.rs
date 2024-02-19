@@ -89,6 +89,16 @@ impl Ty {
 #[derive(Debug)]
 pub enum Generic {
     Var,
+    List,
+}
+
+impl fmt::Display for Generic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Var => "Var",
+            Self::List => "List",
+        })
+    }
 }
 
 impl TryFrom<hir::Expression> for Generic {
@@ -99,6 +109,9 @@ impl TryFrom<hir::Expression> for Generic {
             hir::ExpressionKind::Variable(Name::Builtin(
                 name::Builtin::Var,
             )) => Ok(Self::Var),
+            hir::ExpressionKind::Variable(Name::Builtin(
+                name::Builtin::List,
+            )) => Ok(Self::List),
             _ => Err(()),
         }
     }

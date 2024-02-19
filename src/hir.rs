@@ -615,6 +615,12 @@ impl Expression {
                         [primary(self.span, "")]);
                     Err(())
                 }
+                name::Builtin::List => {
+                    tcx.diagnostics.error(
+                        "generic type `List` must have one type parameter applied",
+                        [primary(self.span, "")]);
+                    Err(())
+                }
             },
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::FunctionCall {
