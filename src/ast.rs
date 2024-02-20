@@ -329,6 +329,7 @@ pub enum Expression {
     Lvalue(Lvalue),
     GenericTypeInstantiation(GenericTypeInstantiation),
     ListLiteral(ListLiteral),
+    TypeAscription(TypeAscription),
 }
 
 impl AstNode for Expression {
@@ -344,6 +345,7 @@ impl AstNode for Expression {
             || Lvalue::can_cast(kind)
             || GenericTypeInstantiation::can_cast(kind)
             || ListLiteral::can_cast(kind)
+            || TypeAscription::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
@@ -361,6 +363,7 @@ impl AstNode for Expression {
                 AstNode::cast(node).map(Self::GenericTypeInstantiation)
             }
             LIST_LITERAL => AstNode::cast(node).map(Self::ListLiteral),
+            TYPE_ASCRIPTION => AstNode::cast(node).map(Self::TypeAscription),
             _ => None,
         }
     }
@@ -376,6 +379,7 @@ impl AstNode for Expression {
             Self::Lvalue(inner) => &inner.syntax,
             Self::GenericTypeInstantiation(inner) => &inner.syntax,
             Self::ListLiteral(inner) => &inner.syntax,
+            Self::TypeAscription(inner) => &inner.syntax,
         }
     }
 }
@@ -491,5 +495,33 @@ ast_node!(ListLiteral: LIST_LITERAL);
 impl ListLiteral {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
         rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(TypeAscription: TYPE_ASCRIPTION);
+
+impl TypeAscription {
+    pub fn operator(&self) -> SyntaxToken {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|token| token.kind() == KW_AS)
+            .unwrap()
+    }
+
+    pub fn inner(&self) -> Option<Expression> {
+        let operator = self.operator().text_range().start();
+        self.syntax
+            .children()
+            .take_while(|child| child.text_range().end() <= operator)
+            .find_map(AstNode::cast)
+    }
+
+    pub fn ty(&self) -> Option<Expression> {
+        let operator = self.operator().text_range().end();
+        self.syntax
+            .children()
+            .skip_while(|child| child.text_range().start() < operator)
+            .find_map(AstNode::cast)
     }
 }

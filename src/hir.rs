@@ -566,6 +566,13 @@ impl Expression {
                     .map(|it| Self::lower(&it, file, diagnostics))
                     .collect(),
             ),
+            ast::Expression::TypeAscription(_) => {
+                diagnostics.error(
+                    "type ascription is not implemented yet",
+                    [primary(span(file, ast.syntax().text_range()), "")],
+                );
+                ExpressionKind::Error
+            }
         };
 
         Self {
