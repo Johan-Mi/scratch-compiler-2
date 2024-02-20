@@ -10,7 +10,7 @@ pub enum Name {
     Builtin(Builtin),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Builtin {
     Unit,
     Num,

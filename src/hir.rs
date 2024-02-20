@@ -6,7 +6,7 @@ use crate::{
     comptime::{self, Value},
     diagnostics::{primary, secondary, span, Diagnostics},
     function,
-    name::{self, Name},
+    name::Name,
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
     ty::{self, Context, Ty},
 };
@@ -610,25 +610,9 @@ impl Expression {
                 .get(&variable.text_range().start())
                 .unwrap_or_else(|| panic!("variable `{variable}` has no type"))
                 .clone(),
-            ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
-                name::Builtin::Unit
-                | name::Builtin::Num
-                | name::Builtin::String
-                | name::Builtin::Bool
-                | name::Builtin::Type => Ok(Ty::Ty),
-                name::Builtin::Var => {
-                    tcx.diagnostics.error(
-                        "generic type `Var` must have one type parameter applied",
-                        [primary(self.span, "")]);
-                    Err(())
-                }
-                name::Builtin::List => {
-                    tcx.diagnostics.error(
-                        "generic type `List` must have one type parameter applied",
-                        [primary(self.span, "")]);
-                    Err(())
-                }
-            },
+            ExpressionKind::Variable(Name::Builtin(builtin)) => {
+                ty::of_builtin_name(*builtin, self.span, tcx.diagnostics)
+            }
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::FunctionCall {
                 name_or_operator,

@@ -5,6 +5,7 @@ use crate::{
     name::{self, Name},
     parser::SyntaxToken,
 };
+use codemap::Span;
 use rowan::TextSize;
 use std::{
     collections::{BTreeMap, HashMap},
@@ -342,6 +343,34 @@ impl hir::Parameter {
                 // A type error has already occured; don't let it cascade.
                 _ => true,
             }
+    }
+}
+
+pub fn of_builtin_name(
+    builtin: name::Builtin,
+    span: Span,
+    diagnostics: &mut Diagnostics,
+) -> Result<Ty, ()> {
+    match builtin {
+        name::Builtin::Unit
+        | name::Builtin::Num
+        | name::Builtin::String
+        | name::Builtin::Bool
+        | name::Builtin::Type => Ok(Ty::Ty),
+        name::Builtin::Var => {
+            diagnostics.error(
+                "generic type `Var` must have one type parameter applied",
+                [primary(span, "")],
+            );
+            Err(())
+        }
+        name::Builtin::List => {
+            diagnostics.error(
+                "generic type `List` must have one type parameter applied",
+                [primary(span, "")],
+            );
+            Err(())
+        }
     }
 }
 
