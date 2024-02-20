@@ -2,23 +2,23 @@ use crate::diagnostics::{primary, secondary, Diagnostics};
 use codemap::Span;
 use logos::Logos;
 use rowan::GreenNodeBuilder;
-use std::iter::Peekable;
 
 pub fn parse(
     file: &codemap::File,
     diagnostics: &mut Diagnostics,
 ) -> SyntaxNode {
     let source_code = file.source();
+    let tokens = &SyntaxKind::lexer(source_code)
+        .spanned()
+        .map(|(token, span)| Token {
+            kind: token.unwrap_or(ERROR),
+            text: &source_code[span.clone()],
+            span: file.span.subspan(span.start as u64, span.end as u64),
+        })
+        .collect::<Vec<_>>();
     Parser {
         builder: GreenNodeBuilder::new(),
-        iter: SyntaxKind::lexer(source_code)
-            .spanned()
-            .map(|(token, span)| Token {
-                kind: token.unwrap_or(ERROR),
-                text: &source_code[span.clone()],
-                span: file.span.subspan(span.start as u64, span.end as u64),
-            })
-            .peekable(),
+        tokens,
         span: file.span,
         diagnostics,
     }
@@ -192,34 +192,43 @@ struct Token<'src> {
     span: Span,
 }
 
-struct Parser<'src, I: Iterator<Item = Token<'src>>> {
+struct Parser<'src> {
     builder: GreenNodeBuilder<'static>,
-    iter: Peekable<I>,
+    tokens: &'src [Token<'src>],
     span: Span,
     diagnostics: &'src mut Diagnostics,
 }
 
-impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
+impl Parser<'_> {
     fn skip_trivia(&mut self) {
-        if self.iter.peek().is_some_and(|token| token.kind == TRIVIA) {
-            self.bump();
+        while let [token, rest @ ..] = self.tokens {
+            if token.kind != TRIVIA {
+                break;
+            }
+            self.tokens = rest;
+            self.builder.token(token.kind.into(), token.text);
         }
     }
 
     fn peek(&mut self) -> SyntaxKind {
-        self.skip_trivia();
-        self.iter.peek().map_or(EOF, |token| token.kind)
+        self.tokens
+            .iter()
+            .map(|token| token.kind)
+            .find(|&it| it != TRIVIA)
+            .unwrap_or(EOF)
     }
 
     fn peek_span(&mut self) -> Span {
-        self.skip_trivia();
-        self.iter.peek().map_or_else(
-            || {
-                let len = self.span.len();
-                self.span.subspan(len, len)
-            },
-            |token| token.span,
-        )
+        self.tokens
+            .iter()
+            .find(|token| token.kind != TRIVIA)
+            .map_or_else(
+                || {
+                    let len = self.span.len();
+                    self.span.subspan(len, len)
+                },
+                |token| token.span,
+            )
     }
 
     fn at(&mut self, kind: SyntaxKind) -> bool {
@@ -227,12 +236,16 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
     }
 
     fn immediately_at(&mut self, kind: SyntaxKind) -> bool {
-        self.iter.peek().is_some_and(|token| token.kind == kind)
+        self.tokens.first().is_some_and(|token| token.kind == kind)
     }
 
     fn bump(&mut self) {
-        if let Some(token) = self.iter.next() {
+        while let [token, rest @ ..] = self.tokens {
+            self.tokens = rest;
             self.builder.token(token.kind.into(), token.text);
+            if token.kind != TRIVIA {
+                break;
+            }
         }
     }
 
@@ -343,6 +356,7 @@ impl<'src, I: Iterator<Item = Token<'src>>> Parser<'src, I> {
                 self.builder.finish_node();
             }
             NUMBER | STRING | KW_FALSE | KW_TRUE => {
+                self.skip_trivia();
                 self.builder.start_node(LITERAL.into());
                 self.bump();
                 self.builder.finish_node();
