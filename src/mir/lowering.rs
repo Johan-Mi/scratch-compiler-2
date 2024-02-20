@@ -317,6 +317,9 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             }
             Some(Value::List(list))
         }
+        hir::ExpressionKind::TypeAscription { inner, .. } => {
+            lower_expression(*inner, cx)
+        }
         hir::ExpressionKind::GenericTypeInstantiation { .. }
         | hir::ExpressionKind::Error => unreachable!(),
     }

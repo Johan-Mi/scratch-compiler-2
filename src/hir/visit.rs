@@ -103,6 +103,9 @@ pub trait Visitor {
                     self.traverse_expression(arg);
                 }
             }
+            ExpressionKind::TypeAscription { inner, .. } => {
+                self.traverse_expression(inner);
+            }
         }
     }
 }

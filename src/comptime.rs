@@ -116,6 +116,9 @@ pub fn evaluate(
         ExpressionKind::ListLiteral(_) => {
             error("list literals are not supported at compile-time")
         }
+        ExpressionKind::TypeAscription { inner, .. } => {
+            evaluate(*inner, diagnostics)
+        }
         ExpressionKind::Error => Err(()),
     }
 }

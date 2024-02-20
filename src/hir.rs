@@ -468,6 +468,10 @@ pub enum ExpressionKind {
         arguments: Vec<Expression>,
     },
     ListLiteral(Vec<Expression>),
+    TypeAscription {
+        inner: Box<Expression>,
+        ty: Ty,
+    },
     Error,
 }
 
@@ -566,12 +570,8 @@ impl Expression {
                     .map(|it| Self::lower(&it, file, diagnostics))
                     .collect(),
             ),
-            ast::Expression::TypeAscription(_) => {
-                diagnostics.error(
-                    "type ascription is not implemented yet",
-                    [primary(span(file, ast.syntax().text_range()), "")],
-                );
-                ExpressionKind::Error
+            ast::Expression::TypeAscription(ascription) => {
+                lower_type_ascription(ascription, diagnostics, file)
             }
         };
 
@@ -697,6 +697,23 @@ impl Expression {
 
                 Ok(Ty::List(Box::new(first_ty)))
             }
+            ExpressionKind::TypeAscription { inner, ty } => {
+                if let Ok(inner_ty) = inner.ty(tcx) {
+                    if inner_ty != *ty {
+                        tcx.diagnostics.error(
+                            "type ascription mismatch",
+                            [primary(
+                                inner.span,
+                                format!(
+                                    "expected type `{ty}`, got `{inner_ty}`"
+                                ),
+                            )],
+                        );
+                    }
+                }
+
+                Ok(ty.clone())
+            }
             ExpressionKind::Error => Err(()),
         }
     }
@@ -776,6 +793,41 @@ fn lower_generic_type_instantiation(
         .collect::<Vec<_>>();
 
     ExpressionKind::GenericTypeInstantiation { generic, arguments }
+}
+
+fn lower_type_ascription(
+    ascription: &ast::TypeAscription,
+    diagnostics: &mut Diagnostics,
+    file: &File,
+) -> ExpressionKind {
+    let Some(inner) = ascription.inner() else {
+        return ExpressionKind::Error;
+    };
+    let Some(ty) = ascription.ty() else {
+        return ExpressionKind::Error;
+    };
+
+    let inner = Expression::lower(&inner, file, diagnostics);
+    let ty = Expression::lower(&ty, file, diagnostics);
+    let ty_span = ty.span;
+    let Ok(ty) = comptime::evaluate(ty, diagnostics) else {
+        return ExpressionKind::Error;
+    };
+    let Value::Ty(ty) = ty else {
+        diagnostics.error(
+            "ascribed type must be a type",
+            [primary(
+                ty_span,
+                format!("expected `Type`, got `{}`", ty.ty()),
+            )],
+        );
+        return ExpressionKind::Error;
+    };
+
+    ExpressionKind::TypeAscription {
+        inner: Box::new(inner),
+        ty,
+    }
 }
 
 fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
