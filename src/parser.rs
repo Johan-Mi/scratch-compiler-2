@@ -1,7 +1,7 @@
 use crate::diagnostics::{primary, secondary, Diagnostics};
 use codemap::Span;
 use logos::Logos;
-use rowan::GreenNodeBuilder;
+use rowan::{Checkpoint, GreenNodeBuilder};
 
 pub fn parse(
     file: &codemap::File,
@@ -261,6 +261,16 @@ impl Parser<'_> {
         }
     }
 
+    fn start_node(&mut self, kind: SyntaxKind) {
+        self.skip_trivia();
+        self.builder.start_node(kind.into());
+    }
+
+    fn checkpoint(&mut self) -> Checkpoint {
+        self.skip_trivia();
+        self.builder.checkpoint()
+    }
+
     fn parse_anything(&mut self) {
         match self.peek() {
             KW_SPRITE => self.parse_sprite(),
@@ -296,7 +306,7 @@ impl Parser<'_> {
     }
 
     fn error(&mut self) {
-        self.builder.start_node(ERROR.into());
+        self.start_node(ERROR);
         self.parse_anything();
         self.builder.finish_node();
     }
@@ -313,7 +323,7 @@ impl Parser<'_> {
     }
 
     fn parse_arguments(&mut self) {
-        self.builder.start_node(ARGUMENTS.into());
+        self.start_node(ARGUMENTS);
         self.bump(); // LPAREN
         while !self.at(EOF) && !self.eat(RPAREN) {
             self.parse_expression();
@@ -323,7 +333,7 @@ impl Parser<'_> {
     }
 
     fn parse_list_literal(&mut self) {
-        self.builder.start_node(LIST_LITERAL.into());
+        self.start_node(LIST_LITERAL);
         self.bump(); // LBRACKET
         while !self.at(EOF) && !self.eat(RBRACKET) {
             self.parse_expression();
@@ -335,7 +345,7 @@ impl Parser<'_> {
     fn parse_atom(&mut self) {
         match self.peek() {
             IDENTIFIER => {
-                let checkpoint = self.builder.checkpoint();
+                let checkpoint = self.checkpoint();
                 self.bump();
                 if self.immediately_at(LPAREN) {
                     self.builder
@@ -352,20 +362,19 @@ impl Parser<'_> {
                 self.builder.finish_node();
             }
             LPAREN => {
-                self.builder.start_node(PARENTHESIZED_EXPRESSION.into());
+                self.start_node(PARENTHESIZED_EXPRESSION);
                 self.bump();
                 self.parse_expression();
                 self.expect(RPAREN);
                 self.builder.finish_node();
             }
             NUMBER | STRING | KW_FALSE | KW_TRUE => {
-                self.skip_trivia();
-                self.builder.start_node(LITERAL.into());
+                self.start_node(LITERAL);
                 self.bump();
                 self.builder.finish_node();
             }
             AMPERSAND => {
-                self.builder.start_node(LVALUE.into());
+                self.start_node(LVALUE);
                 self.bump();
                 self.parse_atom();
                 self.builder.finish_node();
@@ -380,7 +389,7 @@ impl Parser<'_> {
     }
 
     fn parse_recursive_expression(&mut self, left: SyntaxKind) {
-        let checkpoint = self.builder.checkpoint();
+        let checkpoint = self.checkpoint();
         self.parse_atom();
         while self.at(LBRACKET) {
             self.builder
@@ -407,7 +416,7 @@ impl Parser<'_> {
     }
 
     fn parse_type_parameters(&mut self) {
-        self.builder.start_node(TYPE_PARAMETERS.into());
+        self.start_node(TYPE_PARAMETERS);
         self.bump(); // LBRACKET
         while !self.at(EOF) && !self.eat(RBRACKET) {
             self.parse_expression();
@@ -417,7 +426,7 @@ impl Parser<'_> {
     }
 
     fn parse_function_parameters(&mut self) {
-        self.builder.start_node(FUNCTION_PARAMETERS.into());
+        self.start_node(FUNCTION_PARAMETERS);
         self.bump(); // LPAREN
         while !self.at(EOF) && !self.eat(RPAREN) {
             if self.at(COMMA) {
@@ -442,8 +451,8 @@ impl Parser<'_> {
                 continue;
             }
 
-            self.builder.start_node(PARAMETER.into());
-            self.builder.start_node(EXTERNAL_PARAMETER_NAME.into());
+            self.start_node(PARAMETER);
+            self.start_node(EXTERNAL_PARAMETER_NAME);
             self.bump();
             self.builder.finish_node();
             self.eat(KW_COMPTIME);
@@ -473,7 +482,7 @@ impl Parser<'_> {
     }
 
     fn parse_let(&mut self) {
-        self.builder.start_node(LET.into());
+        self.start_node(LET);
         self.bump(); // KW_LET
         if !self.at(EQ) {
             self.expect(IDENTIFIER);
@@ -484,7 +493,7 @@ impl Parser<'_> {
     }
 
     fn parse_if(&mut self) {
-        self.builder.start_node(IF.into());
+        self.start_node(IF);
         self.bump(); // KW_IF
         if self.at(LBRACE) {
             let label = primary(self.peek_span(), "");
@@ -495,7 +504,7 @@ impl Parser<'_> {
         }
         self.parse_block();
         if self.eat(KW_ELSE) {
-            self.builder.start_node(ELSE_CLAUSE.into());
+            self.start_node(ELSE_CLAUSE);
             if self.at(KW_IF) {
                 self.parse_if();
             } else {
@@ -507,7 +516,7 @@ impl Parser<'_> {
     }
 
     fn parse_repeat(&mut self) {
-        self.builder.start_node(REPEAT.into());
+        self.start_node(REPEAT);
         self.bump(); // KW_REPEAT
         if self.at(LBRACE) {
             let label = primary(self.peek_span(), "");
@@ -521,14 +530,14 @@ impl Parser<'_> {
     }
 
     fn parse_forever(&mut self) {
-        self.builder.start_node(FOREVER.into());
+        self.start_node(FOREVER);
         self.bump(); // KW_FOREVER
         self.parse_block();
         self.builder.finish_node();
     }
 
     fn parse_while(&mut self) {
-        self.builder.start_node(WHILE.into());
+        self.start_node(WHILE);
         self.bump(); // KW_WHILE
         if self.at(LBRACE) {
             let label = primary(self.peek_span(), "");
@@ -542,7 +551,7 @@ impl Parser<'_> {
     }
 
     fn parse_until(&mut self) {
-        self.builder.start_node(UNTIL.into());
+        self.start_node(UNTIL);
         self.bump(); // KW_UNTIL
         if self.at(LBRACE) {
             let label = primary(self.peek_span(), "");
@@ -556,7 +565,7 @@ impl Parser<'_> {
     }
 
     fn parse_for(&mut self) {
-        self.builder.start_node(FOR.into());
+        self.start_node(FOR);
         self.bump(); // KW_FOR
         if self.at(LBRACE) {
             let label = primary(self.peek_span(), "");
@@ -596,7 +605,7 @@ impl Parser<'_> {
             self.error();
             return;
         }
-        self.builder.start_node(BLOCK.into());
+        self.start_node(BLOCK);
         self.bump();
         while !self.at(EOF) && !self.eat(RBRACE) {
             if self.at(KW_SPRITE) {
@@ -609,7 +618,7 @@ impl Parser<'_> {
     }
 
     fn parse_function(&mut self) {
-        let checkpoint = self.builder.checkpoint();
+        let checkpoint = self.checkpoint();
         self.eat(KW_INLINE);
         if !self.eat(KW_FN) {
             let span = self.peek_span();
@@ -633,7 +642,7 @@ impl Parser<'_> {
     }
 
     fn parse_generics(&mut self) {
-        self.builder.start_node(GENERICS.into());
+        self.start_node(GENERICS);
         self.bump(); // LBRACKET
         while !self.at(EOF) && !self.eat(RBRACKET) {
             self.expect(IDENTIFIER);
@@ -643,7 +652,7 @@ impl Parser<'_> {
     }
 
     fn parse_costume_list(&mut self) {
-        self.builder.start_node(COSTUME_LIST.into());
+        self.start_node(COSTUME_LIST);
         self.bump(); // KW_COSTUMES
         self.expect(LBRACE);
         while !self.at(EOF) && !self.eat(RBRACE) {
@@ -651,7 +660,7 @@ impl Parser<'_> {
                 self.error();
                 continue;
             }
-            self.builder.start_node(COSTUME.into());
+            self.start_node(COSTUME);
             self.bump();
             self.expect(COLON);
             self.expect(STRING);
@@ -662,7 +671,7 @@ impl Parser<'_> {
     }
 
     fn parse_sprite(&mut self) {
-        self.builder.start_node(SPRITE.into());
+        self.start_node(SPRITE);
         let kw_sprite_span = self.peek_span();
         self.bump(); // KW_SPRITE
         if !self.at(LBRACE) {
@@ -700,7 +709,7 @@ impl Parser<'_> {
     }
 
     fn parse(mut self) -> SyntaxNode {
-        self.builder.start_node(DOCUMENT.into());
+        self.start_node(DOCUMENT);
         while !self.at(EOF) {
             self.parse_top_level_item();
         }
