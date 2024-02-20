@@ -596,7 +596,7 @@ impl Expression {
         )
     }
 
-    pub fn ty(&self, tcx: &mut Context) -> Result<Ty> {
+    pub fn ty(&self, ascribed: Option<&Ty>, tcx: &mut Context) -> Result<Ty> {
         match &self.kind {
             ExpressionKind::Variable(Name::User(variable))
                 if variable
@@ -655,7 +655,18 @@ impl Expression {
             }
             ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
             ExpressionKind::ListLiteral(list) => {
+                let ascribed_element_ty = match ascribed {
+                    Some(Ty::List(ty)) => Some(&**ty),
+                    _ => None,
+                };
+
                 let [first, rest @ ..] = &**list else {
+                    if let Some(ascribed_element_ty) = ascribed_element_ty {
+                        return Ok(Ty::List(Box::new(
+                            ascribed_element_ty.clone(),
+                        )));
+                    }
+
                     tcx.diagnostics.error(
                         "cannot infer type of empty list literal",
                         [primary(self.span, "")],
@@ -663,10 +674,10 @@ impl Expression {
                     tcx.diagnostics.note("sorry!", []);
                     return Err(());
                 };
-                let first_ty = first.ty(tcx)?;
+                let first_ty = first.ty(ascribed_element_ty, tcx)?;
 
                 for element in rest {
-                    let ty = element.ty(tcx)?;
+                    let ty = element.ty(ascribed_element_ty, tcx)?;
                     if ty != first_ty {
                         tcx.diagnostics.error(
                             "conflicting types in list literal",
@@ -682,7 +693,7 @@ impl Expression {
                 Ok(Ty::List(Box::new(first_ty)))
             }
             ExpressionKind::TypeAscription { inner, ty } => {
-                if let Ok(inner_ty) = inner.ty(tcx) {
+                if let Ok(inner_ty) = inner.ty(Some(ty), tcx) {
                     if inner_ty != *ty {
                         tcx.diagnostics.error(
                             "type ascription mismatch",

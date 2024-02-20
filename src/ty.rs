@@ -180,7 +180,7 @@ fn check_statement(
 ) -> Result<Ty, ()> {
     match statement {
         hir::Statement::Let { variable, value } => {
-            let ty = value.ty(tcx);
+            let ty = value.ty(None, tcx);
             tcx.variable_types.insert(variable.text_range().start(), ty);
             Ok(Ty::Unit)
         }
@@ -189,7 +189,7 @@ fn check_statement(
             then,
             else_,
         } => {
-            if let Ok(condition_ty) = condition.ty(tcx) {
+            if let Ok(condition_ty) = condition.ty(None, tcx) {
                 if condition_ty != Ty::Bool {
                     tcx.diagnostics.error(
                         "`if` condition must be a `Bool`",
@@ -209,7 +209,7 @@ fn check_statement(
             Ok(Ty::Unit)
         }
         hir::Statement::Repeat { times, body } => {
-            if let Ok(times_ty) = times.ty(tcx) {
+            if let Ok(times_ty) = times.ty(None, tcx) {
                 if times_ty != Ty::Num {
                     tcx.diagnostics.error(
                         "repetition count must be a number",
@@ -233,7 +233,7 @@ fn check_statement(
         }
         hir::Statement::While { condition, body }
         | hir::Statement::Until { condition, body } => {
-            if let Ok(condition_ty) = condition.ty(tcx) {
+            if let Ok(condition_ty) = condition.ty(None, tcx) {
                 if condition_ty != Ty::Bool {
                     let message =
                         if matches!(statement, hir::Statement::While { .. }) {
@@ -260,7 +260,7 @@ fn check_statement(
             times,
             body,
         } => Ok(check_for(variable, times, body, tcx)),
-        hir::Statement::Expr(expr) => expr.ty(tcx),
+        hir::Statement::Expr(expr) => expr.ty(None, tcx),
         hir::Statement::Error => Err(()),
     }
 }
@@ -271,7 +271,7 @@ fn check_for(
     body: &Result<hir::Block, ()>,
     tcx: &mut Context,
 ) -> Ty {
-    if let Ok(times_ty) = times.ty(tcx) {
+    if let Ok(times_ty) = times.ty(None, tcx) {
         if times_ty != Ty::Num {
             tcx.diagnostics.error(
                 "repetition count must be a number",
@@ -333,7 +333,7 @@ impl hir::Parameter {
         tcx: &mut Context,
     ) -> bool {
         self.external_name.as_deref() == argument_name.as_deref()
-            && match (&self.ty.node, value.ty(tcx)) {
+            && match (&self.ty.node, value.ty(None, tcx)) {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
                     let mut parameter_ty = parameter_ty.clone();
                     parameter_ty.apply_constraints(constraints);
