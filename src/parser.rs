@@ -62,6 +62,7 @@ pub enum SyntaxKind {
     GENERIC_TYPE_INSTANTIATION,
     TYPE_PARAMETERS,
     LIST_LITERAL,
+    TYPE_ASCRIPTION,
 
     #[token("(")]
     LPAREN,
@@ -132,6 +133,8 @@ pub enum SyntaxKind {
     KW_FOR,
     #[token("comptime")]
     KW_COMPTIME,
+    #[token("as")]
+    KW_AS,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -391,8 +394,12 @@ impl Parser<'_> {
             if binding_power(right) <= binding_power(left) {
                 break;
             }
-            self.builder
-                .start_node_at(checkpoint, BINARY_EXPRESSION.into());
+            let node_kind = if right == KW_AS {
+                TYPE_ASCRIPTION
+            } else {
+                BINARY_EXPRESSION
+            };
+            self.builder.start_node_at(checkpoint, node_kind.into());
             self.bump(); // operator
             self.parse_recursive_expression(right);
             self.builder.finish_node();
@@ -707,6 +714,7 @@ const PRECEDENCE_TABLE: &[&[SyntaxKind]] = &[
     &[LT, EQ_EQ, GT],
     &[PLUS, MINUS],
     &[STAR, SLASH, PERCENT],
+    &[KW_AS],
 ];
 
 fn binding_power(kind: SyntaxKind) -> Option<usize> {
