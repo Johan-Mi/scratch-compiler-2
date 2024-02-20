@@ -94,6 +94,12 @@ impl Formatter {
                 self.remove_newlines();
             }
 
+            if matches!(token.kind(), RPAREN | RBRACKET)
+                && self.output.ends_with(',')
+            {
+                self.output.pop();
+            }
+
             self.indent();
             self.newlines = 0;
             self.comment = false;
