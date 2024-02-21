@@ -268,17 +268,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             variable,
             function,
             args,
-        } => {
-            let args =
-                args.into_iter().map(|arg| compile_value(arg, cx)).collect();
-            let compiled_ref = &cx.compiled_functions[&function];
-            cx.sprite.use_custom_block(&compiled_ref.block, args);
-            if let Some(variable) = variable {
-                let return_variable =
-                    compiled_ref.return_variable.clone().unwrap().into();
-                store_result(variable, return_variable, cx);
-            }
-        }
+        } => compile_function_call(function, args, variable, cx),
         mir::Op::CallBuiltin {
             variable,
             name,
@@ -318,6 +308,22 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 }
             }
         },
+    }
+}
+
+fn compile_function_call(
+    function: function::Ref,
+    args: Vec<mir::Value>,
+    variable: Option<mir::SsaVar>,
+    cx: &mut Context,
+) {
+    let args = args.into_iter().map(|arg| compile_value(arg, cx)).collect();
+    let compiled_ref = &cx.compiled_functions[&function];
+    cx.sprite.use_custom_block(&compiled_ref.block, args);
+    if let Some(variable) = variable {
+        let return_variable =
+            compiled_ref.return_variable.clone().unwrap().into();
+        store_result(variable, return_variable, cx);
     }
 }
 
