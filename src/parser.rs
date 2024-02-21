@@ -63,6 +63,7 @@ pub enum SyntaxKind {
     TYPE_PARAMETERS,
     LIST_LITERAL,
     TYPE_ASCRIPTION,
+    METHOD_CALL,
 
     #[token("(")]
     LPAREN,
@@ -102,6 +103,8 @@ pub enum SyntaxKind {
     GT,
     #[token("&")]
     AMPERSAND,
+    #[token(".")]
+    DOT,
 
     #[token("sprite")]
     KW_SPRITE,
@@ -403,10 +406,10 @@ impl Parser<'_> {
             if binding_power(right) <= binding_power(left) {
                 break;
             }
-            let node_kind = if right == KW_AS {
-                TYPE_ASCRIPTION
-            } else {
-                BINARY_EXPRESSION
+            let node_kind = match right {
+                KW_AS => TYPE_ASCRIPTION,
+                DOT => METHOD_CALL,
+                _ => BINARY_EXPRESSION,
             };
             self.builder.start_node_at(checkpoint, node_kind.into());
             self.bump(); // operator
@@ -724,6 +727,7 @@ const PRECEDENCE_TABLE: &[&[SyntaxKind]] = &[
     &[PLUS, MINUS],
     &[STAR, SLASH, PERCENT],
     &[KW_AS],
+    &[DOT],
 ];
 
 fn binding_power(kind: SyntaxKind) -> Option<usize> {
