@@ -573,6 +573,9 @@ impl Expression {
             ast::Expression::TypeAscription(ascription) => {
                 lower_type_ascription(ascription, diagnostics, file)
             }
+            ast::Expression::MethodCall(call) => {
+                lower_method_call(call, file, diagnostics)
+            }
         };
 
         Self {
@@ -676,6 +679,32 @@ impl Expression {
             }
             ExpressionKind::Error => Err(()),
         }
+    }
+}
+
+fn lower_method_call(
+    call: &ast::MethodCall,
+    file: &File,
+    diagnostics: &mut Diagnostics,
+) -> ExpressionKind {
+    let caller = Expression::lower(&call.caller(), file, diagnostics);
+    let Some(rhs) = call.rhs() else {
+        return ExpressionKind::Error;
+    };
+    let rhs = Expression::lower(&rhs, file, diagnostics);
+    let ExpressionKind::FunctionCall {
+        name_or_operator,
+        mut arguments,
+    } = rhs.kind
+    else {
+        diagnostics
+            .error("expected function call after `.`", [primary(rhs.span, "")]);
+        return ExpressionKind::Error;
+    };
+    arguments.insert(0, (None, caller));
+    ExpressionKind::FunctionCall {
+        name_or_operator,
+        arguments,
     }
 }
 

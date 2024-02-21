@@ -338,6 +338,7 @@ pub enum Expression {
     GenericTypeInstantiation(GenericTypeInstantiation),
     ListLiteral(ListLiteral),
     TypeAscription(TypeAscription),
+    MethodCall(MethodCall),
 }
 
 impl AstNode for Expression {
@@ -354,6 +355,7 @@ impl AstNode for Expression {
             || GenericTypeInstantiation::can_cast(kind)
             || ListLiteral::can_cast(kind)
             || TypeAscription::can_cast(kind)
+            || MethodCall::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
@@ -372,6 +374,7 @@ impl AstNode for Expression {
             }
             LIST_LITERAL => AstNode::cast(node).map(Self::ListLiteral),
             TYPE_ASCRIPTION => AstNode::cast(node).map(Self::TypeAscription),
+            METHOD_CALL => AstNode::cast(node).map(Self::MethodCall),
             _ => None,
         }
     }
@@ -388,6 +391,7 @@ impl AstNode for Expression {
             Self::GenericTypeInstantiation(inner) => &inner.syntax,
             Self::ListLiteral(inner) => &inner.syntax,
             Self::TypeAscription(inner) => &inner.syntax,
+            Self::MethodCall(inner) => &inner.syntax,
         }
     }
 }
@@ -527,6 +531,35 @@ impl TypeAscription {
 
     pub fn ty(&self) -> Option<Expression> {
         let operator = self.operator().text_range().end();
+        self.syntax
+            .children()
+            .skip_while(|child| child.text_range().start() < operator)
+            .find_map(AstNode::cast)
+    }
+}
+
+ast_node!(MethodCall: METHOD_CALL);
+
+impl MethodCall {
+    pub fn dot(&self) -> SyntaxToken {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|token| token.kind() == DOT)
+            .unwrap()
+    }
+
+    pub fn caller(&self) -> Expression {
+        let operator = self.dot().text_range().start();
+        self.syntax
+            .children()
+            .take_while(|child| child.text_range().end() <= operator)
+            .find_map(AstNode::cast)
+            .unwrap()
+    }
+
+    pub fn rhs(&self) -> Option<Expression> {
+        let operator = self.dot().text_range().end();
         self.syntax
             .children()
             .skip_while(|child| child.text_range().start() < operator)
