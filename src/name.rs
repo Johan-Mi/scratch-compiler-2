@@ -59,12 +59,6 @@ fn all_in_exact_scope_at(
                 .sprites()
                 .filter_map(|sprite| sprite.name()),
         ),
-        SPRITE => Box::new(
-            ast::Sprite::cast(scope)
-                .unwrap()
-                .functions()
-                .filter_map(|func| func.name()),
-        ),
         FN => {
             let function = ast::Function::cast(scope).unwrap();
             let generics =
