@@ -172,6 +172,7 @@ impl Formatter {
 }
 
 fn token_wants_leading_space(kind: SyntaxKind, last: Option<u8>) -> bool {
-    !matches!(kind, RPAREN | RBRACKET | COLON | COMMA)
+    !matches!(kind, RPAREN | RBRACKET | COLON | COMMA | DOT)
         && (kind, last) != (RBRACE, Some(b'{'))
+        && (kind, last) != (IDENTIFIER, Some(b'.'))
 }
