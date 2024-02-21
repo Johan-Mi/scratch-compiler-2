@@ -374,6 +374,45 @@ pub fn of_builtin_name(
     }
 }
 
+pub fn of_list_literal(
+    list: &[hir::Expression],
+    span: Span,
+    ascribed: Option<&Ty>,
+    tcx: &mut Context,
+) -> Result<Ty, ()> {
+    let ascribed_element_ty = match ascribed {
+        Some(Ty::List(ty)) => Some(&**ty),
+        _ => None,
+    };
+    let [first, rest @ ..] = list else {
+        if let Some(ascribed_element_ty) = ascribed_element_ty {
+            return Ok(Ty::List(Box::new(ascribed_element_ty.clone())));
+        }
+
+        tcx.diagnostics.error(
+            "cannot infer type of empty list literal",
+            [primary(span, "")],
+        );
+        tcx.diagnostics.note("sorry!", []);
+        return Err(());
+    };
+    let first_ty = first.ty(ascribed_element_ty, tcx)?;
+    for element in rest {
+        let ty = element.ty(ascribed_element_ty, tcx)?;
+        if ty != first_ty {
+            tcx.diagnostics.error(
+                    "conflicting types in list literal",
+                    [
+                        primary(first.span, format!("expected element type `{first_ty}` because of because of the first item...")),
+                        primary(element.span, format!("...but this has type `{ty}`")),
+                    ]
+                );
+            return Err(());
+        }
+    }
+    Ok(Ty::List(Box::new(first_ty)))
+}
+
 type Constraints = HashMap<SyntaxToken, Ty>;
 
 pub struct Context<'a> {

@@ -655,42 +655,7 @@ impl Expression {
             }
             ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
             ExpressionKind::ListLiteral(list) => {
-                let ascribed_element_ty = match ascribed {
-                    Some(Ty::List(ty)) => Some(&**ty),
-                    _ => None,
-                };
-
-                let [first, rest @ ..] = &**list else {
-                    if let Some(ascribed_element_ty) = ascribed_element_ty {
-                        return Ok(Ty::List(Box::new(
-                            ascribed_element_ty.clone(),
-                        )));
-                    }
-
-                    tcx.diagnostics.error(
-                        "cannot infer type of empty list literal",
-                        [primary(self.span, "")],
-                    );
-                    tcx.diagnostics.note("sorry!", []);
-                    return Err(());
-                };
-                let first_ty = first.ty(ascribed_element_ty, tcx)?;
-
-                for element in rest {
-                    let ty = element.ty(ascribed_element_ty, tcx)?;
-                    if ty != first_ty {
-                        tcx.diagnostics.error(
-                            "conflicting types in list literal",
-                            [
-                                primary(first.span, format!("expected element type `{first_ty}` because of because of the first item...")),
-                                primary(element.span, format!("...but this has type `{ty}`")),
-                            ]
-                        );
-                        return Err(());
-                    }
-                }
-
-                Ok(Ty::List(Box::new(first_ty)))
+                ty::of_list_literal(list, self.span, ascribed, tcx)
             }
             ExpressionKind::TypeAscription { inner, ty } => {
                 if let Ok(inner_ty) = inner.ty(Some(ty), tcx) {
