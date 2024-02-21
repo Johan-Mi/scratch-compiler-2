@@ -53,11 +53,17 @@ fn all_in_exact_scope_at(
     position: TextSize,
 ) -> Box<dyn Iterator<Item = SyntaxToken>> {
     match scope.kind() {
-        DOCUMENT => Box::new(
-            ast::Document::cast(scope)
+        DOCUMENT => {
+            let document = ast::Document::cast(scope).unwrap();
+            let sprites = document.sprites().filter_map(|sprite| sprite.name());
+            let lets = document.lets().filter_map(|it| it.variable());
+            Box::new(sprites.chain(lets))
+        }
+        SPRITE => Box::new(
+            ast::Sprite::cast(scope)
                 .unwrap()
-                .sprites()
-                .filter_map(|sprite| sprite.name()),
+                .lets()
+                .filter_map(|it| it.variable()),
         ),
         FN => {
             let function = ast::Function::cast(scope).unwrap();
