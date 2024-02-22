@@ -142,8 +142,8 @@ pub enum SyntaxKind {
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
 
-    // TODO: binary, hex, octal and decimals
-    #[regex(r"[+-]?[0-9]+")]
+    // TODO: binary, hex and octal
+    #[regex(r"[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?")]
     NUMBER,
 
     // TODO: escape sequences
