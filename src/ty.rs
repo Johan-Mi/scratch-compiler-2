@@ -141,7 +141,7 @@ pub fn check(
 
     tcx.sprite = None;
     for function in document.functions.values() {
-        if !function.is_builtin {
+        if !function.is_intrinsic {
             check_function(function, &mut tcx);
         }
     }

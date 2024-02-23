@@ -39,7 +39,7 @@ pub fn lower(
         functions: document
             .functions
             .into_iter()
-            .filter(|(_, function)| !function.is_builtin)
+            .filter(|(_, function)| !function.is_intrinsic)
             .map(|(index, function)| (index, lower_function(function, &mut cx)))
             .collect(),
     }
@@ -48,7 +48,7 @@ pub fn lower(
 #[derive(Clone, Copy)]
 pub struct FunctionSignature {
     returns_something: bool,
-    is_builtin: bool,
+    is_intrinsic: bool,
 }
 
 #[allow(clippy::fallible_impl_from)]
@@ -60,7 +60,7 @@ impl From<&hir::Function> for FunctionSignature {
                 .as_ref()
                 .unwrap()
                 .is_zero_sized(),
-            is_builtin: function.is_builtin,
+            is_intrinsic: function.is_intrinsic,
         }
     }
 }
@@ -144,7 +144,7 @@ fn lower_statement(
             if let Some(&real_var) =
                 cx.real_vars.get(&variable.text_range().start())
             {
-                cx.block.ops.push(Op::CallBuiltin {
+                cx.block.ops.push(Op::Intrinsic {
                     variable: None,
                     name: "set".to_owned(),
                     args: vec![Value::Lvalue(real_var), value],
@@ -197,7 +197,7 @@ fn lower_statement(
             //    into `while not(condition) { ... }`
             let condition = lower_expression(condition, cx).unwrap();
             let not_condition = cx.generator.new_ssa_var();
-            cx.block.ops.push(Op::CallBuiltin {
+            cx.block.ops.push(Op::Intrinsic {
                 variable: Some(not_condition),
                 name: "not".to_owned(),
                 args: vec![condition],
@@ -240,7 +240,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 cx.real_vars.get(&variable.text_range().start())
             {
                 let ssa_var = cx.generator.new_ssa_var();
-                cx.block.ops.push(Op::CallBuiltin {
+                cx.block.ops.push(Op::Intrinsic {
                     variable: Some(ssa_var),
                     name: "get".to_owned(),
                     args: vec![Value::Lvalue(real_var)],
@@ -285,8 +285,8 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             let variable = signature
                 .returns_something
                 .then(|| cx.generator.new_ssa_var());
-            cx.block.ops.push(if signature.is_builtin {
-                Op::CallBuiltin {
+            cx.block.ops.push(if signature.is_intrinsic {
+                Op::Intrinsic {
                     variable,
                     name: name.to_owned(),
                     args,
@@ -309,7 +309,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             // TODO: clear list first
             for element in elements {
                 let element = lower_expression(element, cx).unwrap();
-                cx.block.ops.push(Op::CallBuiltin {
+                cx.block.ops.push(Op::Intrinsic {
                     variable: None,
                     name: "push".to_owned(),
                     args: vec![Value::List(list), element],

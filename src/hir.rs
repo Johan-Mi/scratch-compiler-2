@@ -147,7 +147,8 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub return_ty: Spanned<Result<Ty>>,
     pub body: Block,
-    pub is_builtin: bool,
+    pub is_from_builtins: bool,
+    pub is_intrinsic: bool,
     pub is_inline: bool,
 }
 
@@ -216,7 +217,8 @@ impl Function {
                 span: return_ty_span,
             },
             body: Block::lower(&body, file, diagnostics),
-            is_builtin: false,
+            is_from_builtins: false,
+            is_intrinsic: false,
             is_inline: ast.kw_inline().is_some(),
         })
     }

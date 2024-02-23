@@ -58,7 +58,7 @@ impl Visitor for SsaVarRefresher<'_> {
             variable: Some(variable),
             ..
         }
-        | Op::CallBuiltin {
+        | Op::Intrinsic {
             variable: Some(variable),
             ..
         }) = op

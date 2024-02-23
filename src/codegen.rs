@@ -269,7 +269,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             function,
             args,
         } => compile_function_call(function, args, variable, cx),
-        mir::Op::CallBuiltin {
+        mir::Op::Intrinsic {
             variable,
             name,
             mut args,
@@ -302,7 +302,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                     .into_iter()
                     .map(|arg| compile_value(arg, cx))
                     .collect();
-                let res = compile_builtin_function_call(&name, args, cx);
+                let res = compile_intrinsic(&name, args, cx);
                 if let Some(variable) = variable {
                     store_result(variable, res.unwrap(), cx);
                 }
@@ -378,7 +378,7 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
     }
 }
 
-fn compile_builtin_function_call(
+fn compile_intrinsic(
     name: &str,
     arguments: Vec<Operand>,
     cx: &mut Context,

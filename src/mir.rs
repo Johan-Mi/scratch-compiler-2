@@ -197,7 +197,7 @@ pub enum Op {
         function: function::Ref,
         args: Vec<Value>,
     },
-    CallBuiltin {
+    Intrinsic {
         variable: Option<SsaVar>,
         name: String,
         args: Vec<Value>,
@@ -206,7 +206,7 @@ pub enum Op {
 
 impl Op {
     fn is_pure(&self) -> bool {
-        matches!(self, Self::CallBuiltin { name, .. } if matches!(&**name,
+        matches!(self, Self::Intrinsic { name, .. } if matches!(&**name,
             "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt"
         ))
     }

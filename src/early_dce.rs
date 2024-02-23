@@ -39,7 +39,7 @@ pub fn perform(
 }
 
 fn warn(diagnostics: &mut Diagnostics, function: &Function) {
-    if !function.is_builtin {
+    if !function.is_from_builtins {
         diagnostics
             .warning("unused function", [primary(function.name.span, "")]);
     }

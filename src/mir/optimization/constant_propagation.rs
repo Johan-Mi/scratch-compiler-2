@@ -9,14 +9,14 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
     let mut dirty = false;
     let mut index = 0;
     while index < block.ops.len() {
-        if let Op::CallBuiltin {
+        if let Op::Intrinsic {
             variable: Some(variable),
             name,
             args,
         } = &mut block.ops[index]
         {
             let variable = *variable;
-            if let Some(value) = evaluate_builtin_call(name, args) {
+            if let Some(value) = evaluate_intrinsic(name, args) {
                 dirty = true;
                 block.ops.remove(index);
                 SsaVarReplacer {
@@ -34,7 +34,7 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
     dirty
 }
 
-fn evaluate_builtin_call(name: &str, args: &mut [Value]) -> Option<Value> {
+fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
     use crate::mir::Imm::{Bool, Num, String};
     use Value::Imm;
 

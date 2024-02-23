@@ -10,7 +10,10 @@ pub fn add_to_hir(
     let mut hir = crate::hir::lower(cst, &file, &mut diagnostics);
     debug_assert!(diagnostics.successful());
     for function in hir.functions.values_mut() {
-        function.is_builtin = true;
+        function.is_from_builtins = true;
+        if function.body.statements.is_empty() {
+            function.is_intrinsic = true;
+        }
     }
     document.functions.extend(hir.functions);
 }

@@ -62,7 +62,7 @@ pub(super) trait Visitor {
                 self.visit_value(condition);
                 self.traverse_block(body);
             }
-            Op::Call { args, .. } | Op::CallBuiltin { args, .. } => {
+            Op::Call { args, .. } | Op::Intrinsic { args, .. } => {
                 for arg in args {
                     self.visit_value(arg);
                 }

@@ -48,7 +48,7 @@ impl Visitor for Finder {
                     variable: Some(variable),
                     ..
                 }
-                | Op::CallBuiltin {
+                | Op::Intrinsic {
                     variable: Some(variable),
                     ..
                 } if candidates.remove(&variable) => {
@@ -83,6 +83,6 @@ fn direct_args(op: &Op) -> &[Value] {
         }
         | Op::For { times: value, .. } => slice::from_ref(value),
         Op::Forever { .. } => &[],
-        Op::Call { args, .. } | Op::CallBuiltin { args, .. } => args,
+        Op::Call { args, .. } | Op::Intrinsic { args, .. } => args,
     }
 }
