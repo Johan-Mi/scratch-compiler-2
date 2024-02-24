@@ -33,7 +33,7 @@ fn gt(_ lhs: String, _ rhs: String) -> Bool {}
 
 fn not(_ bool: Bool) -> Bool {}
 
-fn answer() {}
+fn answer() -> String {}
 
 fn ask(_ question: String) {}
 
