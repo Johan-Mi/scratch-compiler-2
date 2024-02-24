@@ -297,6 +297,82 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 let value = compile_value(args.pop().unwrap(), cx);
                 cx.sprite.put(block::append(list, value));
             }
+            "delete" => {
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let index = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.put(block::delete_of_list(list, index));
+            }
+            "delete-all" => {
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                cx.sprite.put(block::delete_all_of_list(list));
+            }
+            "insert" => {
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let index = compile_value(args.pop().unwrap(), cx);
+                let item = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.put(block::insert_at_list(list, item, index));
+            }
+            "replace" => {
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let item = compile_value(args.pop().unwrap(), cx);
+                let index = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.put(block::replace(list, index, item));
+            }
+            "at" => {
+                let Some(variable) = variable else { return };
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let index = compile_value(args.pop().unwrap(), cx);
+                store_result(variable, cx.sprite.item_of_list(list, index), cx);
+            }
+            "index" => {
+                let Some(variable) = variable else { return };
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let item = compile_value(args.pop().unwrap(), cx);
+                store_result(
+                    variable,
+                    cx.sprite.item_num_of_list(list, item),
+                    cx,
+                );
+            }
+            "length" => {
+                let Some(variable) = variable else { return };
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                store_result(variable, cx.sprite.length_of_list(list), cx);
+            }
+            "contains" => {
+                let Some(variable) = variable else { return };
+                let mir::Value::List(list) = args[0] else {
+                    unreachable!()
+                };
+                let list = cx.compile_real_list(list);
+                let item = compile_value(args.pop().unwrap(), cx);
+                store_result(
+                    variable,
+                    cx.sprite.list_contains_item(list, item),
+                    cx,
+                );
+            }
             _ => {
                 let args = args
                     .into_iter()
