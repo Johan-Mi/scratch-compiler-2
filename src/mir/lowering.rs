@@ -306,7 +306,11 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         }
         hir::ExpressionKind::ListLiteral(elements) => {
             let list = cx.generator.new_real_list();
-            // TODO: clear list first
+            cx.block.ops.push(Op::Intrinsic {
+                variable: None,
+                name: "delete-all".to_owned(),
+                args: vec![Value::List(list)],
+            });
             for element in elements {
                 let element = lower_expression(element, cx).unwrap();
                 cx.block.ops.push(Op::Intrinsic {
