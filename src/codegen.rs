@@ -491,6 +491,7 @@ fn compile_intrinsic(
             // (see the comment regarding boolean literals)
             Some(cx.sprite.eq(operand, "false".to_owned().into()))
         }
+        "answer" => f! { = answer() },
         "ask" => f! { ask(question) },
         "change-x" => f! { change_x(amount) },
         "change-y" => f! { change_y(amount) },

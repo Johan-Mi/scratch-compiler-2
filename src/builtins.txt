@@ -33,6 +33,8 @@ fn gt(_ lhs: String, _ rhs: String) -> Bool {}
 
 fn not(_ bool: Bool) -> Bool {}
 
+fn answer() {}
+
 fn ask(_ question: String) {}
 
 fn change-x(by amount: Num) {}
