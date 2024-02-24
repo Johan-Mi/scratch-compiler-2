@@ -393,7 +393,10 @@ pub fn of_list_literal(
             "cannot infer type of empty list literal",
             [primary(span, "")],
         );
-        tcx.diagnostics.note("sorry!", []);
+        tcx.diagnostics.help(
+            "use type ascription to specify the element type: `[] as List[T]`",
+            [],
+        );
         return Err(());
     };
     let first_ty = first.ty(ascribed_element_ty, tcx)?;
