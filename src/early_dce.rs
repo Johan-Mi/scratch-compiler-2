@@ -59,7 +59,9 @@ impl DceVisitor<'_> {
         self.pending_sprite_functions = sprite
             .functions
             .iter()
-            .filter(|(_, function)| function::name_is_special(&function.name))
+            .filter(|(_, function)| {
+                function::Special::try_from(&**function.name).is_ok()
+            })
             .map(|(&index, _)| index)
             .collect();
         self.required_sprite_functions.clear();

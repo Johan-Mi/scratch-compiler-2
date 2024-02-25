@@ -49,7 +49,7 @@ impl Visitor for SemanticVisitor<'_> {
             name_or_operator, ..
         } = &expr.kind
         {
-            if function::name_is_special(name_or_operator.text()) {
+            if function::Special::try_from(name_or_operator.text()).is_ok() {
                 self.diagnostics.error(format!("special function `{name_or_operator}` cannot be called"), [primary(expr.span, "")]);
             }
         }
@@ -62,7 +62,11 @@ impl SemanticVisitor<'_> {
         is_top_level: bool,
         function: &hir::Function,
     ) {
-        if is_top_level && function::name_is_special(&function.name) {
+        let Ok(special) = function::Special::try_from(&**function.name) else {
+            return;
+        };
+
+        if is_top_level {
             self.diagnostics.error(
                 format!(
                     "special function `{}` cannot be defined outside of a sprite",
@@ -72,7 +76,7 @@ impl SemanticVisitor<'_> {
             );
         }
 
-        if function.is_inline && function::name_is_special(&function.name) {
+        if function.is_inline {
             self.diagnostics.error(
                 format!(
                     "special function `{}` cannot be inline",
@@ -82,8 +86,8 @@ impl SemanticVisitor<'_> {
             );
         }
 
-        match &**function.name {
-            "when-flag-clicked" => {
+        match special {
+            function::Special::WhenFlagClicked => {
                 if !function.parameters.is_empty()
                     || function
                         .return_ty
@@ -100,7 +104,6 @@ impl SemanticVisitor<'_> {
                     );
                 }
             }
-            _ => {}
         }
     }
 

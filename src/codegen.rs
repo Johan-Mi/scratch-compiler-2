@@ -129,7 +129,7 @@ impl CompiledFunctionRef {
         sprite: &mut Target,
         compiled_ssa_vars: &mut HashMap<mir::SsaVar, CompiledSsaVar>,
     ) -> Option<Self> {
-        if function::name_is_special(&function.name) {
+        if function::Special::try_from(&*function.name).is_ok() {
             return None;
         }
 
@@ -189,12 +189,12 @@ fn compile_function(
     function_ref: function::Ref,
     cx: &mut Context,
 ) {
-    cx.return_variable = match &*function.name {
-        "when-flag-clicked" => {
+    cx.return_variable = match function::Special::try_from(&*function.name) {
+        Ok(function::Special::WhenFlagClicked) => {
             cx.sprite.start_script(block::when_flag_clicked());
             None
         }
-        _ => {
+        Err(()) => {
             let compiled_ref =
                 cx.compiled_functions.get_mut(&function_ref).unwrap();
             cx.sprite

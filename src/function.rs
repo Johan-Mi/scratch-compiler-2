@@ -125,6 +125,17 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
     );
 }
 
-pub fn name_is_special(name: &str) -> bool {
-    name == "when-flag-clicked"
+pub enum Special {
+    WhenFlagClicked,
+}
+
+impl TryFrom<&str> for Special {
+    type Error = ();
+
+    fn try_from(name: &str) -> Result<Self> {
+        match name {
+            "when-flag-clicked" => Ok(Self::WhenFlagClicked),
+            _ => Err(()),
+        }
+    }
 }
