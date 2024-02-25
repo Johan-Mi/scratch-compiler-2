@@ -273,25 +273,26 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             variable,
             name,
             args,
-        } => compile_intrinsic(&name, variable, args, cx),
+        } => {
+            let res = compile_intrinsic(&name, args, cx);
+            if let Some(variable) = variable {
+                store_result(variable, res.unwrap(), cx);
+            }
+        }
     }
 }
 
 fn compile_intrinsic(
     name: &str,
-    variable: Option<mir::SsaVar>,
     mut args: Vec<mir::Value>,
     cx: &mut Context<'_>,
-) {
+) -> Option<Operand> {
     match name {
         "get" => {
-            let Some(variable) = variable else {
-                return;
-            };
             let [mir::Value::Lvalue(var)] = *args else {
                 unreachable!()
             };
-            store_result(variable, cx.compile_real_var(var).into(), cx);
+            Some(cx.compile_real_var(var).into())
         }
         "set" => {
             let mir::Value::Lvalue(var) = args[0] else {
@@ -300,6 +301,7 @@ fn compile_intrinsic(
             let var = cx.compile_real_var(var);
             let value = compile_value(args.pop().unwrap(), cx);
             cx.sprite.put(block::set_variable(var, value));
+            None
         }
         "push" => {
             let mir::Value::List(list) = args[0] else {
@@ -308,6 +310,7 @@ fn compile_intrinsic(
             let list = cx.compile_real_list(list);
             let value = compile_value(args.pop().unwrap(), cx);
             cx.sprite.put(block::append(list, value));
+            None
         }
         "delete" => {
             let mir::Value::List(list) = args[0] else {
@@ -316,6 +319,7 @@ fn compile_intrinsic(
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
             cx.sprite.put(block::delete_of_list(list, index));
+            None
         }
         "delete-all" => {
             let mir::Value::List(list) = args[0] else {
@@ -323,6 +327,7 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             cx.sprite.put(block::delete_all_of_list(list));
+            None
         }
         "insert" => {
             let mir::Value::List(list) = args[0] else {
@@ -332,6 +337,7 @@ fn compile_intrinsic(
             let index = compile_value(args.pop().unwrap(), cx);
             let item = compile_value(args.pop().unwrap(), cx);
             cx.sprite.put(block::insert_at_list(list, item, index));
+            None
         }
         "replace" => {
             let mir::Value::List(list) = args[0] else {
@@ -341,61 +347,43 @@ fn compile_intrinsic(
             let item = compile_value(args.pop().unwrap(), cx);
             let index = compile_value(args.pop().unwrap(), cx);
             cx.sprite.put(block::replace(list, index, item));
+            None
         }
         "at" => {
-            let Some(variable) = variable else {
-                return;
-            };
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
-            store_result(variable, cx.sprite.item_of_list(list, index), cx);
+            Some(cx.sprite.item_of_list(list, index))
         }
         "index" => {
-            let Some(variable) = variable else {
-                return;
-            };
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            store_result(variable, cx.sprite.item_num_of_list(list, item), cx);
+            Some(cx.sprite.item_num_of_list(list, item))
         }
         "length" => {
-            let Some(variable) = variable else {
-                return;
-            };
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
-            store_result(variable, cx.sprite.length_of_list(list), cx);
+            Some(cx.sprite.length_of_list(list))
         }
         "contains" => {
-            let Some(variable) = variable else {
-                return;
-            };
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            store_result(
-                variable,
-                cx.sprite.list_contains_item(list, item),
-                cx,
-            );
+            Some(cx.sprite.list_contains_item(list, item))
         }
         _ => {
             let args =
                 args.into_iter().map(|arg| compile_value(arg, cx)).collect();
-            let res = compile_regular_intrinsic(name, args, cx);
-            if let Some(variable) = variable {
-                store_result(variable, res.unwrap(), cx);
-            }
+            compile_regular_intrinsic(name, args, cx)
         }
     }
 }
