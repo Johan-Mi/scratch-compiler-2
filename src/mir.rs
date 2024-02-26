@@ -207,7 +207,7 @@ pub enum Op {
 impl Op {
     fn is_pure(&self) -> bool {
         matches!(self, Self::Intrinsic { name, .. } if matches!(&**name,
-            "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt" | "not"
+            "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt" | "not" | "join"
         ))
     }
 
