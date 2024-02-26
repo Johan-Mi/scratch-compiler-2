@@ -60,6 +60,9 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
             Some(Imm(Bool(lhs.to_lowercase() > rhs.to_lowercase())))
         }
         ("not", [Imm(Bool(operand))]) => Some(Imm(Bool(!*operand))),
+        ("join", [Imm(String(lhs)), Imm(String(rhs))]) => {
+            Some(Imm(String(format!("{lhs}{rhs}"))))
+        }
 
         #[allow(clippy::float_cmp)]
         ("add", [n, Imm(Num(identity))]) if *identity == 0.0 => {
