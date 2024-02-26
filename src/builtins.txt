@@ -57,8 +57,8 @@ fn pen-up() {}
 
 fn reset-timer() {}
 
-fn say(message _: String) {}
-fn say(message _: String, seconds _: Num) {}
+fn say(_ message: String) {}
+fn say(_ message: String, seconds _: Num) {}
 
 fn set-costume(to costume: String) {}
 fn set-costume(to costume: Num) {}
