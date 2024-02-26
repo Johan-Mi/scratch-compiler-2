@@ -492,6 +492,7 @@ fn compile_regular_intrinsic(
             // (see the comment regarding boolean literals)
             Some(cx.sprite.eq(operand, "false".to_owned().into()))
         }
+        "join" => f! { = join(lhs, rhs) },
         "answer" => f! { = answer() },
         "ask" => f! { ask(question) },
         "change-x" => f! { change_x(amount) },
