@@ -483,7 +483,7 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
 
 fn compile_regular_intrinsic(
     name: &str,
-    arguments: Vec<Operand>,
+    mut arguments: Vec<Operand>,
     cx: &mut Context,
 ) -> Option<Operand> {
     macro_rules! f {
@@ -504,6 +504,7 @@ fn compile_regular_intrinsic(
     }
 
     match name {
+        "to-string" => arguments.pop(),
         "add" => f! { = add(lhs, rhs) },
         "sub" => f! { = sub(lhs, rhs) },
         "mul" => f! { = mul(lhs, rhs) },
