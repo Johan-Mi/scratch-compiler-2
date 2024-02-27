@@ -4,13 +4,19 @@ fn push[T](_ comptime list: List[T], _ value: T) {}
 
 fn delete[T](_ comptime list: List[T], index _: Num) {}
 
+fn delete-last[T](_ comptime list: List[T]) {}
+
 fn delete-all[T](_ comptime list: List[T]) {}
 
 fn insert[T](_ comptime list: List[T], _ item: T, at index: Num) {}
 
 fn replace[T](_ comptime list: List[T], index _: Num, with item: Num) {}
 
+fn replace-last[T](_ comptime list: List[T], with item: Num) {}
+
 fn at[T](_ comptime list: List[T], _ index: Num) -> T {}
+
+fn last[T](_ comptime list: List[T]) -> T {}
 
 fn index[T](_ comptime list: List[T], of item: T) -> Num {}
 

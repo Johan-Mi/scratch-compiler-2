@@ -321,6 +321,15 @@ fn compile_intrinsic(
             cx.sprite.put(block::delete_of_list(list, index));
             None
         }
+        "delete-last" => {
+            let mir::Value::List(list) = args[0] else {
+                unreachable!()
+            };
+            let list = cx.compile_real_list(list);
+            cx.sprite
+                .put(block::delete_of_list(list, "last".to_owned().into()));
+            None
+        }
         "delete-all" => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
@@ -349,6 +358,16 @@ fn compile_intrinsic(
             cx.sprite.put(block::replace(list, index, item));
             None
         }
+        "replace-last" => {
+            let mir::Value::List(list) = args[0] else {
+                unreachable!()
+            };
+            let list = cx.compile_real_list(list);
+            let item = compile_value(args.pop().unwrap(), cx);
+            cx.sprite
+                .put(block::replace(list, "last".to_owned().into(), item));
+            None
+        }
         "at" => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
@@ -356,6 +375,13 @@ fn compile_intrinsic(
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
             Some(cx.sprite.item_of_list(list, index))
+        }
+        "last" => {
+            let mir::Value::List(list) = args[0] else {
+                unreachable!()
+            };
+            let list = cx.compile_real_list(list);
+            Some(cx.sprite.item_of_list(list, "last".to_owned().into()))
         }
         "index" => {
             let mir::Value::List(list) = args[0] else {
