@@ -265,6 +265,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
             arguments,
+            ..
         } => {
             let name = desugar_function_call_name(&name_or_operator);
             let args = arguments

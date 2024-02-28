@@ -462,6 +462,7 @@ pub enum ExpressionKind {
     Imm(Value),
     FunctionCall {
         name_or_operator: SyntaxToken,
+        name_span: Span,
         arguments: Vec<Argument>,
     },
     Lvalue(TextSize),
@@ -507,6 +508,7 @@ impl Expression {
                 let operator_range = operator.text_range();
                 ExpressionKind::FunctionCall {
                     name_or_operator: operator,
+                    name_span: span(file, operator_range),
                     arguments: vec![
                         (
                             None,
@@ -621,18 +623,12 @@ impl Expression {
             ExpressionKind::Imm(value) => Ok(value.ty()),
             ExpressionKind::FunctionCall {
                 name_or_operator,
+                name_span,
                 arguments,
             } => {
                 let name = desugar_function_call_name(name_or_operator);
-                let (resolved, return_ty) = function::resolve(
-                    name,
-                    arguments,
-                    self.span.subspan(
-                        0,
-                        u32::from(name_or_operator.text_range().len()).into(),
-                    ),
-                    tcx,
-                )?;
+                let (resolved, return_ty) =
+                    function::resolve(name, arguments, *name_span, tcx)?;
                 tcx.resolved_calls.insert(self.span.low(), resolved);
 
                 for (param, (_, arg)) in std::iter::zip(
@@ -696,6 +692,7 @@ fn lower_method_call(
     let rhs = Expression::lower(&rhs, file, diagnostics);
     let ExpressionKind::FunctionCall {
         name_or_operator,
+        name_span,
         mut arguments,
     } = rhs.kind
     else {
@@ -706,6 +703,7 @@ fn lower_method_call(
     arguments.insert(0, (None, caller));
     ExpressionKind::FunctionCall {
         name_or_operator,
+        name_span,
         arguments,
     }
 }
@@ -715,8 +713,11 @@ fn lower_function_call(
     file: &File,
     diagnostics: &mut Diagnostics,
 ) -> ExpressionKind {
+    let name_or_operator = call.name();
+    let name_span = span(file, name_or_operator.text_range());
     ExpressionKind::FunctionCall {
-        name_or_operator: call.name(),
+        name_or_operator,
+        name_span,
         arguments: call
             .args()
             .iter()
