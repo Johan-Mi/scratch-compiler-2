@@ -82,6 +82,9 @@ impl Ty {
                 (Self::Var(this), Self::Var(other)) => {
                     this.pattern_match(*other, constraints)
                 }
+                (Self::List(this), Self::List(other)) => {
+                    this.pattern_match(*other, constraints)
+                }
                 _ => false,
             }
     }
