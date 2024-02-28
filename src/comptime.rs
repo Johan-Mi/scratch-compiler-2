@@ -126,6 +126,8 @@ pub fn evaluate(
 pub const fn is_known(expr: &Expression) -> bool {
     matches!(
         expr.kind,
-        ExpressionKind::Imm(_) | ExpressionKind::Lvalue(_)
+        ExpressionKind::Imm(_)
+            | ExpressionKind::Variable(_)
+            | ExpressionKind::Lvalue(_)
     )
 }
