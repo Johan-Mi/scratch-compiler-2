@@ -123,6 +123,7 @@ pub fn evaluate(
     }
 }
 
+// FIXME: get rid of this and use actual compile-time evaluation instead
 pub const fn is_known(expr: &Expression) -> bool {
     matches!(
         expr.kind,
