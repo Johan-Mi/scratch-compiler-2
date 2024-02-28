@@ -504,7 +504,7 @@ fn compile_regular_intrinsic(
     }
 
     match name {
-        "to-string" => arguments.pop(),
+        "to-string" | "to-num" => arguments.pop(),
         "add" => f! { = add(lhs, rhs) },
         "sub" => f! { = sub(lhs, rhs) },
         "mul" => f! { = mul(lhs, rhs) },
