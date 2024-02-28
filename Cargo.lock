@@ -243,6 +243,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
 
 [[package]]
+name = "ryu-js"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4950d85bc52415f8432144c97c4791bd0c4f7954de32a7270ee9cccd3c22b12b"
+
+[[package]]
 name = "sb3-builder"
 version = "0.1.0"
 dependencies = [
@@ -262,6 +268,7 @@ dependencies = [
  "logos",
  "petgraph",
  "rowan",
+ "ryu-js",
  "sb3-builder",
 ]
 

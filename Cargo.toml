@@ -12,4 +12,5 @@ levenshtein = "1.0.5"
 logos = "0.13.0"
 petgraph = { version = "0.6.4", default-features = false }
 rowan = "0.15.13"
+ryu-js = "1.0.0"
 sb3-builder = { version = "0.1.0", path = "../sb3-builder" }

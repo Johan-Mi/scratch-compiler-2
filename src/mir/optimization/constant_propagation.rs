@@ -39,6 +39,9 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
     use Value::Imm;
 
     match (name, args) {
+        ("to-string", [Imm(Num(num))]) => {
+            Some(Imm(String(ryu_js::Buffer::new().format(*num).to_owned())))
+        }
         ("add", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs + *rhs))),
         ("sub", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs - *rhs))),
         ("mul", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs * *rhs))),
