@@ -52,11 +52,17 @@ pub fn resolve(
         .chain(top_level_overloads)
         .collect::<Vec<_>>();
 
+    let typed_arguments = arguments
+        .iter()
+        .map(|(name, arg)| (name.as_deref(), arg.ty(None, tcx)))
+        .collect::<Vec<_>>();
+
     let mut viable_overloads = all_overloads
         .iter()
         .copied()
         .filter_map(|overload| {
-            Some(overload).zip(tcx.function(overload).call_with(arguments, tcx))
+            Some(overload)
+                .zip(tcx.function(overload).call_with(&typed_arguments))
         })
         .collect::<Vec<_>>();
 

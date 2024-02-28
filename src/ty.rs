@@ -303,16 +303,19 @@ fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
 impl hir::Function {
     pub fn call_with(
         &self,
-        arguments: &[hir::Argument],
-        tcx: &mut Context,
+        typed_arguments: &[(Option<&str>, Result<Ty, ()>)],
     ) -> Option<Result<Ty, ()>> {
-        if self.parameters.len() != arguments.len() {
+        if self.parameters.len() != typed_arguments.len() {
             return None;
         }
         let mut constraints = Constraints::new();
-        if !std::iter::zip(&self.parameters, arguments).all(
+        if !std::iter::zip(&self.parameters, typed_arguments).all(
             |(parameter, argument)| {
-                parameter.is_compatible_with(argument, &mut constraints, tcx)
+                parameter.is_compatible_with(
+                    argument.0,
+                    &argument.1,
+                    &mut constraints,
+                )
             },
         ) {
             return None;
@@ -328,12 +331,12 @@ impl hir::Function {
 impl hir::Parameter {
     fn is_compatible_with(
         &self,
-        (argument_name, value): &hir::Argument,
+        name: Option<&str>,
+        ty: &Result<Ty, ()>,
         constraints: &mut Constraints,
-        tcx: &mut Context,
     ) -> bool {
-        self.external_name.as_deref() == argument_name.as_deref()
-            && match (&self.ty.node, value.ty(None, tcx)) {
+        self.external_name.as_deref() == name
+            && match (&self.ty.node, ty) {
                 (Ok(parameter_ty), Ok(argument_ty)) => {
                     let mut parameter_ty = parameter_ty.clone();
                     parameter_ty.apply_constraints(constraints);
