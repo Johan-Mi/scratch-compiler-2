@@ -127,7 +127,7 @@ impl SemanticVisitor<'_> {
     }
 
     fn check_generics(&mut self, function: &hir::Function) {
-        if !function.is_intrinsic && function.generics.is_some() {
+        if !function.is_intrinsic && !function.generics.is_empty() {
             self.diagnostics.error(
                 "user-defined functions with generics are not supported yet",
                 [primary(function.name.span, "")],
