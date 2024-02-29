@@ -88,7 +88,7 @@ impl Ty {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Generic {
     Var,
     List,
@@ -119,35 +119,22 @@ impl TryFrom<hir::Expression> for Generic {
     }
 }
 
-pub fn check(
-    document: &hir::Document,
-    diagnostics: &mut Diagnostics,
-) -> ResolvedCalls {
-    let mut resolved_calls = HashMap::new();
-
-    let mut tcx = Context {
-        sprite: None,
-        top_level_functions: &document.functions,
-        diagnostics,
-        variable_types: HashMap::new(),
-        resolved_calls: &mut resolved_calls,
-    };
+pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
+    tcx.top_level_functions = &document.functions;
 
     for sprite in document.sprites.values() {
         tcx.sprite = Some(sprite);
         for function in sprite.functions.values() {
-            check_function(function, &mut tcx);
+            check_function(function, tcx);
         }
     }
 
     tcx.sprite = None;
     for function in document.functions.values() {
         if !function.is_intrinsic {
-            check_function(function, &mut tcx);
+            check_function(function, tcx);
         }
     }
-
-    resolved_calls
 }
 
 fn check_function(function: &hir::Function, tcx: &mut Context) {
@@ -428,4 +415,34 @@ pub struct Context<'a> {
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
     pub resolved_calls: &'a mut ResolvedCalls,
+}
+
+pub fn check_generic_type_instantiation(
+    generic: Generic,
+    arguments: &[hir::Expression],
+    span: Span,
+    tcx: &mut Context,
+) {
+    let [arg] = arguments else {
+        tcx.diagnostics.error(
+            format!("wrong number of arguments for generic type `{generic}`"),
+            [primary(
+                span,
+                format!("expected 1 argument, got {}", arguments.len()),
+            )],
+        );
+        return;
+    };
+    let Ok(arg_ty) = arg.ty(None, tcx) else {
+        return;
+    };
+    if !matches!(arg_ty, Ty::Ty) {
+        tcx.diagnostics.error(
+            format!("type mismatch for argument of generic type `{generic}`"),
+            [primary(
+                arg.span,
+                format!("expected `Type`, got `{arg_ty}`"),
+            )],
+        );
+    };
 }

@@ -23,7 +23,11 @@ mod ty;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
-use std::{path::Path, process::ExitCode};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::Path,
+    process::ExitCode,
+};
 
 fn main() -> ExitCode {
     let mut code_map = CodeMap::default();
@@ -89,12 +93,23 @@ fn compile_or_check(
     if std::env::var_os("DUMP_CST").is_some() {
         eprintln!("{document:#?}");
     }
-    let mut document = hir::lower(document, &file, diagnostics);
+
+    let mut resolved_calls = HashMap::new();
+
+    let mut tcx = ty::Context {
+        sprite: None,
+        top_level_functions: &BTreeMap::new(),
+        diagnostics,
+        variable_types: HashMap::new(),
+        resolved_calls: &mut resolved_calls,
+    };
+
+    let mut document = hir::lower(document, &file, &mut tcx);
     if std::env::var_os("DUMP_HIR").is_some() {
         eprintln!("{document:#?}");
     }
-    builtins::add_to_hir(&mut document, code_map);
-    let resolved_calls = ty::check(&document, diagnostics);
+    builtins::add_to_hir(&mut document, code_map, &mut tcx);
+    ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
     linter::lint(&document, &file, diagnostics);

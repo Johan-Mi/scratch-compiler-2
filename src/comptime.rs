@@ -68,12 +68,7 @@ pub fn evaluate(
             Builtin::Num => Ok(Value::Ty(Ty::Num)),
             Builtin::String => Ok(Value::Ty(Ty::String)),
             Builtin::Bool => Ok(Value::Ty(Ty::Bool)),
-            Builtin::Var => {
-                error("generic type `Var` must have one type parameter applied")
-            }
-            Builtin::List => error(
-                "generic type `List` must have one type parameter applied",
-            ),
+            Builtin::Var | Builtin::List => Err(()),
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
@@ -84,30 +79,12 @@ pub fn evaluate(
             error("mutable variables are not supported at compile-time")
         }
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
-            let arg_count = arguments.len();
             let Ok([arg]) = <[Expression; 1]>::try_from(arguments) else {
-                diagnostics.error(
-                    format!("wrong number of arguments for generic type `{generic}`"),
-                    [primary(
-                        expr.span,
-                        format!("expected 1 argument, got {arg_count}",),
-                    )],
-                );
                 return Err(());
             };
-
-            let arg = evaluate(arg, diagnostics)?;
-            let Value::Ty(ty) = arg else {
-                diagnostics.error(
-                    format!("type mismatch for argument of generic type `{generic}`"),
-                    [primary(
-                        expr.span,
-                        format!("expected `Type`, got `{}`", arg.ty()),
-                    )],
-                );
+            let Value::Ty(ty) = evaluate(arg, diagnostics)? else {
                 return Err(());
             };
-
             Ok(Value::Ty(match generic {
                 ty::Generic::Var => Ty::Var(Box::new(ty)),
                 ty::Generic::List => Ty::List(Box::new(ty)),

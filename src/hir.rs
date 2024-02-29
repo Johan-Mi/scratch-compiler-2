@@ -20,12 +20,8 @@ use std::collections::{BTreeMap, HashMap};
 /// the sake of resilience.
 type Result<T> = std::result::Result<T, ()>;
 
-pub fn lower(
-    document: SyntaxNode,
-    file: &File,
-    diagnostics: &mut Diagnostics,
-) -> Document {
-    Document::lower(&ast::Document::cast(document).unwrap(), file, diagnostics)
+pub fn lower(document: SyntaxNode, file: &File, tcx: &mut Context) -> Document {
+    Document::lower(&ast::Document::cast(document).unwrap(), file, tcx)
 }
 
 #[derive(Debug)]
@@ -35,21 +31,16 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn lower(
-        ast: &ast::Document,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    pub fn lower(ast: &ast::Document, file: &File, tcx: &mut Context) -> Self {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
-            let Ok((name, sprite)) = Sprite::lower(&sprite, file, diagnostics)
-            else {
+            let Ok((name, sprite)) = Sprite::lower(&sprite, file, tcx) else {
                 continue;
             };
 
             if let Some(prev_sprite) = sprites.get(&*name) {
-                diagnostics.error(
+                tcx.diagnostics.error(
                     format!("redefinition of sprite `{name}`"),
                     [
                         primary(sprite.name_span, "second definition here"),
@@ -66,9 +57,7 @@ impl Document {
 
         let functions = ast
             .functions()
-            .filter_map(|function| {
-                Function::lower(&function, file, diagnostics).ok()
-            })
+            .filter_map(|function| Function::lower(&function, file, tcx).ok())
             .enumerate()
             .collect();
 
@@ -87,10 +76,10 @@ impl Sprite {
     fn lower(
         ast: &ast::Sprite,
         file: &File,
-        diagnostics: &mut Diagnostics,
+        tcx: &mut Context,
     ) -> Result<(String, Self)> {
         let name = ast.name().ok_or_else(|| {
-            diagnostics.error(
+            tcx.diagnostics.error(
                 "sprite has no name",
                 [primary(
                     span(file, ast.syntax().text_range()),
@@ -108,9 +97,7 @@ impl Sprite {
 
         let functions = ast
             .functions()
-            .filter_map(|function| {
-                Function::lower(&function, file, diagnostics).ok()
-            })
+            .filter_map(|function| Function::lower(&function, file, tcx).ok())
             .enumerate()
             .collect();
 
@@ -156,7 +143,7 @@ impl Function {
     fn lower(
         ast: &ast::Function,
         file: &File,
-        diagnostics: &mut Diagnostics,
+        tcx: &mut Context,
     ) -> Result<Self> {
         let defined_here = || {
             [primary(
@@ -165,8 +152,21 @@ impl Function {
             )]
         };
 
+        let generics = ast
+            .generics()
+            .into_iter()
+            .flat_map(|it| it.iter())
+            .collect::<Vec<_>>();
+
+        tcx.variable_types.extend(
+            generics
+                .iter()
+                .map(|it| (it.text_range().start(), Ok(Ty::Ty))),
+        );
+
         let name = ast.name().ok_or_else(|| {
-            diagnostics.error("function has no name", defined_here());
+            tcx.diagnostics
+                .error("function has no name", defined_here());
         })?;
         let name = Spanned {
             node: name.text().to_owned(),
@@ -176,51 +176,49 @@ impl Function {
         let parameters = ast
             .parameters()
             .ok_or_else(|| {
-                diagnostics
+                tcx.diagnostics
                     .error("function has no parameter list", defined_here());
             })
             .into_iter()
             .flat_map(|p| p.parameters())
-            .map(|parameter| Parameter::lower(&parameter, file, diagnostics))
+            .map(|parameter| Parameter::lower(&parameter, file, tcx))
             .collect::<Result<_>>()?;
 
         let body = ast.body().ok_or_else(|| {
-            diagnostics.error("function has no body", defined_here());
+            tcx.diagnostics
+                .error("function has no body", defined_here());
         })?;
 
         let return_ty = ast
             .return_ty()
-            .map(|it| Expression::lower(&it, file, diagnostics));
+            .map(|it| Expression::lower(&it, file, tcx.diagnostics));
         let return_ty_span = return_ty.as_ref().map_or(name.span, |it| it.span);
         let return_ty = return_ty.map_or(Ok(Ty::Unit), |expr| {
-            match comptime::evaluate(expr, diagnostics)? {
+            let expr_ty = expr.ty(None, tcx)?;
+            if !matches!(expr_ty, Ty::Ty) {
+                tcx.diagnostics.error(
+                    "function return type must be a type",
+                    [primary(
+                        return_ty_span,
+                        format!("expected `Type`, got `{expr_ty}`"),
+                    )],
+                );
+            };
+            match comptime::evaluate(expr, tcx.diagnostics)? {
                 Value::Ty(ty) => Ok(ty),
-                value => {
-                    diagnostics.error(
-                        "function return type must be a type",
-                        [primary(
-                            return_ty_span,
-                            format!("expected `Type`, got `{}`", value.ty()),
-                        )],
-                    );
-                    Err(())
-                }
+                _ => Err(()),
             }
         });
 
         Ok(Self {
             name,
-            generics: ast
-                .generics()
-                .into_iter()
-                .flat_map(|it| it.iter())
-                .collect(),
+            generics,
             parameters,
             return_ty: Spanned {
                 node: return_ty,
                 span: return_ty_span,
             },
-            body: Block::lower(&body, file, diagnostics),
+            body: Block::lower(&body, file, tcx.diagnostics),
             is_from_builtins: false,
             is_intrinsic: false,
             is_inline: ast.kw_inline().is_some(),
@@ -241,25 +239,37 @@ impl Parameter {
     fn lower(
         ast: &ast::Parameter,
         file: &File,
-        diagnostics: &mut Diagnostics,
+        tcx: &mut Context,
     ) -> Result<Self> {
         let external_name = ast.external_name().unwrap().identifier();
         let internal_name = ast.internal_name().ok_or_else(|| {
-            diagnostics.error(
+            tcx.diagnostics.error(
                 "function parameter has no internal name",
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
 
         let ty = ast.ty().ok_or_else(|| {
-            diagnostics.error(
+            tcx.diagnostics.error(
                 "function parameter has no type",
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
-        let ty = Expression::lower(&ty, file, diagnostics);
-        let ty_span = ty.span;
-        let ty = match comptime::evaluate(ty, diagnostics) {
+        let expr = Expression::lower(&ty, file, tcx.diagnostics);
+        let ty_span = expr.span;
+
+        let expr_ty = expr.ty(None, tcx)?;
+        if !matches!(expr_ty, Ty::Ty) {
+            tcx.diagnostics.error(
+                "function parameter type must be a type",
+                [primary(
+                    ty_span,
+                    format!("expected `Type`, got `{expr_ty}`"),
+                )],
+            );
+        };
+
+        let ty = match comptime::evaluate(expr, tcx.diagnostics) {
             Ok(Value::Ty(ty)) => Ok(ty),
             _ => Err(()),
         };
@@ -658,7 +668,12 @@ impl Expression {
             ExpressionKind::Lvalue(var) => {
                 tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
             }
-            ExpressionKind::GenericTypeInstantiation { .. } => Ok(Ty::Ty),
+            ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
+                ty::check_generic_type_instantiation(
+                    *generic, arguments, self.span, tcx,
+                );
+                Ok(Ty::Ty)
+            }
             ExpressionKind::ListLiteral(list) => {
                 ty::of_list_literal(list, self.span, ascribed, tcx)
             }
