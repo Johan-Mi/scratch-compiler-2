@@ -79,10 +79,8 @@ impl Ty {
                     constraints.insert(name, self.clone());
                     true
                 }
-                (Self::Var(this), Self::Var(other)) => {
-                    this.pattern_match(*other, constraints)
-                }
-                (Self::List(this), Self::List(other)) => {
+                (Self::Var(this), Self::Var(other))
+                | (Self::List(this), Self::List(other)) => {
                     this.pattern_match(*other, constraints)
                 }
                 _ => false,
