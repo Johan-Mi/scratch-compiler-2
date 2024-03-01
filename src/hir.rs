@@ -4,7 +4,7 @@ pub use visit::Visitor;
 use crate::{
     ast,
     comptime::{self, Value},
-    diagnostics::{primary, secondary, span, Diagnostics},
+    diagnostics::{primary, secondary, span},
     function,
     name::Name,
     parser::{SyntaxKind, SyntaxNode, SyntaxToken},
@@ -189,9 +189,8 @@ impl Function {
                 .error("function has no body", defined_here());
         })?;
 
-        let return_ty = ast
-            .return_ty()
-            .map(|it| Expression::lower(&it, file, tcx.diagnostics));
+        let return_ty =
+            ast.return_ty().map(|it| Expression::lower(&it, file, tcx));
         let return_ty_span = return_ty.as_ref().map_or(name.span, |it| it.span);
         let return_ty = return_ty.map_or(Ok(Ty::Unit), |expr| {
             let expr_ty = expr.ty(None, tcx)?;
@@ -204,7 +203,13 @@ impl Function {
                     )],
                 );
             };
-            match comptime::evaluate(expr, tcx.diagnostics)? {
+            let expr_span = expr.span;
+            match comptime::evaluate(expr).map_err(|()| {
+                tcx.diagnostics.error(
+                    "function return type must be comptime-known",
+                    [primary(expr_span, "")],
+                );
+            })? {
                 Value::Ty(ty) => Ok(ty),
                 _ => Err(()),
             }
@@ -218,7 +223,7 @@ impl Function {
                 node: return_ty,
                 span: return_ty_span,
             },
-            body: Block::lower(&body, file, tcx.diagnostics),
+            body: Block::lower(&body, file, tcx),
             is_from_builtins: false,
             is_intrinsic: false,
             is_inline: ast.kw_inline().is_some(),
@@ -255,7 +260,7 @@ impl Parameter {
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
-        let expr = Expression::lower(&ty, file, tcx.diagnostics);
+        let expr = Expression::lower(&ty, file, tcx);
         let ty_span = expr.span;
 
         let expr_ty = expr.ty(None, tcx)?;
@@ -269,8 +274,13 @@ impl Parameter {
             );
         };
 
-        let ty = match comptime::evaluate(expr, tcx.diagnostics) {
-            Ok(Value::Ty(ty)) => Ok(ty),
+        let ty = match comptime::evaluate(expr).map_err(|()| {
+            tcx.diagnostics.error(
+                "function parameter type must be comptime-known",
+                [primary(ty_span, "")],
+            );
+        })? {
+            Value::Ty(ty) => Ok(ty),
             _ => Err(()),
         };
 
@@ -296,17 +306,11 @@ pub struct Block {
 }
 
 impl Block {
-    fn lower(
-        ast: &ast::Block,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Block, file: &File, tcx: &mut Context) -> Self {
         Self {
             statements: ast
                 .statements()
-                .map(|statement| {
-                    Statement::lower(&statement, file, diagnostics)
-                })
+                .map(|statement| Statement::lower(&statement, file, tcx))
                 .collect(),
         }
     }
@@ -314,10 +318,9 @@ impl Block {
     fn lower_opt(
         ast: Option<ast::Block>,
         file: &File,
-        diagnostics: &mut Diagnostics,
+        tcx: &mut Context,
     ) -> Result<Self> {
-        ast.map(|block| Self::lower(&block, file, diagnostics))
-            .ok_or(())
+        ast.map(|block| Self::lower(&block, file, tcx)).ok_or(())
     }
 }
 
@@ -358,15 +361,11 @@ pub enum Statement {
 }
 
 impl Statement {
-    fn lower(
-        ast: &ast::Statement,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Statement, file: &File, tcx: &mut Context) -> Self {
         match ast {
             ast::Statement::Let(let_) => {
                 let Some(variable) = let_.variable() else {
-                    diagnostics.error(
+                    tcx.diagnostics.error(
                         "expected variable name after `let`",
                         [primary(span(file, ast.syntax().text_range()), "")],
                     );
@@ -374,9 +373,9 @@ impl Statement {
                 };
 
                 let value = if let Some(value) = let_.value() {
-                    Expression::lower(&value, file, diagnostics)
+                    Expression::lower(&value, file, tcx)
                 } else {
-                    diagnostics.error(
+                    tcx.diagnostics.error(
                         "expected expression after `=` in variable definition",
                         [primary(span(file, ast.syntax().text_range()), "")],
                     );
@@ -392,24 +391,22 @@ impl Statement {
                 condition: Expression::lower_opt(
                     if_.condition(),
                     file,
-                    diagnostics,
+                    tcx,
                     ast.syntax().text_range(),
                 ),
-                then: Block::lower_opt(if_.then(), file, diagnostics),
+                then: Block::lower_opt(if_.then(), file, tcx),
                 else_: if_
                     .else_clause()
                     .and_then(|clause| {
                         clause
                             .block()
-                            .map(|block| {
-                                Block::lower(&block, file, diagnostics)
-                            })
+                            .map(|block| Block::lower(&block, file, tcx))
                             .or_else(|| {
                                 clause.if_().map(|if_| Block {
                                     statements: vec![Self::lower(
                                         &ast::Statement::If(if_),
                                         file,
-                                        diagnostics,
+                                        tcx,
                                     )],
                                 })
                             })
@@ -420,30 +417,30 @@ impl Statement {
                 times: Expression::lower_opt(
                     repeat_.times(),
                     file,
-                    diagnostics,
+                    tcx,
                     ast.syntax().text_range(),
                 ),
-                body: Block::lower_opt(repeat_.body(), file, diagnostics),
+                body: Block::lower_opt(repeat_.body(), file, tcx),
             },
             ast::Statement::Forever(forever) => Self::Forever {
-                body: Block::lower_opt(forever.body(), file, diagnostics),
+                body: Block::lower_opt(forever.body(), file, tcx),
                 span: span(file, ast.syntax().text_range()),
             },
             ast::Statement::While(while_) => Self::While {
-                body: Block::lower_opt(while_.body(), file, diagnostics),
+                body: Block::lower_opt(while_.body(), file, tcx),
                 condition: Expression::lower_opt(
                     while_.condition(),
                     file,
-                    diagnostics,
+                    tcx,
                     ast.syntax().text_range(),
                 ),
             },
             ast::Statement::Until(until_) => Self::Until {
-                body: Block::lower_opt(until_.body(), file, diagnostics),
+                body: Block::lower_opt(until_.body(), file, tcx),
                 condition: Expression::lower_opt(
                     until_.condition(),
                     file,
-                    diagnostics,
+                    tcx,
                     ast.syntax().text_range(),
                 ),
             },
@@ -452,13 +449,13 @@ impl Statement {
                 times: Expression::lower_opt(
                     for_.times(),
                     file,
-                    diagnostics,
+                    tcx,
                     ast.syntax().text_range(),
                 ),
-                body: Block::lower_opt(for_.body(), file, diagnostics),
+                body: Block::lower_opt(for_.body(), file, tcx),
             },
             ast::Statement::Expr(expr) => {
-                Self::Expr(Expression::lower(expr, file, diagnostics))
+                Self::Expr(Expression::lower(expr, file, tcx))
             }
         }
     }
@@ -495,17 +492,13 @@ pub enum ExpressionKind {
 pub type Argument = (Option<String>, Expression);
 
 impl Expression {
-    fn lower(
-        ast: &ast::Expression,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Expression, file: &File, tcx: &mut Context) -> Self {
         let kind = match ast {
             ast::Expression::Variable(var) => {
                 let identifier = var.identifier();
                 Name::resolve(&identifier).map_or_else(
                     || {
-                        diagnostics.error(
+                        tcx.diagnostics.error(
                             "undefined variable",
                             [primary(span(file, identifier.text_range()), "")],
                         );
@@ -515,7 +508,7 @@ impl Expression {
                 )
             }
             ast::Expression::FunctionCall(call) => {
-                lower_function_call(call, file, diagnostics)
+                lower_function_call(call, file, tcx)
             }
             ast::Expression::BinaryOperation(op) => {
                 let operator = op.operator();
@@ -529,7 +522,7 @@ impl Expression {
                             Self::lower_opt(
                                 op.lhs(),
                                 file,
-                                diagnostics,
+                                tcx,
                                 operator_range,
                             ),
                         ),
@@ -538,7 +531,7 @@ impl Expression {
                             Self::lower_opt(
                                 op.rhs(),
                                 file,
-                                diagnostics,
+                                tcx,
                                 operator_range,
                             ),
                         ),
@@ -549,12 +542,12 @@ impl Expression {
                 return Self::lower_opt(
                     expr.inner(),
                     file,
-                    diagnostics,
+                    tcx,
                     expr.syntax().text_range(),
                 );
             }
             ast::Expression::NamedArgument(named_arg) => {
-                diagnostics.error(
+                tcx.diagnostics.error(
                     "unexpected named argument",
                     [primary(
                         span(file, named_arg.syntax().text_range()),
@@ -564,35 +557,26 @@ impl Expression {
                 let _ = Self::lower_opt(
                     named_arg.value(),
                     file,
-                    diagnostics,
+                    tcx,
                     named_arg.syntax().text_range(),
                 );
                 ExpressionKind::Error
             }
             ast::Expression::Literal(lit) => lower_literal(lit),
-            ast::Expression::Lvalue(lvalue) => lower_lvalue(
-                lvalue,
-                ast.syntax().text_range(),
-                file,
-                diagnostics,
-            ),
+            ast::Expression::Lvalue(lvalue) => {
+                lower_lvalue(lvalue, ast.syntax().text_range(), file, tcx)
+            }
             ast::Expression::GenericTypeInstantiation(instantiation) => {
-                lower_generic_type_instantiation(
-                    instantiation,
-                    file,
-                    diagnostics,
-                )
+                lower_generic_type_instantiation(instantiation, file, tcx)
             }
             ast::Expression::ListLiteral(list) => ExpressionKind::ListLiteral(
-                list.iter()
-                    .map(|it| Self::lower(&it, file, diagnostics))
-                    .collect(),
+                list.iter().map(|it| Self::lower(&it, file, tcx)).collect(),
             ),
             ast::Expression::TypeAscription(ascription) => {
-                lower_type_ascription(ascription, diagnostics, file)
+                lower_type_ascription(ascription, tcx, file)
             }
             ast::Expression::MethodCall(call) => {
-                lower_method_call(call, file, diagnostics)
+                lower_method_call(call, file, tcx)
             }
         };
 
@@ -605,7 +589,7 @@ impl Expression {
     fn lower_opt(
         ast: Option<ast::Expression>,
         file: &File,
-        diagnostics: &mut Diagnostics,
+        tcx: &mut Context,
         fallback_text_range: TextRange,
     ) -> Self {
         ast.map_or_else(
@@ -613,7 +597,7 @@ impl Expression {
                 kind: ExpressionKind::Error,
                 span: span(file, fallback_text_range),
             },
-            |expr| Self::lower(&expr, file, diagnostics),
+            |expr| Self::lower(&expr, file, tcx),
         )
     }
 
@@ -702,20 +686,20 @@ impl Expression {
 fn lower_method_call(
     call: &ast::MethodCall,
     file: &File,
-    diagnostics: &mut Diagnostics,
+    tcx: &mut Context,
 ) -> ExpressionKind {
-    let caller = Expression::lower(&call.caller(), file, diagnostics);
+    let caller = Expression::lower(&call.caller(), file, tcx);
     let Some(rhs) = call.rhs() else {
         return ExpressionKind::Error;
     };
-    let rhs = Expression::lower(&rhs, file, diagnostics);
+    let rhs = Expression::lower(&rhs, file, tcx);
     let ExpressionKind::FunctionCall {
         name_or_operator,
         name_span,
         mut arguments,
     } = rhs.kind
     else {
-        diagnostics
+        tcx.diagnostics
             .error("expected function call after `.`", [primary(rhs.span, "")]);
         return ExpressionKind::Error;
     };
@@ -730,7 +714,7 @@ fn lower_method_call(
 fn lower_function_call(
     call: &ast::FunctionCall,
     file: &File,
-    diagnostics: &mut Diagnostics,
+    tcx: &mut Context,
 ) -> ExpressionKind {
     let name_or_operator = call.name();
     let name_span = span(file, name_or_operator.text_range());
@@ -747,12 +731,12 @@ fn lower_function_call(
                         Expression::lower_opt(
                             named_arg.value(),
                             file,
-                            diagnostics,
+                            tcx,
                             named_arg.syntax().text_range(),
                         ),
                     )
                 } else {
-                    (None, Expression::lower(&arg, file, diagnostics))
+                    (None, Expression::lower(&arg, file, tcx))
                 }
             })
             .collect(),
@@ -763,18 +747,18 @@ fn lower_lvalue(
     lvalue: &ast::Lvalue,
     text_range: TextRange,
     file: &File,
-    diagnostics: &mut Diagnostics,
+    tcx: &mut Context,
 ) -> ExpressionKind {
     let Some(inner) = lvalue.inner() else {
         return ExpressionKind::Error;
     };
-    let inner = Expression::lower(&inner, file, diagnostics);
+    let inner = Expression::lower(&inner, file, tcx);
     if let ExpressionKind::Variable(Name::User(var)) = inner.kind {
         if var.parent().is_some_and(|it| it.kind() == SyntaxKind::LET) {
             return ExpressionKind::Lvalue(var.text_range().start());
         }
     }
-    diagnostics.error(
+    tcx.diagnostics.error(
         "`&` can only be applied to variables declared with `let`",
         [primary(span(file, text_range), "")],
     );
@@ -784,13 +768,12 @@ fn lower_lvalue(
 fn lower_generic_type_instantiation(
     instantiation: &ast::GenericTypeInstantiation,
     file: &File,
-    diagnostics: &mut Diagnostics,
+    tcx: &mut Context,
 ) -> ExpressionKind {
-    let generic =
-        Expression::lower(&instantiation.generic(), file, diagnostics);
+    let generic = Expression::lower(&instantiation.generic(), file, tcx);
     let span = generic.span;
     let Ok(generic) = ty::Generic::try_from(generic) else {
-        diagnostics.error(
+        tcx.diagnostics.error(
             "type parameters can only be applied to generic types",
             [primary(span, "this is not a generic type")],
         );
@@ -800,7 +783,7 @@ fn lower_generic_type_instantiation(
     let arguments = instantiation
         .type_parameters()
         .iter()
-        .map(|it| Expression::lower(&it, file, diagnostics))
+        .map(|it| Expression::lower(&it, file, tcx))
         .collect::<Vec<_>>();
 
     ExpressionKind::GenericTypeInstantiation { generic, arguments }
@@ -808,7 +791,7 @@ fn lower_generic_type_instantiation(
 
 fn lower_type_ascription(
     ascription: &ast::TypeAscription,
-    diagnostics: &mut Diagnostics,
+    tcx: &mut Context,
     file: &File,
 ) -> ExpressionKind {
     let Some(inner) = ascription.inner() else {
@@ -818,14 +801,25 @@ fn lower_type_ascription(
         return ExpressionKind::Error;
     };
 
-    let inner = Expression::lower(&inner, file, diagnostics);
-    let ty = Expression::lower(&ty, file, diagnostics);
+    let inner = Expression::lower(&inner, file, tcx);
+    let ty = Expression::lower(&ty, file, tcx);
+
+    let Ok(ty_ty) = ty.ty(None, tcx) else {
+        return ExpressionKind::Error;
+    };
+    if !matches!(ty_ty, Ty::Ty) {
+        tcx.diagnostics.error(
+            "ascribed type must be a type",
+            [primary(ty.span, format!("expected `Type`, got `{ty_ty}`"))],
+        );
+    };
+
     let ty_span = ty.span;
-    let Ok(ty) = comptime::evaluate(ty, diagnostics) else {
+    let Ok(ty) = comptime::evaluate(ty) else {
         return ExpressionKind::Error;
     };
     let Value::Ty(ty) = ty else {
-        diagnostics.error(
+        tcx.diagnostics.error(
             "ascribed type must be a type",
             [primary(
                 ty_span,

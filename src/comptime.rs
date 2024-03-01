@@ -1,5 +1,4 @@
 use crate::{
-    diagnostics::{primary, Diagnostics},
     hir::{Expression, ExpressionKind},
     name::{Builtin, Name},
     parser::SyntaxKind,
@@ -42,15 +41,7 @@ impl Value {
     }
 }
 
-pub fn evaluate(
-    expr: Expression,
-    diagnostics: &mut Diagnostics,
-) -> Result<Value, ()> {
-    let mut error = |message| {
-        diagnostics.error(message, [primary(expr.span, "")]);
-        Err(())
-    };
-
+pub fn evaluate(expr: Expression) -> Result<Value, ()> {
     match expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
             match token.parent().map(|it| it.kind()) {
@@ -58,9 +49,7 @@ pub fn evaluate(
                     name: token.to_string(),
                 }),
                 Some(SyntaxKind::GENERICS) => Ok(Value::Ty(Ty::Generic(token))),
-                _ => error(
-                    "user-defined variables are not supported at compile-time",
-                ),
+                _ => Err(()),
             }
         }
         ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
@@ -72,17 +61,11 @@ pub fn evaluate(
             Builtin::Type => Ok(Value::Ty(Ty::Ty)),
         },
         ExpressionKind::Imm(value) => Ok(value),
-        ExpressionKind::FunctionCall { .. } => {
-            error("function calls are not supported at compile-time")
-        }
-        ExpressionKind::Lvalue(_) => {
-            error("mutable variables are not supported at compile-time")
-        }
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
             let Ok([arg]) = <[Expression; 1]>::try_from(arguments) else {
                 return Err(());
             };
-            let Value::Ty(ty) = evaluate(arg, diagnostics)? else {
+            let Value::Ty(ty) = evaluate(arg)? else {
                 return Err(());
             };
             Ok(Value::Ty(match generic {
@@ -90,13 +73,11 @@ pub fn evaluate(
                 ty::Generic::List => Ty::List(Box::new(ty)),
             }))
         }
-        ExpressionKind::ListLiteral(_) => {
-            error("list literals are not supported at compile-time")
-        }
-        ExpressionKind::TypeAscription { inner, .. } => {
-            evaluate(*inner, diagnostics)
-        }
-        ExpressionKind::Error => Err(()),
+        ExpressionKind::TypeAscription { inner, .. } => evaluate(*inner),
+        ExpressionKind::FunctionCall { .. }
+        | ExpressionKind::Lvalue(_)
+        | ExpressionKind::ListLiteral(_)
+        | ExpressionKind::Error => Err(()),
     }
 }
 
