@@ -104,7 +104,7 @@ fn compile_or_check(
         resolved_calls: &mut resolved_calls,
     };
 
-    let mut document = hir::lower(document, &file, &mut tcx);
+    let mut document = hir::lowering::lower(document, &file, &mut tcx);
     if std::env::var_os("DUMP_HIR").is_some() {
         eprintln!("{document:#?}");
     }

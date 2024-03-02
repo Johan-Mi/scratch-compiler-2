@@ -7,7 +7,7 @@ pub fn add_to_hir(
     let file =
         code_map.add_file("<builtins>".to_owned(), source_code.to_owned());
     let cst = crate::parser::parse(&file, tcx.diagnostics);
-    let mut hir = crate::hir::lower(cst, &file, tcx);
+    let mut hir = crate::hir::lowering::lower(cst, &file, tcx);
     for function in hir.functions.values_mut() {
         function.is_from_builtins = true;
         if function.body.statements.is_empty() {
