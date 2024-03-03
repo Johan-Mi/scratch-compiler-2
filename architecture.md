@@ -12,9 +12,9 @@
   language supports function overloading.
 - Semantic analysis is performed on the HIR to detect certain errors.
 - The linter traverses the HIR and emits warnings.
+- An early dead code elimination step is performed, which removes (and warns
+  about) unused functions to avoid wasting time on them.
 - If no errors have occured, the compiler moves on to code generation:
-  - An early dead code elimination step is performed, which removes unused
-    functions to avoid wasting time on them.
   - The HIR gets lowered to MIR (the mid-level intermediate representation).
   - Inlining is performed on the MIR.
   - Several optimizations are repeatedly applied to the MIR until a fixed point
