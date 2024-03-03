@@ -166,15 +166,16 @@ impl Function {
                     )],
                 );
             };
-            let expr_span = expr.span;
-            match comptime::evaluate(expr).map_err(|()| {
-                tcx.diagnostics.error(
-                    "function return type must be comptime-known",
-                    [primary(expr_span, "")],
-                );
-            })? {
-                Value::Ty(ty) => Ok(ty),
-                _ => Err(()),
+            match expr.kind {
+                ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+                ExpressionKind::Imm(_) => Err(()),
+                _ => {
+                    tcx.diagnostics.error(
+                        "function return type must be comptime-known",
+                        [primary(expr.span, "")],
+                    );
+                    Err(())
+                }
             }
         });
 
@@ -215,27 +216,28 @@ impl Parameter {
             );
         })?;
         let expr = Expression::lower(&ty, file, tcx);
-        let ty_span = expr.span;
 
         let expr_ty = expr.ty(None, tcx)?;
         if !matches!(expr_ty, Ty::Ty) {
             tcx.diagnostics.error(
                 "function parameter type must be a type",
                 [primary(
-                    ty_span,
+                    expr.span,
                     format!("expected `Type`, got `{expr_ty}`"),
                 )],
             );
         };
 
-        let ty = match comptime::evaluate(expr).map_err(|()| {
-            tcx.diagnostics.error(
-                "function parameter type must be comptime-known",
-                [primary(ty_span, "")],
-            );
-        })? {
-            Value::Ty(ty) => Ok(ty),
-            _ => Err(()),
+        let ty = match expr.kind {
+            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+            ExpressionKind::Imm(_) => Err(()),
+            _ => {
+                tcx.diagnostics.error(
+                    "function parameter type must be comptime-known",
+                    [primary(expr.span, "")],
+                );
+                Err(())
+            }
         };
 
         Ok(Self {
@@ -246,7 +248,7 @@ impl Parameter {
             internal_name,
             ty: Spanned {
                 node: ty,
-                span: ty_span,
+                span: expr.span,
             },
             is_comptime: ast.is_comptime(),
             span: span(file, ast.syntax().text_range()),
@@ -376,6 +378,16 @@ impl Statement {
 
 impl Expression {
     fn lower(ast: &ast::Expression, file: &File, tcx: &mut Context) -> Self {
+        let mut expr = Self::lower_impl(ast, file, tcx);
+        comptime::evaluate(&mut expr);
+        expr
+    }
+
+    fn lower_impl(
+        ast: &ast::Expression,
+        file: &File,
+        tcx: &mut Context,
+    ) -> Self {
         let kind = match ast {
             ast::Expression::Variable(var) => {
                 let identifier = var.identifier();
@@ -616,19 +628,16 @@ fn lower_type_ascription(
         );
     };
 
-    let ty_span = ty.span;
-    let Ok(ty) = comptime::evaluate(ty) else {
-        return ExpressionKind::Error;
-    };
-    let Value::Ty(ty) = ty else {
-        tcx.diagnostics.error(
-            "ascribed type must be a type",
-            [primary(
-                ty_span,
-                format!("expected `Type`, got `{}`", ty.ty()),
-            )],
-        );
-        return ExpressionKind::Error;
+    let ty = match ty.kind {
+        ExpressionKind::Imm(Value::Ty(ty)) => ty,
+        ExpressionKind::Imm(_) => return ExpressionKind::Error,
+        _ => {
+            tcx.diagnostics.error(
+                "ascribed type must be comptime-known",
+                [primary(ty.span, "")],
+            );
+            return ExpressionKind::Error;
+        }
     };
 
     ExpressionKind::TypeAscription {

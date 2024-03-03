@@ -42,6 +42,21 @@ impl fmt::Display for Ty {
     }
 }
 
+impl TryFrom<name::Builtin> for Ty {
+    type Error = ();
+
+    fn try_from(builtin: name::Builtin) -> Result<Self, ()> {
+        match builtin {
+            name::Builtin::Unit => Ok(Self::Unit),
+            name::Builtin::Num => Ok(Self::Num),
+            name::Builtin::String => Ok(Self::String),
+            name::Builtin::Bool => Ok(Self::Bool),
+            name::Builtin::Type => Ok(Self::Ty),
+            name::Builtin::Var | name::Builtin::List => Err(()),
+        }
+    }
+}
+
 impl Ty {
     pub fn is_zero_sized(&self) -> bool {
         *self == Self::Unit

@@ -1,6 +1,6 @@
 use crate::{
     hir::{Expression, ExpressionKind},
-    name::{Builtin, Name},
+    name::Name,
     parser::SyntaxKind,
     ty::{self, Ty},
 };
@@ -41,43 +41,38 @@ impl Value {
     }
 }
 
-pub fn evaluate(expr: Expression) -> Result<Value, ()> {
-    match expr.kind {
+pub fn evaluate(expr: &mut Expression) {
+    match &mut expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
-            match token.parent().map(|it| it.kind()) {
-                Some(SyntaxKind::SPRITE) => Ok(Value::Sprite {
-                    name: token.to_string(),
-                }),
-                Some(SyntaxKind::GENERICS) => Ok(Value::Ty(Ty::Generic(token))),
-                _ => Err(()),
+            expr.kind =
+                ExpressionKind::Imm(match token.parent().map(|it| it.kind()) {
+                    Some(SyntaxKind::SPRITE) => Value::Sprite {
+                        name: token.to_string(),
+                    },
+                    Some(SyntaxKind::GENERICS) => {
+                        Value::Ty(Ty::Generic(token.clone()))
+                    }
+                    _ => return,
+                });
+        }
+        ExpressionKind::Variable(Name::Builtin(builtin)) => {
+            if let Ok(ty) = (*builtin).try_into() {
+                expr.kind = ExpressionKind::Imm(Value::Ty(ty));
             }
         }
-        ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
-            Builtin::Unit => Ok(Value::Ty(Ty::Unit)),
-            Builtin::Num => Ok(Value::Ty(Ty::Num)),
-            Builtin::String => Ok(Value::Ty(Ty::String)),
-            Builtin::Bool => Ok(Value::Ty(Ty::Bool)),
-            Builtin::Var | Builtin::List => Err(()),
-            Builtin::Type => Ok(Value::Ty(Ty::Ty)),
-        },
-        ExpressionKind::Imm(value) => Ok(value),
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
-            let Ok([arg]) = <[Expression; 1]>::try_from(arguments) else {
-                return Err(());
-            };
-            let Value::Ty(ty) = evaluate(arg)? else {
-                return Err(());
-            };
-            Ok(Value::Ty(match generic {
-                ty::Generic::Var => Ty::Var(Box::new(ty)),
-                ty::Generic::List => Ty::List(Box::new(ty)),
-            }))
+            if let [Expression {
+                kind: ExpressionKind::Imm(Value::Ty(ty)),
+                ..
+            }] = &mut **arguments
+            {
+                expr.kind = ExpressionKind::Imm(Value::Ty(match generic {
+                    ty::Generic::Var => Ty::Var(Box::new(ty.clone())),
+                    ty::Generic::List => Ty::List(Box::new(ty.clone())),
+                }));
+            }
         }
-        ExpressionKind::TypeAscription { inner, .. } => evaluate(*inner),
-        ExpressionKind::FunctionCall { .. }
-        | ExpressionKind::Lvalue(_)
-        | ExpressionKind::ListLiteral(_)
-        | ExpressionKind::Error => Err(()),
+        _ => {}
     }
 }
 
