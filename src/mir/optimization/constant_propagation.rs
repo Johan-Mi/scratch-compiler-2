@@ -42,6 +42,7 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
         ("to-string", [Imm(Num(num))]) => {
             Some(Imm(String(ryu_js::Buffer::new().format(*num).to_owned())))
         }
+        ("to-string", [Imm(Bool(b))]) => Some(Imm(String(b.to_string()))),
         ("add", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs + *rhs))),
         ("sub", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs - *rhs))),
         ("mul", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Num(*lhs * *rhs))),

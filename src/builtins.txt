@@ -25,6 +25,7 @@ fn length[T](_ comptime list: List[T]) -> Num {}
 fn contains[T](_ comptime list: List[T], _ item: T) -> Bool {}
 
 fn to-string(_ num: Num) -> String {}
+fn to-string(_ b: Bool) -> Bool {}
 
 fn to-num(_ s: String) -> Num {}
 
