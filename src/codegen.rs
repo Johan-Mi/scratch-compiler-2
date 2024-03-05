@@ -391,7 +391,7 @@ fn compile_intrinsic(
             let item = compile_value(args.pop().unwrap(), cx);
             Some(cx.sprite.item_num_of_list(list, item))
         }
-        "length" => {
+        "length" if matches!(&*args, [mir::Value::List(_)]) => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
@@ -505,6 +505,7 @@ fn compile_regular_intrinsic(
 
     match name {
         "to-string" | "to-num" => arguments.pop(),
+        "length" => f! { = length(string) },
         "add" => f! { = add(lhs, rhs) },
         "sub" => f! { = sub(lhs, rhs) },
         "mul" => f! { = mul(lhs, rhs) },
