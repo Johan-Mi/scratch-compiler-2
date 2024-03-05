@@ -164,7 +164,7 @@ impl Expression {
                     &tcx.function(resolved).parameters,
                     arguments,
                 ) {
-                    if param.is_comptime && !comptime::is_known(arg) {
+                    if param.is_comptime && !comptime::is_known(arg, tcx) {
                         tcx.diagnostics.error(
                             "function argument is not comptime-known",
                             [

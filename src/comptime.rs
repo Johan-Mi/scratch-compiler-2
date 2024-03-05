@@ -77,11 +77,13 @@ pub fn evaluate(expr: &mut Expression) {
 }
 
 // FIXME: get rid of this and use actual compile-time evaluation instead
-pub const fn is_known(expr: &Expression) -> bool {
+pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
     matches!(
         expr.kind,
-        ExpressionKind::Imm(_)
-            | ExpressionKind::Variable(_)
-            | ExpressionKind::Lvalue(_)
+        ExpressionKind::Imm(_) | ExpressionKind::Lvalue(_)
+    ) || matches!(
+        &expr.kind,
+        ExpressionKind::Variable(Name::User(var))
+            if tcx.comptime_known_variables.contains(&var.text_range().start())
     )
 }

@@ -8,7 +8,7 @@ use crate::{
 use codemap::Span;
 use rowan::TextSize;
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, HashSet},
     fmt,
 };
 
@@ -184,7 +184,11 @@ fn check_statement(
     match statement {
         hir::Statement::Let { variable, value } => {
             let ty = value.ty(None, tcx);
-            tcx.variable_types.insert(variable.text_range().start(), ty);
+            let pos = variable.text_range().start();
+            if matches!(ty, Ok(Ty::List(_))) {
+                tcx.comptime_known_variables.insert(pos);
+            }
+            tcx.variable_types.insert(pos, ty);
             Ok(Ty::Unit)
         }
         hir::Statement::If {
@@ -429,6 +433,7 @@ pub struct Context<'a> {
     pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
+    pub comptime_known_variables: HashSet<TextSize>,
     pub resolved_calls: &'a mut ResolvedCalls,
 }
 
