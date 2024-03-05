@@ -1,3 +1,5 @@
+fn get[T](_ comptime var: Var[T]) -> T {}
+
 fn set[T](_ comptime var: Var[T], _ value: T) {}
 
 fn push[T](_ comptime list: List[T], _ value: T) {}
