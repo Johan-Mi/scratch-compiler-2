@@ -228,10 +228,17 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         } => {
             let condition = compile_value(condition, cx);
             let condition = cx.sprite.eq(condition, "true".to_owned().into());
-            let [after, else_clause] = cx.sprite.if_else(condition);
-            compile_block(then, cx);
-            cx.sprite.insert_at(else_clause);
-            compile_block(else_, cx);
+            let after = if else_.ops.is_empty() {
+                let after = cx.sprite.if_(condition);
+                compile_block(then, cx);
+                after
+            } else {
+                let [after, else_clause] = cx.sprite.if_else(condition);
+                compile_block(then, cx);
+                cx.sprite.insert_at(else_clause);
+                compile_block(else_, cx);
+                after
+            };
             cx.sprite.insert_at(after);
         }
         mir::Op::Forever { body } => {
