@@ -58,7 +58,7 @@ impl Visitor for Finder {
                 _ => false,
             };
 
-            if !this_is_linear && !op.is_pure() {
+            if !this_is_linear && op.has_side_effects() {
                 candidates.clear();
             }
 

@@ -52,7 +52,7 @@ pub(super) fn eliminate_useless_ops(block: &mut Block) -> bool {
 }
 
 fn is_useless(op: &Op) -> bool {
-    matches!(op, Op::Intrinsic { variable: None, .. } if op.is_pure())
+    matches!(op, Op::Intrinsic { variable: None, .. } if !op.has_side_effects())
         || matches!(op,
             Op::If {
                 then, else_, ..
