@@ -124,6 +124,18 @@ impl SemanticVisitor<'_> {
                 );
             }
         }
+
+        if !function.is_intrinsic && !function.is_inline {
+            for param in &function.parameters {
+                if param.is_comptime {
+                    self.diagnostics.error(
+                        "comptime parameters are not supported in \
+                        user-defined, non-inline functions yet",
+                        [primary(param.span, "")],
+                    );
+                }
+            }
+        }
     }
 
     fn check_generics(&mut self, function: &hir::Function) {

@@ -161,6 +161,13 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
             )
         }));
 
+    tcx.comptime_known_variables.extend(
+        function
+            .parameters
+            .iter()
+            .map(|it| it.internal_name.text_range().start()),
+    );
+
     let actual_return_ty = check_block(&function.body, tcx);
     if let (Ok(return_ty), Ok(actual_return_ty)) =
         (&function.return_ty.node, actual_return_ty)
