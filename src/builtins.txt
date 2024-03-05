@@ -33,6 +33,8 @@ fn to-num(_ s: String) -> Num {}
 
 fn length(_ s: String) -> Num {}
 
+fn letter(_ s: String, _ index: Num) -> String {}
+
 fn add(_ lhs: Num, _ rhs: Num) -> Num {}
 fn sub(_ lhs: Num, _ rhs: Num) -> Num {}
 fn mul(_ lhs: Num, _ rhs: Num) -> Num {}

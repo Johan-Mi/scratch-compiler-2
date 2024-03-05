@@ -506,6 +506,7 @@ fn compile_regular_intrinsic(
     match name {
         "to-string" | "to-num" => arguments.pop(),
         "length" => f! { = length(string) },
+        "letter" => f! { = letter_of(string, index) },
         "add" => f! { = add(lhs, rhs) },
         "sub" => f! { = sub(lhs, rhs) },
         "mul" => f! { = mul(lhs, rhs) },
