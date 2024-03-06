@@ -20,6 +20,9 @@ pub trait Visitor {
         for function in document.functions.values() {
             self.traverse_function(function, true);
         }
+        for variable in document.variables.values() {
+            self.traverse_expression(variable);
+        }
     }
 
     fn traverse_sprite(&mut self, sprite: &Sprite) {
