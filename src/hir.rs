@@ -24,6 +24,8 @@ type Result<T> = std::result::Result<T, ()>;
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
+    // TODO: use this for something
+    pub variables: HashMap<SyntaxToken, Expression>,
 }
 
 #[derive(Debug)]

@@ -49,7 +49,24 @@ impl Document {
             .enumerate()
             .collect();
 
-        Self { sprites, functions }
+        let variables = ast
+            .lets()
+            .chain(ast.sprites().flat_map(|it| it.lets()))
+            .filter_map(|it| {
+                let variable = it.variable()?;
+                let text_range = variable.text_range();
+                Some((
+                    variable,
+                    Expression::lower_opt(it.value(), file, tcx, text_range),
+                ))
+            })
+            .collect();
+
+        Self {
+            sprites,
+            functions,
+            variables,
+        }
     }
 }
 
