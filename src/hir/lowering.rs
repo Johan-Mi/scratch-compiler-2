@@ -1,6 +1,6 @@
 use super::{
-    Block, Costume, Document, Expression, ExpressionKind, Function, Parameter,
-    Result, Sprite, Statement,
+    Block, Costume, Document, Expression, ExpressionKind, Function,
+    GlobalVariable, Parameter, Result, Sprite, Statement,
 };
 use crate::{
     ast,
@@ -55,9 +55,24 @@ impl Document {
             .filter_map(|it| {
                 let variable = it.variable()?;
                 let text_range = variable.text_range();
+                let owning_sprite = variable
+                    .parent()
+                    .and_then(|it| ast::Sprite::cast(it.parent()?)?.name())
+                    .map_or_else(
+                        || "Stage".to_owned(),
+                        |it| it.text().to_owned(),
+                    );
                 Some((
                     variable,
-                    Expression::lower_opt(it.value(), file, tcx, text_range),
+                    GlobalVariable {
+                        initializer: Expression::lower_opt(
+                            it.value(),
+                            file,
+                            tcx,
+                            text_range,
+                        ),
+                        owning_sprite,
+                    },
                 ))
             })
             .collect();

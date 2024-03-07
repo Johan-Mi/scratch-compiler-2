@@ -21,7 +21,7 @@ pub trait Visitor {
             self.traverse_function(function, true);
         }
         for variable in document.variables.values() {
-            self.traverse_expression(variable);
+            self.traverse_expression(&variable.initializer);
         }
     }
 

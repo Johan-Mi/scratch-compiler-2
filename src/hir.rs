@@ -25,7 +25,13 @@ pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
     // TODO: use this for something
-    pub variables: HashMap<SyntaxToken, Expression>,
+    pub variables: HashMap<SyntaxToken, GlobalVariable>,
+}
+
+#[derive(Debug)]
+pub struct GlobalVariable {
+    initializer: Expression,
+    owning_sprite: String,
 }
 
 #[derive(Debug)]
