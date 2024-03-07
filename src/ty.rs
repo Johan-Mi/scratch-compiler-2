@@ -1,4 +1,5 @@
 use crate::{
+    comptime,
     diagnostics::{primary, Diagnostics},
     function::ResolvedCalls,
     hir,
@@ -138,12 +139,7 @@ pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
     tcx.top_level_functions = &document.functions;
 
     for variable in &document.variables {
-        let ty = variable.initializer.ty(None, tcx);
-        let pos = variable.token.text_range().start();
-        if matches!(ty, Ok(Ty::List(_))) {
-            tcx.comptime_known_variables.insert(pos);
-        }
-        tcx.variable_types.insert(pos, ty);
+        check_global_variable(variable, tcx);
     }
 
     for sprite in document.sprites.values() {
@@ -158,6 +154,24 @@ pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
         if !function.is_intrinsic {
             check_function(function, tcx);
         }
+    }
+}
+
+fn check_global_variable(
+    variable: &hir::GlobalVariable,
+    tcx: &mut Context<'_>,
+) {
+    let ty = variable.initializer.ty(None, tcx);
+    let pos = variable.token.text_range().start();
+    if matches!(ty, Ok(Ty::List(_))) {
+        tcx.comptime_known_variables.insert(pos);
+    }
+    tcx.variable_types.insert(pos, ty);
+    if !comptime::is_known(&variable.initializer, tcx) {
+        tcx.diagnostics.error(
+            "global variable initializer is not comptime-known",
+            [primary(variable.initializer.span, "")],
+        );
     }
 }
 
