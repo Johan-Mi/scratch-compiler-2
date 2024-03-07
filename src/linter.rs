@@ -11,8 +11,8 @@ pub fn lint(document: &Document, file: &File, diagnostics: &mut Diagnostics) {
     let mut visitor = LintVisitor {
         unused_variables: HashSet::new(),
     };
-    for variable in document.variables.keys() {
-        visitor.unused_variables.insert(variable.clone());
+    for variable in &document.variables {
+        visitor.unused_variables.insert(variable.token.clone());
     }
     visitor.traverse_document(document);
     for variable in &visitor.unused_variables {

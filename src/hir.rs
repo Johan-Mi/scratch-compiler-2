@@ -25,11 +25,12 @@ pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
     // TODO: use this for something
-    pub variables: HashMap<SyntaxToken, GlobalVariable>,
+    pub variables: Vec<GlobalVariable>,
 }
 
 #[derive(Debug)]
 pub struct GlobalVariable {
+    pub token: SyntaxToken,
     pub initializer: Expression,
     owning_sprite: String,
 }

@@ -137,9 +137,9 @@ impl TryFrom<hir::Expression> for Generic {
 pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
     tcx.top_level_functions = &document.functions;
 
-    for (token, variable) in &document.variables {
+    for variable in &document.variables {
         let ty = variable.initializer.ty(None, tcx);
-        let pos = token.text_range().start();
+        let pos = variable.token.text_range().start();
         if matches!(ty, Ok(Ty::List(_))) {
             tcx.comptime_known_variables.insert(pos);
         }

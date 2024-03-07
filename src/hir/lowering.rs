@@ -53,27 +53,25 @@ impl Document {
             .lets()
             .chain(ast.sprites().flat_map(|it| it.lets()))
             .filter_map(|it| {
-                let variable = it.variable()?;
-                let text_range = variable.text_range();
-                let owning_sprite = variable
+                let token = it.variable()?;
+                let text_range = token.text_range();
+                let owning_sprite = token
                     .parent()
                     .and_then(|it| ast::Sprite::cast(it.parent()?)?.name())
                     .map_or_else(
                         || "Stage".to_owned(),
                         |it| it.text().to_owned(),
                     );
-                Some((
-                    variable,
-                    GlobalVariable {
-                        initializer: Expression::lower_opt(
-                            it.value(),
-                            file,
-                            tcx,
-                            text_range,
-                        ),
-                        owning_sprite,
-                    },
-                ))
+                Some(GlobalVariable {
+                    token,
+                    initializer: Expression::lower_opt(
+                        it.value(),
+                        file,
+                        tcx,
+                        text_range,
+                    ),
+                    owning_sprite,
+                })
             })
             .collect();
 
