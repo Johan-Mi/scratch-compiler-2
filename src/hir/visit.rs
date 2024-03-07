@@ -1,10 +1,13 @@
 use super::{
-    Block, Document, Expression, ExpressionKind, Function, Sprite, Statement,
+    Block, Document, Expression, ExpressionKind, Function, GlobalVariable,
+    Sprite, Statement,
 };
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
 pub trait Visitor {
+    fn visit_global_variable(&mut self, _variable: &GlobalVariable) {}
+
     fn visit_function(&mut self, _function: &Function, _is_top_level: bool) {}
 
     fn visit_block(&mut self, _block: &Block) {}
@@ -21,6 +24,7 @@ pub trait Visitor {
             self.traverse_function(function, true);
         }
         for variable in &document.variables {
+            self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);
         }
     }
