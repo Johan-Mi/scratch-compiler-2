@@ -139,7 +139,11 @@ pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
 
     for (token, variable) in &document.variables {
         let ty = variable.initializer.ty(None, tcx);
-        tcx.variable_types.insert(token.text_range().start(), ty);
+        let pos = token.text_range().start();
+        if matches!(ty, Ok(Ty::List(_))) {
+            tcx.comptime_known_variables.insert(pos);
+        }
+        tcx.variable_types.insert(pos, ty);
     }
 
     for sprite in document.sprites.values() {
