@@ -137,6 +137,11 @@ impl TryFrom<hir::Expression> for Generic {
 pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
     tcx.top_level_functions = &document.functions;
 
+    for (token, variable) in &document.variables {
+        let ty = variable.initializer.ty(None, tcx);
+        tcx.variable_types.insert(token.text_range().start(), ty);
+    }
+
     for sprite in document.sprites.values() {
         tcx.sprite = Some(sprite);
         for function in sprite.functions.values() {
@@ -145,11 +150,6 @@ pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
     }
 
     tcx.sprite = None;
-    for (token, variable) in &document.variables {
-        let ty = variable.initializer.ty(None, tcx);
-        tcx.variable_types.insert(token.text_range().start(), ty);
-    }
-
     for function in document.functions.values() {
         if !function.is_intrinsic {
             check_function(function, tcx);
