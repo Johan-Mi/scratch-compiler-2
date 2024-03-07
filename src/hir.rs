@@ -30,7 +30,7 @@ pub struct Document {
 
 #[derive(Debug)]
 pub struct GlobalVariable {
-    initializer: Expression,
+    pub initializer: Expression,
     owning_sprite: String,
 }
 
