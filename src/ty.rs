@@ -170,6 +170,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
         function
             .parameters
             .iter()
+            .filter(|it| it.is_comptime)
             .map(|it| it.internal_name.text_range().start()),
     );
 
