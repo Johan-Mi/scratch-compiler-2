@@ -152,7 +152,9 @@ impl Expression {
             ExpressionKind::Variable(Name::User(variable)) => tcx
                 .variable_types
                 .get(&variable.text_range().start())
-                .unwrap_or_else(|| panic!("variable `{variable}` has no type"))
+                .unwrap_or_else(|| {
+                    panic!("variable `{variable:?}` has no type")
+                })
                 .clone(),
             ExpressionKind::Variable(Name::Builtin(builtin)) => {
                 ty::of_builtin_name(*builtin, self.span, tcx.diagnostics)
