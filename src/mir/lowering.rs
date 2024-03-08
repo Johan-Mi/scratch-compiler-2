@@ -5,6 +5,7 @@ use crate::{
     function::{self, ResolvedCalls},
     hir::{self, desugar_function_call_name},
     name::{self, Name},
+    parser::SyntaxToken,
 };
 use rowan::TextSize;
 use std::collections::HashMap;
@@ -134,24 +135,30 @@ fn lower_block(block: hir::Block, cx: &mut Context) -> Block {
     std::mem::replace(&mut cx.block, old_block)
 }
 
+fn lower_variable_initialization(
+    variable: &SyntaxToken,
+    initializer: hir::Expression,
+    cx: &mut Context,
+) {
+    let value = lower_expression(initializer, cx).unwrap();
+    if let Some(&real_var) = cx.real_vars.get(&variable.text_range().start()) {
+        cx.block.ops.push(Op::Intrinsic {
+            variable: None,
+            name: "set".to_owned(),
+            args: vec![Value::Lvalue(real_var), value],
+        });
+    } else {
+        cx.vars.insert(variable.text_range().start(), value);
+    }
+}
+
 fn lower_statement(
     statement: hir::Statement,
     cx: &mut Context,
 ) -> Option<Value> {
     match statement {
         hir::Statement::Let { variable, value } => {
-            let value = lower_expression(value, cx).unwrap();
-            if let Some(&real_var) =
-                cx.real_vars.get(&variable.text_range().start())
-            {
-                cx.block.ops.push(Op::Intrinsic {
-                    variable: None,
-                    name: "set".to_owned(),
-                    args: vec![Value::Lvalue(real_var), value],
-                });
-            } else {
-                cx.vars.insert(variable.text_range().start(), value);
-            }
+            lower_variable_initialization(&variable, value, cx);
             None
         }
         hir::Statement::If {
