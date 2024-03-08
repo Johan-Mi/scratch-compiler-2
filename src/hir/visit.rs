@@ -17,15 +17,15 @@ pub trait Visitor {
     fn visit_expression(&mut self, _expr: &Expression) {}
 
     fn traverse_document(&mut self, document: &Document) {
+        for variable in &document.variables {
+            self.visit_global_variable(variable);
+            self.traverse_expression(&variable.initializer);
+        }
         for sprite in document.sprites.values() {
             self.traverse_sprite(sprite);
         }
         for function in document.functions.values() {
             self.traverse_function(function, true);
-        }
-        for variable in &document.variables {
-            self.visit_global_variable(variable);
-            self.traverse_expression(&variable.initializer);
         }
     }
 
