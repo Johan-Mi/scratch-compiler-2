@@ -31,6 +31,14 @@ pub fn lower(
         block: Block::default(),
     };
 
+    for variable in document.variables {
+        lower_variable_initialization(
+            &variable.token,
+            variable.initializer,
+            &mut cx,
+        );
+    }
+
     Document {
         sprites: document
             .sprites
