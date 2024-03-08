@@ -328,7 +328,7 @@ fn compile_intrinsic(
             cx.sprite.put(block::delete_of_list(list, index));
             None
         }
-        "delete-last" => {
+        "pop" => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };

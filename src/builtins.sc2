@@ -6,7 +6,7 @@ fn push[T](_ comptime list: List[T], _ value: T) {}
 
 fn delete[T](_ comptime list: List[T], index _: Num) {}
 
-fn delete-last[T](_ comptime list: List[T]) {}
+fn pop[T](_ comptime list: List[T]) {}
 
 fn delete-all[T](_ comptime list: List[T]) {}
 
