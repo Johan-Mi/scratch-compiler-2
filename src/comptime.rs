@@ -85,5 +85,9 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
         &expr.kind,
         ExpressionKind::Variable(Name::User(var))
             if tcx.comptime_known_variables.contains(&var.text_range().start())
+    ) || matches!(
+        &expr.kind,
+        ExpressionKind::ListLiteral(items)
+            if items.iter().all(|item| is_known(item, tcx))
     )
 }
