@@ -89,5 +89,9 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
         &expr.kind,
         ExpressionKind::ListLiteral(items)
             if items.iter().all(|item| is_known(item, tcx))
+    ) || matches!(
+        &expr.kind,
+        ExpressionKind::TypeAscription { inner, .. }
+            if is_known(inner, tcx)
     )
 }
