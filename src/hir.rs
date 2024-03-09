@@ -24,7 +24,6 @@ type Result<T> = std::result::Result<T, ()>;
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
-    // TODO: use this for something
     pub variables: Vec<GlobalVariable>,
 }
 
@@ -32,6 +31,8 @@ pub struct Document {
 pub struct GlobalVariable {
     pub token: SyntaxToken,
     pub initializer: Expression,
+    // FIXME: ensure that truly global variables belong to the stage and not to
+    // a sprite that uses them and just so happens to get compiled earlier
     owning_sprite: String,
 }
 
