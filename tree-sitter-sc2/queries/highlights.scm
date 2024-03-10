@@ -58,7 +58,7 @@
 ] @punctuation.bracket
 
 (function_definition
-  (identifier) @function)
+  "fn" . (identifier) @function)
 (function_call
   (identifier) @function)
 
