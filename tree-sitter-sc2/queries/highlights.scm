@@ -62,6 +62,9 @@
 (function_call
   (identifier) @function)
 
+(parameter
+  . (identifier) @label)
+
 (named_argument
   . (identifier) @label)
 
