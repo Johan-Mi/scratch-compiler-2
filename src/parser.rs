@@ -34,6 +34,7 @@ pub enum SyntaxKind {
     TRIVIA,
 
     DOCUMENT,
+    IMPORT,
     SPRITE,
     COSTUME_LIST,
     COSTUME,
@@ -278,6 +279,7 @@ impl Parser<'_> {
 
     fn parse_anything(&mut self) {
         match self.peek() {
+            KW_IMPORT => self.parse_import(),
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
@@ -325,6 +327,13 @@ impl Parser<'_> {
             self.error();
             None
         }
+    }
+
+    fn parse_import(&mut self) {
+        self.start_node(IMPORT);
+        self.bump(); // KW_IMPORT
+        self.expect(STRING);
+        self.builder.finish_node();
     }
 
     fn parse_arguments(&mut self) {
@@ -706,6 +715,7 @@ impl Parser<'_> {
 
     fn parse_top_level_item(&mut self) {
         match self.peek() {
+            KW_IMPORT => self.parse_import(),
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
             KW_LET => self.parse_let(),
