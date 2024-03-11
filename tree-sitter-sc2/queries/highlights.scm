@@ -72,6 +72,11 @@
   (identifier) @type.parameter)
 
 (
+  (identifier) @type.parameter
+  (#match? @type.parameter "^[A-Z]$")
+)
+
+(
   (identifier) @type.builtin
   (#match? @type.builtin "^(Num|String|Bool|Var|List|Type)$")
 )
