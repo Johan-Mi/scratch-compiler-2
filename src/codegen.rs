@@ -522,6 +522,20 @@ fn compile_regular_intrinsic(
         "lt" => f! { = lt(lhs, rhs) },
         "eq" => f! { = eq(lhs, rhs) },
         "gt" => f! { = gt(lhs, rhs) },
+        "abs" => Some(mathop("abs", arguments, cx)),
+        "floor" => Some(mathop("floor", arguments, cx)),
+        "ceil" => Some(mathop("ceiling", arguments, cx)),
+        "sqrt" => Some(mathop("sqrt", arguments, cx)),
+        "ln" => Some(mathop("ln", arguments, cx)),
+        "log" => Some(mathop("log", arguments, cx)),
+        "exp" => Some(mathop("e ^", arguments, cx)),
+        "exp-10" => Some(mathop("10 ^", arguments, cx)),
+        "sin" => Some(mathop("sin", arguments, cx)),
+        "cos" => Some(mathop("cos", arguments, cx)),
+        "tan" => Some(mathop("tan", arguments, cx)),
+        "asin" => Some(mathop("asin", arguments, cx)),
+        "acos" => Some(mathop("acos", arguments, cx)),
+        "atan" => Some(mathop("atan", arguments, cx)),
         "not" => {
             let [operand] = arguments.try_into().ok().unwrap();
             // FIXME: actually use the `not` block
@@ -553,4 +567,13 @@ fn compile_regular_intrinsic(
         "wait" => f! { wait(seconds) },
         _ => unreachable!(),
     }
+}
+
+fn mathop(
+    operation: &'static str,
+    arguments: Vec<Operand>,
+    cx: &mut Context,
+) -> Operand {
+    let [operand] = arguments.try_into().ok().unwrap();
+    cx.sprite.mathop(operation, operand)
 }

@@ -48,6 +48,34 @@ fn lt(_ lhs: String, _ rhs: String) -> Bool {}
 fn eq(_ lhs: String, _ rhs: String) -> Bool {}
 fn gt(_ lhs: String, _ rhs: String) -> Bool {}
 
+fn abs(_ num: Num) -> Num {}
+
+fn floor(_ num: Num) -> Num {}
+
+fn ceil(_ num: Num) -> Num {}
+
+fn sqrt(_ num: Num) -> Num {}
+
+fn ln(_ num: Num) -> Num {}
+
+fn log(_ num: Num) -> Num {}
+
+fn exp(_ exponent: Num) -> Num {}
+
+fn exp-10(_ exponent: Num) -> Num {}
+
+fn sin(_ angle: Num) -> Num {}
+
+fn cos(_ angle: Num) -> Num {}
+
+fn tan(_ angle: Num) -> Num {}
+
+fn asin(_ num: Num) -> Num {}
+
+fn acos(_ num: Num) -> Num {}
+
+fn atan(_ num: Num) -> Num {}
+
 fn not(_ bool: Bool) -> Bool {}
 
 fn join(_ lhs: String, _ rhs: String) -> String {}
