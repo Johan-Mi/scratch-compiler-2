@@ -95,7 +95,7 @@ module.exports = grammar({
         $.identifier,
       ),
 
-    list_literal: $ => seq("[", repeat($._expression), "]"),
+    list_literal: $ => seq("[", repeat(seq($._expression, optional(","))), "]"),
 
     function_call: $ => seq($.identifier, $.arguments),
 
