@@ -106,6 +106,8 @@ pub enum SyntaxKind {
     #[token(".")]
     DOT,
 
+    #[token("import")]
+    KW_IMPORT,
     #[token("sprite")]
     KW_SPRITE,
     #[token("inline")]
