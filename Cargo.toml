@@ -13,4 +13,4 @@ logos = "0.13.0"
 petgraph = { version = "0.6.4", default-features = false }
 rowan = "0.15.13"
 ryu-js = "1.0.0"
-sb3-builder = { version = "0.1.0", path = "../sb3-builder" }
+sb3-builder = { git = "https://github.com/Johan-Mi/sb3-builder" }
