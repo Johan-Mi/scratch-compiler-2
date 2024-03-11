@@ -10,6 +10,16 @@ Scratch is a project of the Scratch Foundation, in collaboration with the
 Lifelong Kindergarten Group at the MIT Media Lab. It is available for free at
 <https://scratch.mit.edu>
 
+## Usage
+
+```shell
+# Only check
+scratch-compiler-2 check main.sc2
+
+# Compile to a Scratch project
+scratch-compiler-2 compile main.sc2
+```
+
 ## Editor support
 
 ### Helix
