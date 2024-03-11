@@ -24,7 +24,8 @@ scratch-compiler-2 compile main.sc2
 
 ### Helix
 
-Add the following to `languages.toml`:
+Copy/symlink the Tree-sitter queries to `queries/sc2` in the Helix runtime
+directory and add the following to `languages.toml`:
 
 ```toml
 [[language]]
