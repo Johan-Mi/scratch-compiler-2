@@ -13,6 +13,7 @@
   "inline"
   "comptime"
 ] @keyword
+"import" @keyword.control.import
 [
   "if"
   "else"

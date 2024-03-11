@@ -7,7 +7,16 @@ module.exports = grammar({
 
   rules: {
     source_file: $ =>
-      repeat(choice($.sprite, $.function_definition, $.variable_definition)),
+      repeat(
+        choice(
+          $.import,
+          $.sprite,
+          $.function_definition,
+          $.variable_definition,
+        ),
+      ),
+
+    import: $ => seq("import", $.string_literal),
 
     sprite: $ => seq("sprite", $.identifier, $.sprite_body),
 
