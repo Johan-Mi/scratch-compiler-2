@@ -35,6 +35,10 @@ macro_rules! ast_node {
 ast_node!(Document: DOCUMENT);
 
 impl Document {
+    pub fn imports(&self) -> impl Iterator<Item = Import> {
+        rowan::ast::support::children(&self.syntax)
+    }
+
     pub fn sprites(&self) -> impl Iterator<Item = Sprite> {
         rowan::ast::support::children(&self.syntax)
     }
@@ -45,6 +49,14 @@ impl Document {
 
     pub fn lets(&self) -> impl Iterator<Item = Let> {
         rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(Import: IMPORT);
+
+impl Import {
+    pub fn path(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, STRING)
     }
 }
 
