@@ -9,7 +9,7 @@ use crate::{
 use codemap::Span;
 use rowan::TextSize;
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashMap},
     fmt,
 };
 
@@ -164,7 +164,7 @@ fn check_global_variable(
     let ty = variable.initializer.ty(None, tcx);
     let pos = variable.token.text_range().start();
     if matches!(ty, Ok(Ty::List(_))) {
-        tcx.comptime_known_variables.insert(pos);
+        tcx.comptime_known_variables.insert(pos, None);
     }
     tcx.variable_types.insert(pos, ty);
     if !comptime::is_known(&variable.initializer, tcx) {
@@ -189,7 +189,7 @@ fn check_function(function: &hir::Function, tcx: &mut Context) {
             .parameters
             .iter()
             .filter(|it| it.is_comptime)
-            .map(|it| it.internal_name.text_range().start()),
+            .map(|it| (it.internal_name.text_range().start(), None)),
     );
 
     let actual_return_ty = check_block(&function.body, tcx);
@@ -217,7 +217,7 @@ fn check_statement(
             let ty = value.ty(None, tcx);
             let pos = variable.text_range().start();
             if matches!(ty, Ok(Ty::List(_))) {
-                tcx.comptime_known_variables.insert(pos);
+                tcx.comptime_known_variables.insert(pos, None);
             }
             tcx.variable_types.insert(pos, ty);
             Ok(Ty::Unit)
@@ -464,8 +464,25 @@ pub struct Context<'a> {
     pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
-    pub comptime_known_variables: HashSet<TextSize>,
+    pub comptime_known_variables: HashMap<TextSize, Option<comptime::Value>>,
     pub resolved_calls: &'a mut ResolvedCalls,
+}
+
+impl Context<'_> {
+    pub fn maybe_define_comptime_known_variable(
+        &mut self,
+        variable: TextSize,
+        value: &hir::Expression,
+    ) {
+        if let hir::Expression {
+            kind: hir::ExpressionKind::Imm(value @ comptime::Value::Ty(_)),
+            ..
+        } = value
+        {
+            self.comptime_known_variables
+                .insert(variable, Some(value.clone()));
+        }
+    }
 }
 
 pub fn check_generic_type_instantiation(

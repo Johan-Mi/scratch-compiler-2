@@ -58,14 +58,15 @@ impl Document {
                         || "Stage".to_owned(),
                         |it| it.text().to_owned(),
                     );
+                let initializer =
+                    Expression::lower_opt(it.value(), file, tcx, text_range);
+                tcx.maybe_define_comptime_known_variable(
+                    token.text_range().start(),
+                    &initializer,
+                );
                 Some(GlobalVariable {
                     token,
-                    initializer: Expression::lower_opt(
-                        it.value(),
-                        file,
-                        tcx,
-                        text_range,
-                    ),
+                    initializer,
                     owning_sprite,
                 })
             })
@@ -324,6 +325,11 @@ impl Statement {
                     }
                 };
 
+                tcx.maybe_define_comptime_known_variable(
+                    variable.text_range().start(),
+                    &value,
+                );
+
                 Self::Let { variable, value }
             }
             ast::Statement::If(if_) => Self::If {
@@ -403,7 +409,7 @@ impl Statement {
 impl Expression {
     fn lower(ast: &ast::Expression, file: &File, tcx: &mut Context) -> Self {
         let mut expr = Self::lower_impl(ast, file, tcx);
-        comptime::evaluate(&mut expr);
+        comptime::evaluate(&mut expr, tcx);
         expr
     }
 

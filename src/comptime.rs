@@ -41,19 +41,27 @@ impl Value {
     }
 }
 
-pub fn evaluate(expr: &mut Expression) {
+pub fn evaluate(expr: &mut Expression, tcx: &ty::Context) {
     match &mut expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
-            expr.kind =
-                ExpressionKind::Imm(match token.parent().map(|it| it.kind()) {
-                    Some(SyntaxKind::SPRITE) => Value::Sprite {
-                        name: token.to_string(),
-                    },
-                    Some(SyntaxKind::GENERICS) => {
-                        Value::Ty(Ty::Generic(token.clone()))
+            expr.kind = ExpressionKind::Imm(
+                if let Some(Some(value)) = tcx
+                    .comptime_known_variables
+                    .get(&token.text_range().start())
+                {
+                    value.clone()
+                } else {
+                    match token.parent().map(|it| it.kind()) {
+                        Some(SyntaxKind::SPRITE) => Value::Sprite {
+                            name: token.to_string(),
+                        },
+                        Some(SyntaxKind::GENERICS) => {
+                            Value::Ty(Ty::Generic(token.clone()))
+                        }
+                        _ => return,
                     }
-                    _ => return,
-                });
+                },
+            );
         }
         ExpressionKind::Variable(Name::Builtin(builtin)) => {
             if let Ok(ty) = (*builtin).try_into() {
@@ -84,7 +92,7 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
     ) || matches!(
         &expr.kind,
         ExpressionKind::Variable(Name::User(var))
-            if tcx.comptime_known_variables.contains(&var.text_range().start())
+            if tcx.comptime_known_variables.contains_key(&var.text_range().start())
     ) || matches!(
         &expr.kind,
         ExpressionKind::ListLiteral(items)

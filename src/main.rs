@@ -25,7 +25,7 @@ mod ty;
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashMap},
     path::Path,
     process::ExitCode,
 };
@@ -91,7 +91,7 @@ fn compile_or_check(
         top_level_functions: &BTreeMap::new(),
         diagnostics,
         variable_types: HashMap::new(),
-        comptime_known_variables: HashSet::new(),
+        comptime_known_variables: HashMap::new(),
         resolved_calls: &mut resolved_calls,
     };
 
