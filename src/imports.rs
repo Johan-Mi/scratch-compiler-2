@@ -21,6 +21,7 @@ pub fn import(
         }
 
         let source_code = std::fs::read_to_string(&absolute_path)?;
+        done.insert(absolute_path);
         let file = code_map.add_file(path_name, source_code);
         let document = crate::parser::parse(&file, tcx.diagnostics);
         crate::syntax_errors::check(&document, &file, tcx.diagnostics);
@@ -41,7 +42,6 @@ pub fn import(
         crate::linter::lint(&document, &file, tcx.diagnostics);
 
         root.merge(document);
-        done.insert(absolute_path);
     }
 
     Ok(())
