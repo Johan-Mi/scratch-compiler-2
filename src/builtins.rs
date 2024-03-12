@@ -14,5 +14,5 @@ pub fn add_to_hir(
             function.is_intrinsic = true;
         }
     }
-    document.functions.extend(hir.functions);
+    document.merge(hir);
 }

@@ -27,6 +27,14 @@ pub struct Document {
     pub variables: Vec<GlobalVariable>,
 }
 
+impl Document {
+    pub fn merge(&mut self, other: Self) {
+        self.sprites.extend(other.sprites);
+        self.functions.extend(other.functions);
+        self.variables.extend(other.variables);
+    }
+}
+
 #[derive(Debug)]
 pub struct GlobalVariable {
     pub token: SyntaxToken,
