@@ -11,6 +11,7 @@ mod early_dce;
 mod formatter;
 mod function;
 mod hir;
+mod imports;
 mod linter;
 mod mir;
 mod name;
@@ -83,17 +84,6 @@ fn compile_or_check(
     code_map: &mut CodeMap,
     only_check: bool,
 ) -> Result<(), ()> {
-    let source_code = std::fs::read_to_string(&source_file).map_err(|err| {
-        diagnostics.error("failed to read source code", []);
-        diagnostics.note(err.to_string(), []);
-    })?;
-    let file = code_map.add_file(source_file, source_code);
-    let document = parser::parse(&file, diagnostics);
-    syntax_errors::check(&document, &file, diagnostics);
-    if std::env::var_os("DUMP_CST").is_some() {
-        eprintln!("{document:#?}");
-    }
-
     let mut resolved_calls = HashMap::new();
 
     let mut tcx = ty::Context {
@@ -105,16 +95,12 @@ fn compile_or_check(
         resolved_calls: &mut resolved_calls,
     };
 
-    let mut document = hir::lowering::lower(document, &file, &mut tcx);
-    if std::env::var_os("DUMP_HIR").is_some() {
-        eprintln!("{document:#?}");
-    }
-    let builtins = builtins::hir(code_map, &mut tcx);
-    document.merge(builtins);
+    let mut document = builtins::hir(code_map, &mut tcx);
+    imports::import(&mut document, source_file, &mut tcx, code_map)?;
+
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
-    linter::lint(&document, &file, diagnostics);
 
     early_dce::perform(&mut document, &resolved_calls, diagnostics);
 
