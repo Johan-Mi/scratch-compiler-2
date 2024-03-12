@@ -1,5 +1,5 @@
 use rowan::ast::AstNode;
-use std::{collections::HashSet, path::Path};
+use std::collections::HashSet;
 
 pub fn import(
     root: &mut crate::hir::Document,
@@ -7,7 +7,7 @@ pub fn import(
     tcx: &mut crate::ty::Context,
     code_map: &mut codemap::CodeMap,
 ) -> std::io::Result<()> {
-    let mut pending = Vec::from([(Path::new(&path).canonicalize()?, path)]);
+    let mut pending = Vec::from([(std::fs::canonicalize(&path)?, path)]);
     let mut done = HashSet::new();
 
     while let Some((absolute_path, path_name)) = pending.pop() {
@@ -22,7 +22,7 @@ pub fn import(
             .filter_map(|it| it.path())
             .filter_map(|it| crate::hir::parse_string_literal(it.text()).ok())
         {
-            let absolute_path = Path::new(&import).canonicalize()?;
+            let absolute_path = std::fs::canonicalize(&import)?;
             if !done.contains(&absolute_path) {
                 pending.push((absolute_path, import));
             }
