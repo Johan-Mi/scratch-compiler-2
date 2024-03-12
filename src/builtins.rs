@@ -1,7 +1,7 @@
 use rowan::ast::AstNode;
 
 pub fn hir(
-    generator: &mut crate::mir::Generator,
+    generator: &mut crate::generator::Generator,
     code_map: &mut codemap::CodeMap,
     tcx: &mut crate::ty::Context,
 ) -> crate::hir::Document {

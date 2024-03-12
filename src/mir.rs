@@ -12,7 +12,10 @@ mod visit;
 pub use lowering::lower;
 use visit::*;
 
-use crate::{comptime::Value as Imm, function, hir::Costume, ty::Ty};
+use crate::{
+    comptime::Value as Imm, function, generator::Generator, hir::Costume,
+    ty::Ty,
+};
 use std::{collections::HashMap, fmt};
 
 pub fn optimize(document: &mut Document, generator: &mut Generator) {
@@ -112,34 +115,17 @@ impl fmt::Display for RealList {
     }
 }
 
-#[derive(Default)]
-pub struct Generator {
-    counter: u16,
-}
-
 impl Generator {
-    pub fn new_usize(&mut self) -> usize {
-        let var = self.counter;
-        self.counter += 1;
-        var.into()
-    }
-
     fn new_ssa_var(&mut self) -> SsaVar {
-        let var = self.counter;
-        self.counter += 1;
-        SsaVar(var)
+        SsaVar(self.new_u16())
     }
 
     fn new_real_var(&mut self) -> RealVar {
-        let var = self.counter;
-        self.counter += 1;
-        RealVar(var)
+        RealVar(self.new_u16())
     }
 
     fn new_real_list(&mut self) -> RealList {
-        let list = self.counter;
-        self.counter += 1;
-        RealList(list)
+        RealList(self.new_u16())
     }
 }
 

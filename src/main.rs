@@ -10,6 +10,7 @@ mod diagnostics;
 mod early_dce;
 mod formatter;
 mod function;
+mod generator;
 mod hir;
 mod imports;
 mod linter;
@@ -95,7 +96,7 @@ fn compile_or_check(
         resolved_calls: &mut resolved_calls,
     };
 
-    let mut generator = mir::Generator::default();
+    let mut generator = generator::Generator::default();
 
     let mut document = builtins::hir(&mut generator, code_map, &mut tcx);
     imports::import(
@@ -124,7 +125,7 @@ fn compile_or_check(
         return Ok(());
     }
 
-    let mut generator = mir::Generator::default();
+    let mut generator = generator::Generator::default();
     let mut document = mir::lower(document, &resolved_calls, &mut generator);
     mir::optimize(&mut document, &mut generator);
     if std::env::var_os("DUMP_MIR").is_some() {

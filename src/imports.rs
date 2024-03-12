@@ -1,4 +1,4 @@
-use crate::mir::Generator;
+use crate::generator::Generator;
 use rowan::ast::AstNode;
 use std::{collections::HashSet, io};
 

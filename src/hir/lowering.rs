@@ -6,7 +6,7 @@ use crate::{
     ast,
     comptime::{self, Value},
     diagnostics::{primary, span},
-    mir::Generator,
+    generator::Generator,
     name::Name,
     parser::SyntaxKind,
     ty::{self, Context, Ty},
@@ -39,7 +39,7 @@ impl Document {
             }
         }
 
-        let functions = std::iter::repeat_with(|| generator.new_usize())
+        let functions = std::iter::repeat_with(|| generator.new_u16().into())
             .zip(ast.functions().filter_map(|function| {
                 Function::lower(&function, file, tcx).ok()
             }))
