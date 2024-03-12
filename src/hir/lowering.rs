@@ -636,31 +636,9 @@ fn lower_type_ascription(
     let inner = Expression::lower(&inner, file, tcx);
     let ty = Expression::lower(&ty, file, tcx);
 
-    let Ok(ty_ty) = ty.ty(None, tcx) else {
-        return ExpressionKind::Error;
-    };
-    if !matches!(ty_ty, Ty::Ty) {
-        tcx.diagnostics.error(
-            "ascribed type must be a type",
-            [primary(ty.span, format!("expected `Type`, got `{ty_ty}`"))],
-        );
-    };
-
-    let ty = match ty.kind {
-        ExpressionKind::Imm(Value::Ty(ty)) => ty,
-        ExpressionKind::Imm(_) => return ExpressionKind::Error,
-        _ => {
-            tcx.diagnostics.error(
-                "ascribed type must be comptime-known",
-                [primary(ty.span, "")],
-            );
-            return ExpressionKind::Error;
-        }
-    };
-
     ExpressionKind::TypeAscription {
         inner: Box::new(inner),
-        ty,
+        ty: Box::new(ty),
     }
 }
 

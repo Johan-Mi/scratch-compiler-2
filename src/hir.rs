@@ -148,7 +148,7 @@ pub enum ExpressionKind {
     ListLiteral(Vec<Expression>),
     TypeAscription {
         inner: Box<Expression>,
-        ty: Ty,
+        ty: Box<Expression>,
     },
     Error,
 }
@@ -219,6 +219,31 @@ impl Expression {
                 ty::of_list_literal(list, self.span, ascribed, tcx)
             }
             ExpressionKind::TypeAscription { inner, ty } => {
+                let Ok(ty_ty) = ty.ty(None, tcx) else {
+                    return Err(());
+                };
+                if !matches!(ty_ty, Ty::Ty) {
+                    tcx.diagnostics.error(
+                        "ascribed type must be a type",
+                        [primary(
+                            ty.span,
+                            format!("expected `Type`, got `{ty_ty}`"),
+                        )],
+                    );
+                };
+
+                let ty = match &ty.kind {
+                    ExpressionKind::Imm(Value::Ty(ty)) => ty,
+                    ExpressionKind::Imm(_) => return Err(()),
+                    _ => {
+                        tcx.diagnostics.error(
+                            "ascribed type must be comptime-known",
+                            [primary(ty.span, "")],
+                        );
+                        return Err(());
+                    }
+                };
+
                 if let Ok(inner_ty) = inner.ty(Some(ty), tcx) {
                     if inner_ty != *ty {
                         tcx.diagnostics.error(
