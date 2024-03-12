@@ -96,7 +96,12 @@ fn compile_or_check(
     };
 
     let mut document = builtins::hir(code_map, &mut tcx);
-    imports::import(&mut document, source_file, &mut tcx, code_map)?;
+    imports::import(&mut document, source_file, &mut tcx, code_map).map_err(
+        |err| {
+            tcx.diagnostics.error("failed to read source code", []);
+            tcx.diagnostics.note(err.to_string(), []);
+        },
+    )?;
 
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);

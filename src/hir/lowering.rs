@@ -1,6 +1,6 @@
 use super::{
-    Block, Costume, Document, Expression, ExpressionKind, Function,
-    GlobalVariable, Parameter, Result, Sprite, Statement,
+    parse_string_literal, Block, Costume, Document, Expression, ExpressionKind,
+    Function, GlobalVariable, Parameter, Result, Sprite, Statement,
 };
 use crate::{
     ast,
@@ -688,9 +688,4 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
         }
         _ => unreachable!(),
     }
-}
-
-fn parse_string_literal(lit: &str) -> Result<String> {
-    // Remove the quotes.
-    Ok(lit[1..].strip_suffix('"').ok_or(())?.to_owned())
 }
