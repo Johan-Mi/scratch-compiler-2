@@ -25,7 +25,9 @@ impl Document {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
-            let Ok((name, sprite)) = Sprite::lower(&sprite, file, tcx) else {
+            let Ok((name, sprite)) =
+                Sprite::lower(&sprite, generator, file, tcx)
+            else {
                 continue;
             };
 
@@ -83,6 +85,7 @@ impl Document {
 impl Sprite {
     fn lower(
         ast: &ast::Sprite,
+        generator: &mut Generator,
         file: &File,
         tcx: &mut Context,
     ) -> Result<(String, Self)> {
@@ -102,10 +105,10 @@ impl Sprite {
             .filter_map(|it| Costume::lower(&it).ok())
             .collect();
 
-        let functions = ast
-            .functions()
-            .filter_map(|function| Function::lower(&function, file, tcx).ok())
-            .enumerate()
+        let functions = std::iter::repeat_with(|| generator.new_u16().into())
+            .zip(ast.functions().filter_map(|function| {
+                Function::lower(&function, file, tcx).ok()
+            }))
             .collect();
 
         Ok((
