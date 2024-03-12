@@ -1,6 +1,7 @@
 use rowan::ast::AstNode;
 
 pub fn hir(
+    generator: &mut crate::mir::Generator,
     code_map: &mut codemap::CodeMap,
     tcx: &mut crate::ty::Context,
 ) -> crate::hir::Document {
@@ -10,6 +11,7 @@ pub fn hir(
     let cst = crate::parser::parse(&file, tcx.diagnostics);
     let mut hir = crate::hir::Document::lower(
         &crate::ast::Document::cast(cst).unwrap(),
+        generator,
         &file,
         tcx,
     );

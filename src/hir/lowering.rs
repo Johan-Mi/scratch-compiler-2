@@ -6,6 +6,7 @@ use crate::{
     ast,
     comptime::{self, Value},
     diagnostics::{primary, span},
+    mir::Generator,
     name::Name,
     parser::SyntaxKind,
     ty::{self, Context, Ty},
@@ -15,7 +16,12 @@ use rowan::{ast::AstNode, TextRange};
 use std::collections::{hash_map::Entry, HashMap};
 
 impl Document {
-    pub fn lower(ast: &ast::Document, file: &File, tcx: &mut Context) -> Self {
+    pub fn lower(
+        ast: &ast::Document,
+        generator: &mut Generator,
+        file: &File,
+        tcx: &mut Context,
+    ) -> Self {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
@@ -33,10 +39,10 @@ impl Document {
             }
         }
 
-        let functions = ast
-            .functions()
-            .filter_map(|function| Function::lower(&function, file, tcx).ok())
-            .enumerate()
+        let functions = std::iter::repeat_with(|| generator.new_usize())
+            .zip(ast.functions().filter_map(|function| {
+                Function::lower(&function, file, tcx).ok()
+            }))
             .collect();
 
         let variables = ast

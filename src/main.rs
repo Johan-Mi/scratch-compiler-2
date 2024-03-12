@@ -95,13 +95,20 @@ fn compile_or_check(
         resolved_calls: &mut resolved_calls,
     };
 
-    let mut document = builtins::hir(code_map, &mut tcx);
-    imports::import(&mut document, source_file, &mut tcx, code_map).map_err(
-        |err| {
-            tcx.diagnostics.error("failed to read source code", []);
-            tcx.diagnostics.note(err.to_string(), []);
-        },
-    )?;
+    let mut generator = mir::Generator::default();
+
+    let mut document = builtins::hir(&mut generator, code_map, &mut tcx);
+    imports::import(
+        &mut document,
+        source_file,
+        &mut generator,
+        &mut tcx,
+        code_map,
+    )
+    .map_err(|err| {
+        tcx.diagnostics.error("failed to read source code", []);
+        tcx.diagnostics.note(err.to_string(), []);
+    })?;
 
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);

@@ -1,9 +1,11 @@
+use crate::mir::Generator;
 use rowan::ast::AstNode;
 use std::{collections::HashSet, io};
 
 pub fn import(
     root: &mut crate::hir::Document,
     path: String,
+    generator: &mut Generator,
     tcx: &mut crate::ty::Context,
     code_map: &mut codemap::CodeMap,
 ) -> io::Result<()> {
@@ -38,7 +40,8 @@ pub fn import(
             }
         }
 
-        let document = crate::hir::Document::lower(&document, &file, tcx);
+        let document =
+            crate::hir::Document::lower(&document, generator, &file, tcx);
         crate::linter::lint(&document, &file, tcx.diagnostics);
 
         root.merge(document);

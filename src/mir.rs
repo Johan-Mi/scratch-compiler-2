@@ -118,6 +118,12 @@ pub struct Generator {
 }
 
 impl Generator {
+    pub fn new_usize(&mut self) -> usize {
+        let var = self.counter;
+        self.counter += 1;
+        var.into()
+    }
+
     fn new_ssa_var(&mut self) -> SsaVar {
         let var = self.counter;
         self.counter += 1;
