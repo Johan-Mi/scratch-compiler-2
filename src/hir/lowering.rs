@@ -5,14 +5,14 @@ use super::{
 use crate::{
     ast,
     comptime::{self, Value},
-    diagnostics::{primary, secondary, span},
+    diagnostics::{primary, span},
     name::Name,
     parser::{SyntaxKind, SyntaxNode},
     ty::{self, Context, Ty},
 };
 use codemap::{File, Spanned};
 use rowan::{ast::AstNode, TextRange};
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 
 pub fn lower(document: SyntaxNode, file: &File, tcx: &mut Context) -> Document {
     Document::lower(&ast::Document::cast(document).unwrap(), file, tcx)
@@ -27,19 +27,13 @@ impl Document {
                 continue;
             };
 
-            if let Some(prev_sprite) = sprites.get(&*name) {
-                tcx.diagnostics.error(
-                    format!("redefinition of sprite `{name}`"),
-                    [
-                        primary(sprite.name_span, "second definition here"),
-                        secondary(
-                            prev_sprite.name_span,
-                            "previously defined here",
-                        ),
-                    ],
-                );
-            } else {
-                sprites.insert(name, sprite);
+            match sprites.entry(name) {
+                Entry::Occupied(mut existing) => {
+                    existing.get_mut().merge(sprite);
+                }
+                Entry::Vacant(new) => {
+                    new.insert(sprite);
+                }
             }
         }
 

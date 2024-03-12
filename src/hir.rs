@@ -43,6 +43,13 @@ pub struct Sprite {
     pub functions: BTreeMap<usize, Function>,
 }
 
+impl Sprite {
+    fn merge(&mut self, other: Self) {
+        self.costumes.extend(other.costumes);
+        self.functions.extend(other.functions);
+    }
+}
+
 #[derive(Debug)]
 pub struct Costume {
     pub name: String,
