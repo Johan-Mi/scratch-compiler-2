@@ -92,7 +92,6 @@ impl Sprite {
                 )],
             );
         })?;
-        let name_span = span(file, name.text_range());
 
         let costumes = ast
             .costume_lists()
@@ -109,7 +108,6 @@ impl Sprite {
         Ok((
             name.to_string(),
             Self {
-                name_span,
                 costumes,
                 functions,
             },

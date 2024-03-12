@@ -46,7 +46,6 @@ pub struct GlobalVariable {
 
 #[derive(Debug)]
 pub struct Sprite {
-    name_span: Span,
     pub costumes: Vec<Costume>,
     pub functions: BTreeMap<usize, Function>,
 }
