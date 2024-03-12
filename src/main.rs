@@ -109,7 +109,8 @@ fn compile_or_check(
     if std::env::var_os("DUMP_HIR").is_some() {
         eprintln!("{document:#?}");
     }
-    builtins::add_to_hir(&mut document, code_map, &mut tcx);
+    let builtins = builtins::hir(code_map, &mut tcx);
+    document.merge(builtins);
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);

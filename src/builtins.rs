@@ -1,8 +1,7 @@
-pub fn add_to_hir(
-    document: &mut crate::hir::Document,
+pub fn hir(
     code_map: &mut codemap::CodeMap,
     tcx: &mut crate::ty::Context,
-) {
+) -> crate::hir::Document {
     let source_code = include_str!("builtins.sc2");
     let file =
         code_map.add_file("<builtins>".to_owned(), source_code.to_owned());
@@ -14,5 +13,5 @@ pub fn add_to_hir(
             function.is_intrinsic = true;
         }
     }
-    document.merge(hir);
+    hir
 }
