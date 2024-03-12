@@ -1,16 +1,25 @@
 use rowan::ast::AstNode;
-use std::collections::HashSet;
+use std::{collections::HashSet, io};
 
 pub fn import(
     root: &mut crate::hir::Document,
     path: String,
     tcx: &mut crate::ty::Context,
     code_map: &mut codemap::CodeMap,
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     let mut pending = Vec::from([(std::fs::canonicalize(&path)?, path)]);
     let mut done = HashSet::new();
 
+    let sandbox_root = std::env::current_dir()?;
+
     while let Some((absolute_path, path_name)) = pending.pop() {
+        if !absolute_path.starts_with(&sandbox_root) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("{path_name:?} is outside of the compilation sandbox"),
+            ));
+        }
+
         let source_code = std::fs::read_to_string(&absolute_path)?;
         let file = code_map.add_file(path_name, source_code);
         let document = crate::parser::parse(&file, tcx.diagnostics);
