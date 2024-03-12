@@ -7,19 +7,15 @@ use crate::{
     comptime::{self, Value},
     diagnostics::{primary, span},
     name::Name,
-    parser::{SyntaxKind, SyntaxNode},
+    parser::SyntaxKind,
     ty::{self, Context, Ty},
 };
 use codemap::{File, Spanned};
 use rowan::{ast::AstNode, TextRange};
 use std::collections::{hash_map::Entry, HashMap};
 
-pub fn lower(document: SyntaxNode, file: &File, tcx: &mut Context) -> Document {
-    Document::lower(&ast::Document::cast(document).unwrap(), file, tcx)
-}
-
 impl Document {
-    fn lower(ast: &ast::Document, file: &File, tcx: &mut Context) -> Self {
+    pub fn lower(ast: &ast::Document, file: &File, tcx: &mut Context) -> Self {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
