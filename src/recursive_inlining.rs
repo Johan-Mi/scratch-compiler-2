@@ -1,13 +1,17 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
     function::{self, ResolvedCalls},
-    hir::{self, ExpressionKind, Visitor},
+    hir::{
+        self,
+        typed::{Document, Function},
+        ExpressionKind, Visitor,
+    },
 };
 use petgraph::{prelude::NodeIndex, Direction, Graph};
 use std::collections::{BTreeMap, HashMap};
 
 pub fn check(
-    document: &hir::Document,
+    document: &Document,
     resolved_calls: &ResolvedCalls,
     diagnostics: &mut Diagnostics,
 ) {
@@ -18,7 +22,7 @@ pub fn check(
 }
 
 pub fn check_functions(
-    functions: &BTreeMap<usize, hir::Function>,
+    functions: &BTreeMap<usize, Function>,
     resolved_calls: &ResolvedCalls,
     is_top_level: bool,
     diagnostics: &mut Diagnostics,

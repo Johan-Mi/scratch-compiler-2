@@ -4,7 +4,7 @@ use rowan::TextSize;
 use std::collections::HashMap;
 
 pub(super) fn real_vars(
-    document: &hir::Document,
+    document: &hir::typed::Document,
     generator: &mut Generator,
 ) -> HashMap<TextSize, RealVar> {
     let mut visitor = RealVarVisitor {

@@ -111,6 +111,7 @@ fn compile_or_check(
         tcx.diagnostics.note(err.to_string(), []);
     })?;
 
+    let mut document = hir::typed::lower(document, &mut tcx);
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);

@@ -24,7 +24,7 @@ struct LintVisitor {
     unused_variables: HashSet<SyntaxToken>,
 }
 
-impl Visitor for LintVisitor {
+impl Visitor<crate::hir::Function> for LintVisitor {
     fn visit_global_variable(&mut self, variable: &GlobalVariable) {
         self.unused_variables.insert(variable.token.clone());
     }

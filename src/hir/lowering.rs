@@ -159,9 +159,10 @@ impl Function {
             tcx.diagnostics
                 .error("function has no name", defined_here());
         })?;
+        let name_text_range = name.text_range();
         let name = Spanned {
             node: name.text().to_owned(),
-            span: span(file, name.text_range()),
+            span: span(file, name_text_range),
         };
 
         let parameters = ast
@@ -180,41 +181,19 @@ impl Function {
                 .error("function has no body", defined_here());
         })?;
 
-        let return_ty =
-            ast.return_ty().map(|it| Expression::lower(&it, file, tcx));
-        let return_ty_span = return_ty.as_ref().map_or(name.span, |it| it.span);
-        let return_ty = return_ty.map_or(Ok(Ty::Unit), |expr| {
-            let expr_ty = expr.ty(None, tcx)?;
-            if !matches!(expr_ty, Ty::Ty) {
-                tcx.diagnostics.error(
-                    "function return type must be a type",
-                    [primary(
-                        return_ty_span,
-                        format!("expected `Type`, got `{expr_ty}`"),
-                    )],
-                );
-            };
-            match expr.kind {
-                ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-                ExpressionKind::Imm(_) => Err(()),
-                _ => {
-                    tcx.diagnostics.error(
-                        "function return type must be comptime-known",
-                        [primary(expr.span, "")],
-                    );
-                    Err(())
-                }
-            }
-        });
+        let return_ty = ast.return_ty().map_or(
+            Expression {
+                kind: ExpressionKind::Imm(Value::Ty(Ty::Unit)),
+                span: name.span,
+            },
+            |it| Expression::lower(&it, file, tcx),
+        );
 
         Ok(Self {
             name,
             generics,
             parameters,
-            return_ty: Spanned {
-                node: return_ty,
-                span: return_ty_span,
-            },
+            return_ty,
             body: Block::lower(&body, file, tcx),
             is_from_builtins: false,
             is_intrinsic: false,
@@ -243,30 +222,7 @@ impl Parameter {
                 [primary(span(file, external_name.text_range()), "")],
             );
         })?;
-        let expr = Expression::lower(&ty, file, tcx);
-
-        let expr_ty = expr.ty(None, tcx)?;
-        if !matches!(expr_ty, Ty::Ty) {
-            tcx.diagnostics.error(
-                "function parameter type must be a type",
-                [primary(
-                    expr.span,
-                    format!("expected `Type`, got `{expr_ty}`"),
-                )],
-            );
-        };
-
-        let ty = match expr.kind {
-            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-            ExpressionKind::Imm(_) => Err(()),
-            _ => {
-                tcx.diagnostics.error(
-                    "function parameter type must be comptime-known",
-                    [primary(expr.span, "")],
-                );
-                Err(())
-            }
-        };
+        let ty = Expression::lower(&ty, file, tcx);
 
         Ok(Self {
             external_name: match external_name.text() {
@@ -274,10 +230,7 @@ impl Parameter {
                 name => Some(name.to_owned()),
             },
             internal_name,
-            ty: Spanned {
-                node: ty,
-                span: expr.span,
-            },
+            ty,
             is_comptime: ast.is_comptime(),
             span: span(file, ast.syntax().text_range()),
         })

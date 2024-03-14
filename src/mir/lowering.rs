@@ -11,7 +11,7 @@ use rowan::TextSize;
 use std::collections::HashMap;
 
 pub fn lower(
-    document: hir::Document,
+    document: hir::typed::Document,
     resolved_calls: &ResolvedCalls,
     generator: &mut Generator,
 ) -> Document {
@@ -61,8 +61,8 @@ pub struct FunctionSignature {
 }
 
 #[allow(clippy::fallible_impl_from)]
-impl From<&hir::Function> for FunctionSignature {
-    fn from(function: &hir::Function) -> Self {
+impl From<&hir::typed::Function> for FunctionSignature {
+    fn from(function: &hir::typed::Function) -> Self {
         Self {
             returns_something: !function
                 .return_ty
@@ -84,7 +84,7 @@ struct Context<'a> {
     block: Block,
 }
 
-fn lower_sprite(sprite: hir::Sprite, cx: &mut Context) -> Sprite {
+fn lower_sprite(sprite: hir::typed::Sprite, cx: &mut Context) -> Sprite {
     cx.sprite_functions.clear();
     cx.sprite_functions.extend(
         sprite
@@ -103,7 +103,10 @@ fn lower_sprite(sprite: hir::Sprite, cx: &mut Context) -> Sprite {
     }
 }
 
-fn lower_function(function: hir::Function, cx: &mut Context) -> Function {
+fn lower_function(
+    function: hir::typed::Function,
+    cx: &mut Context,
+) -> Function {
     let parameters = function
         .parameters
         .into_iter()

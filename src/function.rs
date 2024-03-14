@@ -1,6 +1,6 @@
 use crate::{
     diagnostics::primary,
-    hir::{Argument, Function},
+    hir::{typed::Function, Argument},
     ty::{Context, Ty},
 };
 use codemap::{Pos, Span};

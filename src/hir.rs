@@ -1,4 +1,5 @@
 pub mod lowering;
+pub mod typed;
 mod visit;
 pub use visit::Visitor;
 
@@ -21,13 +22,13 @@ use std::collections::{BTreeMap, HashMap};
 type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
-pub struct Document {
-    pub sprites: HashMap<String, Sprite>,
-    pub functions: BTreeMap<usize, Function>,
+pub struct Document<Func = Function> {
+    pub sprites: HashMap<String, Sprite<Func>>,
+    pub functions: BTreeMap<usize, Func>,
     pub variables: Vec<GlobalVariable>,
 }
 
-impl Document {
+impl<Func> Document<Func> {
     pub fn merge(&mut self, other: Self) {
         self.sprites.extend(other.sprites);
         self.functions.extend(other.functions);
@@ -45,12 +46,12 @@ pub struct GlobalVariable {
 }
 
 #[derive(Debug)]
-pub struct Sprite {
+pub struct Sprite<Func = Function> {
     pub costumes: Vec<Costume>,
-    pub functions: BTreeMap<usize, Function>,
+    pub functions: BTreeMap<usize, Func>,
 }
 
-impl Sprite {
+impl<Func> Sprite<Func> {
     fn merge(&mut self, other: Self) {
         self.costumes.extend(other.costumes);
         self.functions.extend(other.functions);
@@ -68,7 +69,7 @@ pub struct Function {
     pub name: Spanned<String>,
     pub generics: Vec<SyntaxToken>,
     pub parameters: Vec<Parameter>,
-    pub return_ty: Spanned<Result<Ty>>,
+    pub return_ty: Expression,
     pub body: Block,
     pub is_from_builtins: bool,
     pub is_intrinsic: bool,
@@ -79,7 +80,7 @@ pub struct Function {
 pub struct Parameter {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
-    pub ty: Spanned<Result<Ty>>,
+    pub ty: Expression,
     pub is_comptime: bool,
     pub span: Span,
 }

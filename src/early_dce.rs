@@ -4,7 +4,10 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
     function::{self, ResolvedCalls},
-    hir::{Document, ExpressionKind, Function, Sprite, Visitor},
+    hir::{
+        typed::{Document, Function, Sprite},
+        ExpressionKind, Visitor,
+    },
 };
 use std::collections::BTreeSet;
 

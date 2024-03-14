@@ -135,7 +135,10 @@ impl TryFrom<hir::Expression> for Generic {
     }
 }
 
-pub fn check<'tcx>(document: &'tcx hir::Document, tcx: &mut Context<'tcx>) {
+pub fn check<'tcx>(
+    document: &'tcx hir::typed::Document,
+    tcx: &mut Context<'tcx>,
+) {
     tcx.top_level_functions = &document.functions;
 
     for variable in &document.variables {
@@ -175,7 +178,7 @@ fn check_global_variable(
     }
 }
 
-fn check_function(function: &hir::Function, tcx: &mut Context) {
+fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     tcx.variable_types
         .extend(function.parameters.iter().map(|parameter| {
             (
@@ -338,7 +341,7 @@ fn check_block(body: &hir::Block, tcx: &mut Context<'_>) -> Result<Ty, ()> {
         .unwrap_or(Ok(Ty::Unit))
 }
 
-impl hir::Function {
+impl hir::typed::Function {
     pub fn call_with(
         &self,
         typed_arguments: &[(Option<&str>, Result<Ty, ()>)],
@@ -366,7 +369,7 @@ impl hir::Function {
     }
 }
 
-impl hir::Parameter {
+impl hir::typed::Parameter {
     fn is_compatible_with(
         &self,
         name: Option<&str>,
@@ -460,8 +463,8 @@ pub fn of_list_literal(
 type Constraints = HashMap<SyntaxToken, Ty>;
 
 pub struct Context<'a> {
-    pub sprite: Option<&'a hir::Sprite>,
-    pub top_level_functions: &'a BTreeMap<usize, hir::Function>,
+    pub sprite: Option<&'a hir::typed::Sprite>,
+    pub top_level_functions: &'a BTreeMap<usize, hir::typed::Function>,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
     pub comptime_known_variables: HashMap<TextSize, Option<comptime::Value>>,

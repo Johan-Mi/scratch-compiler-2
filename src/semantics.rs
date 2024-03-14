@@ -1,11 +1,15 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
     function,
-    hir::{self, ExpressionKind, Visitor},
+    hir::{
+        self,
+        typed::{Document, Function},
+        ExpressionKind, Visitor,
+    },
     ty::Ty,
 };
 
-pub fn check(document: &hir::Document, diagnostics: &mut Diagnostics) {
+pub fn check(document: &Document, diagnostics: &mut Diagnostics) {
     if !document.sprites.contains_key("Stage") {
         diagnostics.error("project has no stage", []);
         diagnostics.help("try creating a stage: `sprite Stage {}`", []);
@@ -19,7 +23,7 @@ struct SemanticVisitor<'a> {
 }
 
 impl Visitor for SemanticVisitor<'_> {
-    fn visit_function(&mut self, function: &hir::Function, is_top_level: bool) {
+    fn visit_function(&mut self, function: &Function, is_top_level: bool) {
         self.check_generics(function);
         self.check_special_function(is_top_level, function);
         self.check_function_staging(function);
@@ -60,7 +64,7 @@ impl SemanticVisitor<'_> {
     fn check_special_function(
         &mut self,
         is_top_level: bool,
-        function: &hir::Function,
+        function: &Function,
     ) {
         let Ok(special) = function::Special::try_from(&**function.name) else {
             return;
@@ -107,7 +111,7 @@ impl SemanticVisitor<'_> {
         }
     }
 
-    fn check_function_staging(&mut self, function: &hir::Function) {
+    fn check_function_staging(&mut self, function: &Function) {
         for ty in function
             .parameters
             .iter()
@@ -138,7 +142,7 @@ impl SemanticVisitor<'_> {
         }
     }
 
-    fn check_generics(&mut self, function: &hir::Function) {
+    fn check_generics(&mut self, function: &Function) {
         if !function.is_intrinsic && !function.generics.is_empty() {
             self.diagnostics.error(
                 "user-defined functions with generics are not supported yet",

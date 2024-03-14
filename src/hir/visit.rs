@@ -1,14 +1,14 @@
 use super::{
-    Block, Document, Expression, ExpressionKind, Function, GlobalVariable,
-    Sprite, Statement,
+    Block, Document, Expression, ExpressionKind, GlobalVariable, Sprite,
+    Statement,
 };
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
-pub trait Visitor {
+pub trait Visitor<Func: HasBody = super::typed::Function> {
     fn visit_global_variable(&mut self, _variable: &GlobalVariable) {}
 
-    fn visit_function(&mut self, _function: &Function, _is_top_level: bool) {}
+    fn visit_function(&mut self, _function: &Func, _is_top_level: bool) {}
 
     fn visit_block(&mut self, _block: &Block) {}
 
@@ -16,7 +16,7 @@ pub trait Visitor {
 
     fn visit_expression(&mut self, _expr: &Expression) {}
 
-    fn traverse_document(&mut self, document: &Document) {
+    fn traverse_document(&mut self, document: &Document<Func>) {
         for variable in &document.variables {
             self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);
@@ -29,15 +29,15 @@ pub trait Visitor {
         }
     }
 
-    fn traverse_sprite(&mut self, sprite: &Sprite) {
+    fn traverse_sprite(&mut self, sprite: &Sprite<Func>) {
         for function in sprite.functions.values() {
             self.traverse_function(function, false);
         }
     }
 
-    fn traverse_function(&mut self, function: &Function, is_top_level: bool) {
+    fn traverse_function(&mut self, function: &Func, is_top_level: bool) {
         self.visit_function(function, is_top_level);
-        self.traverse_block(&function.body);
+        self.traverse_block(function.body());
     }
 
     fn traverse_block(&mut self, block: &Block) {
@@ -114,5 +114,21 @@ pub trait Visitor {
                 self.traverse_expression(inner);
             }
         }
+    }
+}
+
+pub trait HasBody {
+    fn body(&self) -> &Block;
+}
+
+impl HasBody for super::Function {
+    fn body(&self) -> &Block {
+        &self.body
+    }
+}
+
+impl HasBody for super::typed::Function {
+    fn body(&self) -> &Block {
+        &self.body
     }
 }
