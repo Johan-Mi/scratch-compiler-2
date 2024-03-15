@@ -43,6 +43,10 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
             Some(Imm(String(ryu_js::Buffer::new().format(*num).to_owned())))
         }
         ("to-string", [Imm(Bool(b))]) => Some(Imm(String(b.to_string()))),
+        #[allow(clippy::cast_precision_loss)]
+        ("length", [Imm(String(s))]) => {
+            Some(Imm(Num(s.chars().count() as f64)))
+        }
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         ("letter", [Imm(String(s)), Imm(Num(index))]) => Some(Imm(String(
             (*index as usize)
