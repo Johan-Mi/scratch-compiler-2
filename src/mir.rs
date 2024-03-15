@@ -13,10 +13,12 @@ pub use lowering::lower;
 use visit::*;
 
 use crate::{
-    comptime::Value as Imm, function, generator::Generator, hir::Costume,
-    ty::Ty,
+    comptime::Value as Imm, generator::Generator, hir::Costume, ty::Ty,
 };
-use std::{collections::HashMap, fmt};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt,
+};
 
 pub fn optimize(document: &mut Document, generator: &mut Generator) {
     struct OptimizationVistior;
@@ -35,17 +37,17 @@ pub fn optimize(document: &mut Document, generator: &mut Generator) {
 #[derive(Debug)]
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
-    pub functions: HashMap<usize, Function>,
+    pub functions: BTreeMap<usize, Function>,
 }
 
 #[derive(Debug)]
 pub struct Sprite {
     pub costumes: Vec<Costume>,
-    pub functions: HashMap<usize, Function>,
 }
 
 #[derive(Debug)]
 pub struct Function {
+    pub owning_sprite: Option<String>,
     pub name: String,
     pub parameters: Vec<Parameter>,
     pub body: Block,
@@ -186,7 +188,7 @@ pub enum Op {
     },
     Call {
         variable: Option<SsaVar>,
-        function: function::Ref,
+        function: usize,
         args: Vec<Value>,
     },
     Intrinsic {

@@ -1,4 +1,4 @@
-use super::{Block, Document, Function, Op, Sprite, SsaVar, Value};
+use super::{Block, Document, Function, Op, SsaVar, Value};
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the MIR.
@@ -12,16 +12,7 @@ pub(super) trait Visitor {
     fn visit_value(&mut self, _value: &mut Value) {}
 
     fn traverse_document(&mut self, document: &mut Document) {
-        for sprite in document.sprites.values_mut() {
-            self.traverse_sprite(sprite);
-        }
         for function in document.functions.values_mut() {
-            self.traverse_function(function);
-        }
-    }
-
-    fn traverse_sprite(&mut self, sprite: &mut Sprite) {
-        for function in sprite.functions.values_mut() {
             self.traverse_function(function);
         }
     }

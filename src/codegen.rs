@@ -4,17 +4,17 @@ use sb3_builder::{
     Parameter, ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{hash_map::Entry, BTreeMap, HashMap, HashSet},
     path::Path,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub fn generate(document: mir::Document, output_path: &Path) -> Result<()> {
+pub fn generate(mut document: mir::Document, output_path: &Path) -> Result<()> {
     let mut project = Project::default();
 
     for (name, sprite) in document.sprites {
-        compile_sprite(sprite, name, &document.functions, &mut project)?;
+        compile_sprite(sprite, &name, &mut document.functions, &mut project)?;
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -23,14 +23,14 @@ pub fn generate(document: mir::Document, output_path: &Path) -> Result<()> {
 
 fn compile_sprite(
     mir: mir::Sprite,
-    name: String,
-    top_level_functions: &HashMap<usize, mir::Function>,
+    name: &str,
+    functions: &mut BTreeMap<usize, mir::Function>,
     project: &mut Project,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
         project.stage()
     } else {
-        project.add_sprite(name)
+        project.add_sprite(name.to_owned())
     };
 
     for costume in mir.costumes {
@@ -42,17 +42,11 @@ fn compile_sprite(
 
     let mut compiled_ssa_vars = HashMap::new();
 
-    let sprite_functions_refs =
-        mir.functions.iter().map(|(&index, function)| {
-            (function::Ref::SpriteLocal(index), function)
-        });
-    let top_level_functions_refs = top_level_functions
+    let compiled_functions = functions
         .iter()
-        .map(|(&index, function)| (function::Ref::TopLevel(index), function));
-    let compiled_functions = sprite_functions_refs
-        .chain(top_level_functions_refs)
-        .filter_map(|(ref_, function)| {
-            Some(ref_).zip(CompiledFunctionRef::new(
+        .filter(|(_, function)| function.owning_sprite.as_deref() == Some(name))
+        .filter_map(|(&index, function)| {
+            Some(index).zip(CompiledFunctionRef::new(
                 function,
                 &mut sprite,
                 &mut compiled_ssa_vars,
@@ -70,8 +64,12 @@ fn compile_sprite(
         is_linear: HashSet::new(),
     };
 
-    for (index, function) in mir.functions {
-        compile_function(function, function::Ref::SpriteLocal(index), &mut cx);
+    while let Some((&index, _)) = functions
+        .iter()
+        .find(|(_, function)| function.owning_sprite.as_deref() == Some(name))
+    {
+        let function = functions.remove(&index).unwrap();
+        compile_function(function, index, &mut cx);
     }
 
     Ok(())
@@ -82,7 +80,7 @@ struct Context<'a> {
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
     compiled_real_vars: HashMap<mir::RealVar, VariableRef>,
     compiled_real_lists: HashMap<mir::RealList, ListRef>,
-    compiled_functions: HashMap<function::Ref, CompiledFunctionRef>,
+    compiled_functions: HashMap<usize, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,
     is_linear: HashSet<mir::SsaVar>,
 }
@@ -186,7 +184,7 @@ fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
 
 fn compile_function(
     mut function: mir::Function,
-    function_ref: function::Ref,
+    index: usize,
     cx: &mut Context,
 ) {
     cx.return_variable = match function::Special::try_from(&*function.name) {
@@ -195,8 +193,7 @@ fn compile_function(
             None
         }
         Err(()) => {
-            let compiled_ref =
-                cx.compiled_functions.get_mut(&function_ref).unwrap();
+            let compiled_ref = cx.compiled_functions.get_mut(&index).unwrap();
             cx.sprite
                 .insert_at(compiled_ref.insertion_point.take().unwrap());
             compiled_ref.return_variable.clone()
@@ -422,7 +419,7 @@ fn compile_intrinsic(
 }
 
 fn compile_function_call(
-    function: function::Ref,
+    function: usize,
     args: Vec<mir::Value>,
     variable: Option<mir::SsaVar>,
     cx: &mut Context,

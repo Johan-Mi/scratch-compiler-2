@@ -1,9 +1,6 @@
-use crate::{
-    function,
-    mir::{
-        visit::SsaVarReplacer, Block, Document, Function, Generator, Op,
-        SsaVar, Value, Visitor,
-    },
+use crate::mir::{
+    visit::SsaVarReplacer, Block, Document, Function, Generator, Op, SsaVar,
+    Value, Visitor,
 };
 use std::{collections::HashMap, mem};
 
@@ -20,30 +17,10 @@ pub fn inline(document: &mut Document, generator: &mut Generator) {
 
         Inliner {
             function,
-            function_ref: function::Ref::TopLevel(id),
+            id,
             generator,
         }
         .traverse_document(document);
-    }
-
-    for sprite in document.sprites.values_mut() {
-        while let Some(id) = sprite
-            .functions
-            .iter()
-            .find_map(|(&id, function)| function.is_inline.then_some(id))
-        {
-            let mut function = sprite.functions.remove(&id).unwrap();
-
-            // Optimize the function before inlining it to avoid duplicate work.
-            super::optimization::optimize(&mut function);
-
-            Inliner {
-                function,
-                function_ref: function::Ref::SpriteLocal(id),
-                generator,
-            }
-            .traverse_sprite(sprite);
-        }
     }
 }
 
@@ -80,7 +57,7 @@ impl Visitor for SsaVarRefresher<'_> {
 
 struct Inliner<'a> {
     function: Function,
-    function_ref: function::Ref,
+    id: usize,
     generator: &'a mut Generator,
 }
 
@@ -95,9 +72,7 @@ impl Visitor for Inliner<'_> {
                     variable,
                     function,
                     args,
-                } if *function == self.function_ref => {
-                    Some((index, variable, args))
-                }
+                } if *function == self.id => Some((index, variable, args)),
                 _ => None,
             })
         {
