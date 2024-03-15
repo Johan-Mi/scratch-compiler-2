@@ -45,8 +45,9 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
         ("to-string", [Imm(Bool(b))]) => Some(Imm(String(b.to_string()))),
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         ("letter", [Imm(String(s)), Imm(Num(index))]) => Some(Imm(String(
-            s.chars()
-                .nth((*index - 1.0) as usize)
+            (*index as usize)
+                .checked_sub(1)
+                .and_then(|index| s.chars().nth(index))
                 .map(Into::into)
                 .unwrap_or_default(),
         ))),
