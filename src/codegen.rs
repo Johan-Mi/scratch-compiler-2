@@ -64,11 +64,9 @@ fn compile_sprite(
         is_linear: HashSet::new(),
     };
 
-    while let Some((&index, _)) = functions
-        .iter()
-        .find(|(_, function)| function.owning_sprite.as_deref() == Some(name))
-    {
-        let function = functions.remove(&index).unwrap();
+    for (index, function) in crate::stdx::extract_if(functions, |function| {
+        function.owning_sprite.as_deref() == Some(name)
+    }) {
         compile_function(function, index, &mut cx);
     }
 
