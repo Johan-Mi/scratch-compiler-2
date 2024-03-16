@@ -13,7 +13,7 @@ pub use lowering::lower;
 use visit::*;
 
 use crate::{
-    comptime::Value as Imm, generator::Generator, hir::Costume, ty::Ty,
+    comptime::Value as Imm, generator::Generator, hir::Sprite, ty::Ty,
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -38,11 +38,6 @@ pub fn optimize(document: &mut Document, generator: &mut Generator) {
 pub struct Document {
     pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
-}
-
-#[derive(Debug)]
-pub struct Sprite {
-    pub costumes: Vec<Costume>,
 }
 
 #[derive(Debug)]

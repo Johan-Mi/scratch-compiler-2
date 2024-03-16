@@ -1,54 +1,38 @@
 use crate::{
     diagnostics::{primary, Diagnostics},
-    function::{self, ResolvedCalls},
-    hir::{
-        self,
-        typed::{Document, Function},
-        ExpressionKind, Visitor,
-    },
+    function::ResolvedCalls,
+    hir::{self, typed::Document, ExpressionKind, Visitor},
 };
 use petgraph::{prelude::NodeIndex, Direction, Graph};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 pub fn check(
     document: &Document,
     resolved_calls: &ResolvedCalls,
     diagnostics: &mut Diagnostics,
 ) {
-    check_functions(&document.functions, resolved_calls, true, diagnostics);
-    for sprite in document.sprites.values() {
-        check_functions(&sprite.functions, resolved_calls, false, diagnostics);
-    }
-}
-
-pub fn check_functions(
-    functions: &BTreeMap<usize, Function>,
-    resolved_calls: &ResolvedCalls,
-    is_top_level: bool,
-    diagnostics: &mut Diagnostics,
-) {
     let mut graph = Graph::new();
 
-    let nodes = functions
+    let nodes = document
+        .functions
         .keys()
         .map(|&id| (id, graph.add_node(id)))
         .collect::<HashMap<_, _>>();
 
-    for (&id, function) in functions {
+    for (&id, function) in &document.functions {
         if function.is_inline {
             CallGraphVisitor {
                 caller: nodes[&id],
-                is_top_level,
                 nodes: &nodes,
                 graph: &mut graph,
                 resolved_calls,
             }
-            .traverse_function(function, is_top_level);
+            .traverse_function(function);
         }
     }
 
     graph.retain_nodes(|graph, node| {
-        functions[&graph[node]].is_inline
+        document.functions[&graph[node]].is_inline
             // The singleton graph is trivially a strongly connected component.
             && graph
                 .neighbors_directed(node, Direction::Incoming)
@@ -58,7 +42,7 @@ pub fn check_functions(
 
     petgraph::algo::TarjanScc::new().run(&graph, |scc| {
         for &node in scc {
-            let span = functions[&graph[node]].name.span;
+            let span = document.functions[&graph[node]].name.span;
             diagnostics
                 .error("inline function is recursive", [primary(span, "")]);
         }
@@ -67,7 +51,6 @@ pub fn check_functions(
 
 struct CallGraphVisitor<'a> {
     caller: NodeIndex,
-    is_top_level: bool,
     nodes: &'a HashMap<usize, NodeIndex>,
     graph: &'a mut Graph<usize, ()>,
     resolved_calls: &'a ResolvedCalls,
@@ -78,14 +61,8 @@ impl Visitor for CallGraphVisitor<'_> {
         if !matches!(expr.kind, ExpressionKind::FunctionCall { .. }) {
             return;
         };
-        let Some(function_ref) = self.resolved_calls.get(&expr.span.low())
-        else {
+        let Some(index) = self.resolved_calls.get(&expr.span.low()) else {
             return;
-        };
-        let index = match function_ref {
-            function::Ref::SpriteLocal(index) if !self.is_top_level => index,
-            function::Ref::TopLevel(index) if self.is_top_level => index,
-            _ => return,
         };
         self.graph.add_edge(self.caller, self.nodes[&index], ());
     }

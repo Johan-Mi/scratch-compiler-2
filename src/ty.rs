@@ -139,20 +139,11 @@ pub fn check<'tcx>(
     document: &'tcx hir::typed::Document,
     tcx: &mut Context<'tcx>,
 ) {
-    tcx.top_level_functions = &document.functions;
+    tcx.functions = &document.functions;
 
     for variable in &document.variables {
         check_global_variable(variable, tcx);
     }
-
-    for sprite in document.sprites.values() {
-        tcx.sprite = Some(sprite);
-        for function in sprite.functions.values() {
-            check_function(function, tcx);
-        }
-    }
-
-    tcx.sprite = None;
     for function in document.functions.values() {
         if !function.is_intrinsic {
             check_function(function, tcx);
@@ -463,8 +454,8 @@ pub fn of_list_literal(
 type Constraints = HashMap<SyntaxToken, Ty>;
 
 pub struct Context<'a> {
-    pub sprite: Option<&'a hir::typed::Sprite>,
-    pub top_level_functions: &'a BTreeMap<usize, hir::typed::Function>,
+    pub sprite: Option<&'a str>,
+    pub functions: &'a BTreeMap<usize, hir::typed::Function>,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
     pub comptime_known_variables: HashMap<TextSize, Option<comptime::Value>>,

@@ -1,6 +1,6 @@
 use crate::{
     diagnostics::primary,
-    hir::{typed::Function, Argument},
+    hir::Argument,
     ty::{Context, Ty},
 };
 use codemap::{Pos, Span};
@@ -8,48 +8,20 @@ use std::collections::HashMap;
 
 type Result<T> = std::result::Result<T, ()>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Ref {
-    /// An index into the functions of the sprite containing the call.
-    SpriteLocal(usize),
-    /// An index into the top-level functions.
-    TopLevel(usize),
-}
-
-impl<'a> Context<'a> {
-    pub fn function(&self, index: Ref) -> &'a Function {
-        match index {
-            Ref::SpriteLocal(index) => {
-                &self.sprite.as_ref().unwrap().functions[&index]
-            }
-            Ref::TopLevel(index) => &self.top_level_functions[&index],
-        }
-    }
-}
-
-pub type ResolvedCalls = HashMap<Pos, Ref>;
+pub type ResolvedCalls = HashMap<Pos, usize>;
 
 pub fn resolve(
     name: &str,
     arguments: &[Argument],
     span: Span,
     tcx: &mut Context,
-) -> Result<(Ref, Result<Ty>)> {
-    let sprite_local_overloads = tcx
-        .sprite
+) -> Result<(usize, Result<Ty>)> {
+    let all_overloads = tcx
+        .functions
         .iter()
-        .flat_map(|sprite| &sprite.functions)
-        .filter(|(_, function)| *function.name == name)
-        .map(|(&index, _)| Ref::SpriteLocal(index));
-
-    let top_level_overloads = tcx
-        .top_level_functions
-        .iter()
-        .filter(|(_, function)| *function.name == name)
-        .map(|(&index, _)| Ref::TopLevel(index));
-
-    let all_overloads = sprite_local_overloads
-        .chain(top_level_overloads)
+        .filter_map(|(&index, function)| {
+            (*function.name == name).then_some(index)
+        })
         .collect::<Vec<_>>();
 
     let typed_arguments = arguments
@@ -62,7 +34,7 @@ pub fn resolve(
         .copied()
         .filter_map(|overload| {
             Some(overload)
-                .zip(tcx.function(overload).call_with(&typed_arguments))
+                .zip(tcx.functions[&overload].call_with(&typed_arguments))
         })
         .collect::<Vec<_>>();
 
@@ -80,7 +52,7 @@ pub fn resolve(
                 let spans = all_overloads
                     .iter()
                     .map(|&overload| {
-                        primary(tcx.function(overload).name.span, "")
+                        primary(tcx.functions[&overload].name.span, "")
                     })
                     .collect::<Vec<_>>();
                 tcx.diagnostics.note(
@@ -99,7 +71,7 @@ pub fn resolve(
             let spans = viable_overloads
                 .iter()
                 .map(|&(overload, _)| {
-                    primary(tcx.function(overload).name.span, "")
+                    primary(tcx.functions[&overload].name.span, "")
                 })
                 .collect::<Vec<_>>();
             tcx.diagnostics
@@ -111,10 +83,12 @@ pub fn resolve(
 
 fn suggest_similar(name: &str, tcx: &mut Context) {
     let mut all_names = tcx
-        .sprite
-        .into_iter()
-        .flat_map(|sprite| sprite.functions.values())
-        .chain(tcx.top_level_functions.values())
+        .functions
+        .values()
+        .filter(|it| {
+            it.owning_sprite.is_none()
+                || it.owning_sprite.as_deref() == tcx.sprite
+        })
         .map(|function| &function.name)
         .collect::<Vec<_>>();
     // PERFORMANCE: there's really no need to sort the entire vector but it's

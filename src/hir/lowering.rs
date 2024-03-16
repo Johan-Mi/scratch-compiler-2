@@ -25,9 +25,7 @@ impl Document {
         let mut sprites = HashMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
-            let Ok((name, sprite)) =
-                Sprite::lower(&sprite, generator, file, tcx)
-            else {
+            let Ok((name, sprite)) = Sprite::lower(&sprite, file, tcx) else {
                 continue;
             };
 
@@ -41,9 +39,18 @@ impl Document {
             }
         }
 
+        let functions = ast.functions().map(|it| (it, None)).chain(
+            ast.sprites()
+                .filter_map(|it| it.name().zip(Some(it.functions())))
+                .flat_map(|(name, functions)| {
+                    functions.zip(std::iter::repeat_with(move || {
+                        Some(name.to_string())
+                    }))
+                }),
+        );
         let functions = std::iter::repeat_with(|| generator.new_u16().into())
-            .zip(ast.functions().filter_map(|function| {
-                Function::lower(&function, file, tcx).ok()
+            .zip(functions.filter_map(|(function, owning_sprite)| {
+                Function::lower(&function, owning_sprite, file, tcx).ok()
             }))
             .collect();
 
@@ -85,7 +92,6 @@ impl Document {
 impl Sprite {
     fn lower(
         ast: &ast::Sprite,
-        generator: &mut Generator,
         file: &File,
         tcx: &mut Context,
     ) -> Result<(String, Self)> {
@@ -105,19 +111,7 @@ impl Sprite {
             .filter_map(|it| Costume::lower(&it).ok())
             .collect();
 
-        let functions = std::iter::repeat_with(|| generator.new_u16().into())
-            .zip(ast.functions().filter_map(|function| {
-                Function::lower(&function, file, tcx).ok()
-            }))
-            .collect();
-
-        Ok((
-            name.to_string(),
-            Self {
-                costumes,
-                functions,
-            },
-        ))
+        Ok((name.to_string(), Self { costumes }))
     }
 }
 
@@ -133,6 +127,7 @@ impl Costume {
 impl Function {
     fn lower(
         ast: &ast::Function,
+        owning_sprite: Option<String>,
         file: &File,
         tcx: &mut Context,
     ) -> Result<Self> {
@@ -190,6 +185,7 @@ impl Function {
         );
 
         Ok(Self {
+            owning_sprite,
             name,
             generics,
             parameters,

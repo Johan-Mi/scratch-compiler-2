@@ -2,7 +2,7 @@ use super::{
     Block, Document, Function, Generator, Op, Parameter, RealVar, Sprite, Value,
 };
 use crate::{
-    function::{self, ResolvedCalls},
+    function::ResolvedCalls,
     hir::{self, desugar_function_call_name},
     name::{self, Name},
     parser::SyntaxToken,
@@ -11,14 +11,13 @@ use rowan::TextSize;
 use std::collections::HashMap;
 
 pub fn lower(
-    mut document: hir::typed::Document,
+    document: hir::typed::Document,
     resolved_calls: &ResolvedCalls,
     generator: &mut Generator,
 ) -> Document {
     let functions = document
         .functions
         .iter()
-        .chain(document.sprites.values().flat_map(|it| &it.functions))
         .map(|(&index, function)| (index, function.into()))
         .collect();
 
@@ -39,23 +38,10 @@ pub fn lower(
         );
     }
 
-    let top_level_functions = document
+    let functions = document
         .functions
         .into_iter()
-        .filter(|(_, function)| !function.is_intrinsic)
-        .map(|(index, function)| (index, function, None));
-    let sprite_functions =
-        document.sprites.iter_mut().flat_map(|(name, sprite)| {
-            std::mem::take(&mut sprite.functions)
-                .into_iter()
-                .filter(|(_, function)| !function.is_intrinsic)
-                .map(|(index, function)| (index, function, Some(name.clone())))
-        });
-    let functions = top_level_functions
-        .chain(sprite_functions)
-        .map(|(index, function, sprite_name)| {
-            (index, lower_function(function, sprite_name, &mut cx))
-        })
+        .map(|(index, function)| (index, lower_function(function, &mut cx)))
         .collect();
 
     Document {
@@ -106,7 +92,6 @@ struct Context<'a> {
 
 fn lower_function(
     function: hir::typed::Function,
-    sprite_name: Option<String>,
     cx: &mut Context,
 ) -> Function {
     let parameters = function
@@ -131,7 +116,7 @@ fn lower_function(
         body: lower_block(function.body, cx),
         returns_something: !function.return_ty.node.unwrap().is_zero_sized(),
         is_inline: function.is_inline,
-        owning_sprite: sprite_name,
+        owning_sprite: function.owning_sprite,
     }
 }
 
@@ -294,10 +279,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 .map(|(_, arg)| lower_expression(arg, cx).unwrap())
                 .collect::<Vec<_>>();
 
-            let function = match cx.resolved_calls[&expr.span.low()] {
-                function::Ref::SpriteLocal(index)
-                | function::Ref::TopLevel(index) => index,
-            };
+            let function = cx.resolved_calls[&expr.span.low()];
             let signature = cx.functions[&function];
 
             let variable = signature

@@ -22,7 +22,7 @@ pub fn generate(mut document: mir::Document, output_path: &Path) -> Result<()> {
 }
 
 fn compile_sprite(
-    mir: mir::Sprite,
+    hir: crate::hir::Sprite,
     name: &str,
     functions: &mut BTreeMap<usize, mir::Function>,
     project: &mut Project,
@@ -33,7 +33,7 @@ fn compile_sprite(
         project.add_sprite(name.to_owned())
     };
 
-    for costume in mir.costumes {
+    for costume in hir.costumes {
         sprite.add_costume(Costume::from_file(
             costume.name,
             costume.path.as_ref(),

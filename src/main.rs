@@ -90,7 +90,7 @@ fn compile_or_check(
 
     let mut tcx = ty::Context {
         sprite: None,
-        top_level_functions: &BTreeMap::new(),
+        functions: &BTreeMap::new(),
         diagnostics,
         variable_types: HashMap::new(),
         comptime_known_variables: HashMap::new(),

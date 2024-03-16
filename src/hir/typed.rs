@@ -8,10 +8,10 @@ use crate::{
 use codemap::{Span, Spanned};
 
 pub type Document = super::Document<Function>;
-pub type Sprite = super::Sprite<Function>;
 
 #[derive(Debug)]
 pub struct Function {
+    pub owning_sprite: Option<String>,
     pub name: Spanned<String>,
     pub generics: Vec<SyntaxToken>,
     pub parameters: Vec<Parameter>,
@@ -33,28 +33,13 @@ pub struct Parameter {
 
 pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
     Document {
-        sprites: it
-            .sprites
-            .into_iter()
-            .map(|(id, sprite)| (id, lower_sprite(sprite, tcx)))
-            .collect(),
+        sprites: it.sprites,
         functions: it
             .functions
             .into_iter()
             .map(|(id, function)| (id, lower_function(function, tcx)))
             .collect(),
         variables: it.variables,
-    }
-}
-
-pub fn lower_sprite(it: super::Sprite, tcx: &mut Context) -> Sprite {
-    Sprite {
-        costumes: it.costumes,
-        functions: it
-            .functions
-            .into_iter()
-            .map(|(id, function)| (id, lower_function(function, tcx)))
-            .collect(),
     }
 }
 
@@ -83,6 +68,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
     });
 
     Function {
+        owning_sprite: it.owning_sprite,
         name: it.name,
         generics: it.generics,
         parameters: it

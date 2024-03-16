@@ -1,6 +1,5 @@
 use super::{
-    Block, Document, Expression, ExpressionKind, GlobalVariable, Sprite,
-    Statement,
+    Block, Document, Expression, ExpressionKind, GlobalVariable, Statement,
 };
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
@@ -8,7 +7,7 @@ use super::{
 pub trait Visitor<Func: HasBody = super::typed::Function> {
     fn visit_global_variable(&mut self, _variable: &GlobalVariable) {}
 
-    fn visit_function(&mut self, _function: &Func, _is_top_level: bool) {}
+    fn visit_function(&mut self, _function: &Func) {}
 
     fn visit_block(&mut self, _block: &Block) {}
 
@@ -21,22 +20,13 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
             self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);
         }
-        for sprite in document.sprites.values() {
-            self.traverse_sprite(sprite);
-        }
         for function in document.functions.values() {
-            self.traverse_function(function, true);
+            self.traverse_function(function);
         }
     }
 
-    fn traverse_sprite(&mut self, sprite: &Sprite<Func>) {
-        for function in sprite.functions.values() {
-            self.traverse_function(function, false);
-        }
-    }
-
-    fn traverse_function(&mut self, function: &Func, is_top_level: bool) {
-        self.visit_function(function, is_top_level);
+    fn traverse_function(&mut self, function: &Func) {
+        self.visit_function(function);
         self.traverse_block(function.body());
     }
 

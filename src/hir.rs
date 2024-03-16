@@ -23,7 +23,7 @@ type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
 pub struct Document<Func = Function> {
-    pub sprites: HashMap<String, Sprite<Func>>,
+    pub sprites: HashMap<String, Sprite>,
     pub functions: BTreeMap<usize, Func>,
     pub variables: Vec<GlobalVariable>,
 }
@@ -46,15 +46,13 @@ pub struct GlobalVariable {
 }
 
 #[derive(Debug)]
-pub struct Sprite<Func = Function> {
+pub struct Sprite {
     pub costumes: Vec<Costume>,
-    pub functions: BTreeMap<usize, Func>,
 }
 
-impl<Func> Sprite<Func> {
+impl Sprite {
     fn merge(&mut self, other: Self) {
         self.costumes.extend(other.costumes);
-        self.functions.extend(other.functions);
     }
 }
 
@@ -66,6 +64,7 @@ pub struct Costume {
 
 #[derive(Debug)]
 pub struct Function {
+    pub owning_sprite: Option<String>,
     pub name: Spanned<String>,
     pub generics: Vec<SyntaxToken>,
     pub parameters: Vec<Parameter>,
@@ -188,7 +187,7 @@ impl Expression {
                 tcx.resolved_calls.insert(self.span.low(), resolved);
 
                 for (param, (_, arg)) in std::iter::zip(
-                    &tcx.function(resolved).parameters,
+                    &tcx.functions[&resolved].parameters,
                     arguments,
                 ) {
                     if param.is_comptime && !comptime::is_known(arg, tcx) {

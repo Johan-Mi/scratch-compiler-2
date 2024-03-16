@@ -23,9 +23,9 @@ struct SemanticVisitor<'a> {
 }
 
 impl Visitor for SemanticVisitor<'_> {
-    fn visit_function(&mut self, function: &Function, is_top_level: bool) {
+    fn visit_function(&mut self, function: &Function) {
         self.check_generics(function);
-        self.check_special_function(is_top_level, function);
+        self.check_special_function(function);
         self.check_function_staging(function);
     }
 
@@ -61,16 +61,12 @@ impl Visitor for SemanticVisitor<'_> {
 }
 
 impl SemanticVisitor<'_> {
-    fn check_special_function(
-        &mut self,
-        is_top_level: bool,
-        function: &Function,
-    ) {
+    fn check_special_function(&mut self, function: &Function) {
         let Ok(special) = function::Special::try_from(&**function.name) else {
             return;
         };
 
-        if is_top_level {
+        if function.owning_sprite.is_none() {
             self.diagnostics.error(
                 format!(
                     "special function `{}` cannot be defined outside of a sprite",
