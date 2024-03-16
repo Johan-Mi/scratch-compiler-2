@@ -170,6 +170,8 @@ fn check_global_variable(
 }
 
 fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
+    tcx.sprite = function.owning_sprite.clone();
+
     tcx.variable_types
         .extend(function.parameters.iter().map(|parameter| {
             (
@@ -454,7 +456,7 @@ pub fn of_list_literal(
 type Constraints = HashMap<SyntaxToken, Ty>;
 
 pub struct Context<'a> {
-    pub sprite: Option<&'a str>,
+    pub sprite: Option<String>,
     pub functions: &'a BTreeMap<usize, hir::typed::Function>,
     pub diagnostics: &'a mut Diagnostics,
     pub variable_types: HashMap<TextSize, Result<Ty, ()>>,

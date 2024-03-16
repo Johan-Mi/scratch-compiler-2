@@ -20,7 +20,10 @@ pub fn resolve(
         .functions
         .iter()
         .filter_map(|(&index, function)| {
-            (*function.name == name).then_some(index)
+            ((function.owning_sprite.is_none()
+                || function.owning_sprite == tcx.sprite)
+                && (*function.name == name))
+                .then_some(index)
         })
         .collect::<Vec<_>>();
 
@@ -86,8 +89,7 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
         .functions
         .values()
         .filter(|it| {
-            it.owning_sprite.is_none()
-                || it.owning_sprite.as_deref() == tcx.sprite
+            it.owning_sprite.is_none() || it.owning_sprite == tcx.sprite
         })
         .map(|function| &function.name)
         .collect::<Vec<_>>();
