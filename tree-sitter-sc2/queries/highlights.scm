@@ -79,7 +79,7 @@
 
 (
   (identifier) @type.builtin
-  (#match? @type.builtin "^(Num|String|Bool|Var|List|Type)$")
+  (#match? @type.builtin "^(Unit|Num|String|Bool|Var|List|Type)$")
 )
 
 (identifier) @variable
