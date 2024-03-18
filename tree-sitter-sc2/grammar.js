@@ -133,7 +133,13 @@ module.exports = grammar({
 
     identifier: $ => /[\p{XID_Start}_][\p{XID_Continue}-]*/,
 
-    number_literal: $ => /[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?/,
+    number_literal: $ =>
+      choice(
+        /[+-]?0[bB][01]+/,
+        /[+-]?0[oO][0-7]+/,
+        /[+-]?0[xX][0-9a-fA-F]+/,
+        /[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?/,
+      ),
 
     string_literal: $ => /"[^"\n]*"?/,
 
