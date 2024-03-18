@@ -145,9 +145,14 @@ pub enum SyntaxKind {
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
 
-    // TODO: binary, hex and octal
     #[regex(r"[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?")]
-    NUMBER,
+    DECIMAL_NUMBER,
+    #[regex(r"[+-]?0[bB][01]+")]
+    BINARY_NUMBER,
+    #[regex(r"[+-]?0[oO][0-7]+")]
+    OCTAL_NUMBER,
+    #[regex(r"[+-]?0[xX][0-9a-fA-F]+")]
+    HEXADECIMAL_NUMBER,
 
     // TODO: escape sequences
     #[regex(r#""[^"\n]*"?"#)]
@@ -382,7 +387,8 @@ impl Parser<'_> {
                 self.expect(RPAREN);
                 self.builder.finish_node();
             }
-            NUMBER | STRING | KW_FALSE | KW_TRUE => {
+            DECIMAL_NUMBER | BINARY_NUMBER | OCTAL_NUMBER
+            | HEXADECIMAL_NUMBER | STRING | KW_FALSE | KW_TRUE => {
                 self.start_node(LITERAL);
                 self.bump();
                 self.builder.finish_node();
