@@ -158,13 +158,6 @@ pub type Argument = (Option<String>, Expression);
 impl Expression {
     pub fn ty(&self, ascribed: Option<&Ty>, tcx: &mut Context) -> Result<Ty> {
         match &self.kind {
-            ExpressionKind::Variable(Name::User(variable))
-                if variable
-                    .parent()
-                    .is_some_and(|it| it.kind() == SyntaxKind::SPRITE) =>
-            {
-                Ok(Ty::Sprite)
-            }
             ExpressionKind::Variable(Name::User(variable)) => tcx
                 .variable_types
                 .get(&variable.text_range().start())
