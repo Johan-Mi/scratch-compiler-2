@@ -289,6 +289,7 @@ fn check_statement(
             times,
             body,
         } => Ok(check_for(variable, times, body, tcx)),
+        hir::Statement::Return(_) => todo!("type-check `return`"),
         hir::Statement::Expr(expr) => expr.ty(None, tcx),
         hir::Statement::Error => Err(()),
     }

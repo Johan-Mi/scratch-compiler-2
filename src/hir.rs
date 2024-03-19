@@ -120,6 +120,7 @@ pub enum Statement {
         times: Expression,
         body: Result<Block>,
     },
+    Return(Expression),
     Expr(Expression),
     Error,
 }

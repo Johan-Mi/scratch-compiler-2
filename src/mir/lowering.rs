@@ -227,6 +227,11 @@ fn lower_statement(
             });
             None
         }
+        hir::Statement::Return(value) => {
+            let value = lower_expression(value, cx).unwrap();
+            cx.block.ops.push(Op::Return(value));
+            None
+        }
         hir::Statement::Expr(expr) => lower_expression(expr, cx),
         hir::Statement::Error => unreachable!(),
     }
