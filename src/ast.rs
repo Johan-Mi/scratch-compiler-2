@@ -210,7 +210,14 @@ impl AstNode for Statement {
     type Language = crate::parser::Lang;
 
     fn can_cast(kind: SyntaxKind) -> bool {
-        Let::can_cast(kind) || If::can_cast(kind) || Expression::can_cast(kind)
+        Let::can_cast(kind)
+            || If::can_cast(kind)
+            || Repeat::can_cast(kind)
+            || Forever::can_cast(kind)
+            || While::can_cast(kind)
+            || Until::can_cast(kind)
+            || For::can_cast(kind)
+            || Return::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
