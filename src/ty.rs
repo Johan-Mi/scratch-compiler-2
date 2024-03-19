@@ -7,7 +7,6 @@ use crate::{
     parser::SyntaxToken,
 };
 use codemap::Span;
-use rowan::TextSize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt,
@@ -156,11 +155,11 @@ fn check_global_variable(
     tcx: &mut Context<'_>,
 ) {
     let ty = variable.initializer.ty(None, tcx);
-    let pos = variable.token.text_range().start();
     if matches!(ty, Ok(Ty::List(_))) {
-        tcx.comptime_known_variables.insert(pos, None);
+        tcx.comptime_known_variables
+            .insert(variable.token.clone(), None);
     }
-    tcx.variable_types.insert(pos, ty);
+    tcx.variable_types.insert(variable.token.clone(), ty);
     if !comptime::is_known(&variable.initializer, tcx) {
         tcx.diagnostics.error(
             "global variable initializer is not comptime-known",
@@ -174,10 +173,7 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
 
     tcx.variable_types
         .extend(function.parameters.iter().map(|parameter| {
-            (
-                parameter.internal_name.text_range().start(),
-                parameter.ty.node.clone(),
-            )
+            (parameter.internal_name.clone(), parameter.ty.node.clone())
         }));
 
     tcx.comptime_known_variables.extend(
@@ -185,7 +181,7 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
             .parameters
             .iter()
             .filter(|it| it.is_comptime)
-            .map(|it| (it.internal_name.text_range().start(), None)),
+            .map(|it| (it.internal_name.clone(), None)),
     );
 
     let actual_return_ty = check_block(&function.body, tcx);
@@ -211,11 +207,10 @@ fn check_statement(
     match statement {
         hir::Statement::Let { variable, value } => {
             let ty = value.ty(None, tcx);
-            let pos = variable.text_range().start();
             if matches!(ty, Ok(Ty::List(_))) {
-                tcx.comptime_known_variables.insert(pos, None);
+                tcx.comptime_known_variables.insert(variable.clone(), None);
             }
-            tcx.variable_types.insert(pos, ty);
+            tcx.variable_types.insert(variable.clone(), ty);
             Ok(Ty::Unit)
         }
         hir::Statement::If {
@@ -317,8 +312,7 @@ fn check_for(
         }
     }
     if let Ok(variable) = variable {
-        tcx.variable_types
-            .insert(variable.text_range().start(), Ok(Ty::Num));
+        tcx.variable_types.insert(variable.clone(), Ok(Ty::Num));
     }
     if let Ok(body) = body {
         let _ = check_block(body, tcx);
@@ -459,15 +453,15 @@ pub struct Context<'a> {
     pub sprite: Option<String>,
     pub functions: &'a BTreeMap<usize, hir::typed::Function>,
     pub diagnostics: &'a mut Diagnostics,
-    pub variable_types: HashMap<TextSize, Result<Ty, ()>>,
-    pub comptime_known_variables: HashMap<TextSize, Option<comptime::Value>>,
+    pub variable_types: HashMap<SyntaxToken, Result<Ty, ()>>,
+    pub comptime_known_variables: HashMap<SyntaxToken, Option<comptime::Value>>,
     pub resolved_calls: &'a mut ResolvedCalls,
 }
 
 impl Context<'_> {
     pub fn maybe_define_comptime_known_variable(
         &mut self,
-        variable: TextSize,
+        variable: SyntaxToken,
         value: &hir::Expression,
     ) {
         if let hir::Expression {

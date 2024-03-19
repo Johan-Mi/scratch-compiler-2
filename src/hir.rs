@@ -12,7 +12,6 @@ use crate::{
     ty::{self, Context, Ty},
 };
 use codemap::{Span, Spanned};
-use rowan::TextSize;
 use std::collections::{BTreeMap, HashMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
@@ -140,7 +139,7 @@ pub enum ExpressionKind {
         name_span: Span,
         arguments: Vec<Argument>,
     },
-    Lvalue(TextSize),
+    Lvalue(SyntaxToken),
     GenericTypeInstantiation {
         generic: ty::Generic,
         arguments: Vec<Expression>,
@@ -160,7 +159,7 @@ impl Expression {
         match &self.kind {
             ExpressionKind::Variable(Name::User(variable)) => tcx
                 .variable_types
-                .get(&variable.text_range().start())
+                .get(variable)
                 .unwrap_or_else(|| {
                     panic!("variable `{variable:?}` has no type")
                 })

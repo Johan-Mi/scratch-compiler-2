@@ -70,7 +70,7 @@ impl Document {
                 let initializer =
                     Expression::lower_opt(it.value(), file, tcx, text_range);
                 tcx.maybe_define_comptime_known_variable(
-                    token.text_range().start(),
+                    token.clone(),
                     &initializer,
                 );
                 Some(GlobalVariable {
@@ -145,9 +145,7 @@ impl Function {
             .collect::<Vec<_>>();
 
         tcx.variable_types.extend(
-            generics
-                .iter()
-                .map(|it| (it.text_range().start(), Ok(Ty::Ty))),
+            generics.iter().cloned().zip(std::iter::repeat(Ok(Ty::Ty))),
         );
 
         let name = ast.name().ok_or_else(|| {
@@ -278,7 +276,7 @@ impl Statement {
                 };
 
                 tcx.maybe_define_comptime_known_variable(
-                    variable.text_range().start(),
+                    variable.clone(),
                     &value,
                 );
 
@@ -551,7 +549,7 @@ fn lower_lvalue(
     let inner = Expression::lower(&inner, file, tcx);
     if let ExpressionKind::Variable(Name::User(var)) = inner.kind {
         if var.parent().is_some_and(|it| it.kind() == SyntaxKind::LET) {
-            return ExpressionKind::Lvalue(var.text_range().start());
+            return ExpressionKind::Lvalue(var);
         }
     }
     tcx.diagnostics.error(

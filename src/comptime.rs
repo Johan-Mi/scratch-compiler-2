@@ -45,9 +45,8 @@ pub fn evaluate(expr: &mut Expression, tcx: &ty::Context) {
     match &mut expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
             expr.kind = ExpressionKind::Imm(
-                if let Some(Some(value)) = tcx
-                    .comptime_known_variables
-                    .get(&token.text_range().start())
+                if let Some(Some(value)) =
+                    tcx.comptime_known_variables.get(token)
                 {
                     value.clone()
                 } else {
@@ -92,7 +91,7 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
     ) || matches!(
         &expr.kind,
         ExpressionKind::Variable(Name::User(var))
-            if tcx.comptime_known_variables.contains_key(&var.text_range().start())
+            if tcx.comptime_known_variables.contains_key(var)
     ) || matches!(
         &expr.kind,
         ExpressionKind::ListLiteral(items)

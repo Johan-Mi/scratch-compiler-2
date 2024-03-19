@@ -7,7 +7,6 @@ use crate::{
     name::{self, Name},
     parser::SyntaxToken,
 };
-use rowan::TextSize;
 use std::collections::HashMap;
 
 pub fn lower(
@@ -32,7 +31,7 @@ pub fn lower(
 
     for variable in document.variables {
         lower_variable_initialization(
-            &variable.token,
+            variable.token,
             variable.initializer,
             &mut cx,
         );
@@ -82,8 +81,8 @@ impl From<&hir::typed::Function> for FunctionSignature {
 }
 
 struct Context<'a> {
-    vars: HashMap<TextSize, Value>,
-    real_vars: HashMap<TextSize, RealVar>,
+    vars: HashMap<SyntaxToken, Value>,
+    real_vars: HashMap<SyntaxToken, RealVar>,
     generator: &'a mut Generator,
     resolved_calls: &'a ResolvedCalls,
     functions: HashMap<usize, FunctionSignature>,
@@ -99,10 +98,7 @@ fn lower_function(
         .into_iter()
         .map(|param| {
             let ssa_var = cx.generator.new_ssa_var();
-            cx.vars.insert(
-                param.internal_name.text_range().start(),
-                Value::Var(ssa_var),
-            );
+            cx.vars.insert(param.internal_name, Value::Var(ssa_var));
             Parameter {
                 ssa_var,
                 ty: param.ty.node.unwrap(),
@@ -135,19 +131,19 @@ fn lower_block(block: hir::Block, cx: &mut Context) -> Block {
 }
 
 fn lower_variable_initialization(
-    variable: &SyntaxToken,
+    variable: SyntaxToken,
     initializer: hir::Expression,
     cx: &mut Context,
 ) {
     let value = lower_expression(initializer, cx).unwrap();
-    if let Some(&real_var) = cx.real_vars.get(&variable.text_range().start()) {
+    if let Some(&real_var) = cx.real_vars.get(&variable) {
         cx.block.ops.push(Op::Intrinsic {
             variable: None,
             name: "set".to_owned(),
             args: vec![Value::Lvalue(real_var), value],
         });
     } else {
-        cx.vars.insert(variable.text_range().start(), value);
+        cx.vars.insert(variable, value);
     }
 }
 
@@ -157,7 +153,7 @@ fn lower_statement(
 ) -> Option<Value> {
     match statement {
         hir::Statement::Let { variable, value } => {
-            lower_variable_initialization(&variable, value, cx);
+            lower_variable_initialization(variable, value, cx);
             None
         }
         hir::Statement::If {
@@ -222,10 +218,7 @@ fn lower_statement(
         } => {
             let times = lower_expression(times, cx).unwrap();
             let var = cx.generator.new_ssa_var();
-            cx.vars.insert(
-                variable.unwrap().text_range().start(),
-                Value::Var(var),
-            );
+            cx.vars.insert(variable.unwrap(), Value::Var(var));
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
                 variable: Some(var),
@@ -242,9 +235,7 @@ fn lower_statement(
 fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
     match expr.kind {
         hir::ExpressionKind::Variable(Name::User(variable)) => {
-            if let Some(&real_var) =
-                cx.real_vars.get(&variable.text_range().start())
-            {
+            if let Some(&real_var) = cx.real_vars.get(&variable) {
                 let ssa_var = cx.generator.new_ssa_var();
                 cx.block.ops.push(Op::Intrinsic {
                     variable: Some(ssa_var),
@@ -253,7 +244,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 });
                 Some(Value::Var(ssa_var))
             } else {
-                Some(cx.vars[&variable.text_range().start()].clone())
+                Some(cx.vars[&variable].clone())
             }
         }
         hir::ExpressionKind::Variable(Name::Builtin(builtin)) => {
