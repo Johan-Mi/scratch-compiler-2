@@ -610,9 +610,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
     let token = lit.syntax().first_token().unwrap();
     match token.kind() {
         crate::parser::SyntaxKind::DECIMAL_NUMBER => {
-            token.text().parse().map_or(ExpressionKind::Error, |n| {
-                ExpressionKind::Imm(Value::Num(n))
-            })
+            ExpressionKind::Imm(Value::Num(token.text().parse().unwrap()))
         }
         crate::parser::SyntaxKind::BINARY_NUMBER
         | crate::parser::SyntaxKind::OCTAL_NUMBER
