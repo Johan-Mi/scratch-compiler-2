@@ -275,6 +275,8 @@ pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
 }
 
 pub fn parse_string_literal(lit: &str) -> Result<String> {
+    assert!(!lit.contains('\\'), "TODO: parse escape sequences");
+
     // Remove the quotes.
     Ok(lit[1..].strip_suffix('"').ok_or(())?.to_owned())
 }

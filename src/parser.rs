@@ -154,8 +154,7 @@ pub enum SyntaxKind {
     #[regex(r"[+-]?0[xX][0-9a-fA-F]+")]
     HEXADECIMAL_NUMBER,
 
-    // TODO: escape sequences
-    #[regex(r#""[^"\n]*"?"#)]
+    #[regex(r#""([^"\n\\]|\\[^\n])*[\\"]?"#)]
     STRING,
 
     ERROR,
