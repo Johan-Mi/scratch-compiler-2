@@ -274,9 +274,22 @@ pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
     }
 }
 
-pub fn parse_string_literal(lit: &str) -> Result<String> {
-    assert!(!lit.contains('\\'), "TODO: parse escape sequences");
-
-    // Remove the quotes.
-    Ok(lit[1..].strip_suffix('"').ok_or(())?.to_owned())
+pub fn parse_string_literal(token: &SyntaxToken) -> Result<String> {
+    let mut res = String::new();
+    let mut chars = token.text().chars().skip(1);
+    loop {
+        match chars.next() {
+            Some('"') => return Ok(res),
+            Some('\\') => match chars.next() {
+                Some(c @ ('"' | '\\')) => res.push(c),
+                Some('n') => res.push('\n'),
+                Some(_) => todo!("invalid escape sequence"),
+                None => todo!("unfinished escape sequence"),
+            },
+            Some(c) => res.push(c),
+            // Unterminated string literal. This is already checked for in
+            // `syntax_errors`.
+            None => return Err(()),
+        }
+    }
 }

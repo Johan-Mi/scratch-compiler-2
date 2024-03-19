@@ -32,7 +32,7 @@ pub fn import(
         for import in document
             .imports()
             .filter_map(|it| it.path())
-            .filter_map(|it| crate::hir::parse_string_literal(it.text()).ok())
+            .filter_map(|it| crate::hir::parse_string_literal(&it).ok())
         {
             let absolute_path = std::fs::canonicalize(&import)?;
             if !done.contains(&absolute_path) {

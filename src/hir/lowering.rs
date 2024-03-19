@@ -118,8 +118,8 @@ impl Sprite {
 impl Costume {
     fn lower(ast: &ast::Costume) -> Result<Self> {
         Ok(Self {
-            name: parse_string_literal(ast.name().ok_or(())?.text())?,
-            path: parse_string_literal(ast.path().ok_or(())?.text())?,
+            name: parse_string_literal(&ast.name().ok_or(())?)?,
+            path: parse_string_literal(&ast.path().ok_or(())?)?,
         })
     }
 }
@@ -651,7 +651,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                     * if is_negative { -1.0 } else { 1.0 },
             ))
         }
-        crate::parser::SyntaxKind::STRING => parse_string_literal(token.text())
+        crate::parser::SyntaxKind::STRING => parse_string_literal(&token)
             .map_or(ExpressionKind::Error, |s| {
                 ExpressionKind::Imm(Value::String(s))
             }),
