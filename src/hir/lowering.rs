@@ -612,10 +612,44 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
         crate::parser::SyntaxKind::DECIMAL_NUMBER => {
             ExpressionKind::Imm(Value::Num(token.text().parse().unwrap()))
         }
-        crate::parser::SyntaxKind::BINARY_NUMBER
-        | crate::parser::SyntaxKind::OCTAL_NUMBER
-        | crate::parser::SyntaxKind::HEXADECIMAL_NUMBER => {
-            todo!("lower binary, octal and hex numbers to HIR")
+        crate::parser::SyntaxKind::BINARY_NUMBER => {
+            let text = token.text();
+            let (is_negative, text) = match text.as_bytes() {
+                [b'+', b'0', b'b' | b'B', ..] => (false, &text[3..]),
+                [b'-', b'0', b'b' | b'B', ..] => (true, &text[3..]),
+                _ => (false, &text[2..]),
+            };
+            #[allow(clippy::cast_precision_loss)]
+            ExpressionKind::Imm(Value::Num(
+                u64::from_str_radix(text, 2).unwrap() as f64
+                    * if is_negative { -1.0 } else { 1.0 },
+            ))
+        }
+        crate::parser::SyntaxKind::OCTAL_NUMBER => {
+            let text = token.text();
+            let (is_negative, text) = match text.as_bytes() {
+                [b'+', b'0', b'o' | b'O', ..] => (false, &text[3..]),
+                [b'-', b'0', b'o' | b'O', ..] => (true, &text[3..]),
+                _ => (false, &text[2..]),
+            };
+            #[allow(clippy::cast_precision_loss)]
+            ExpressionKind::Imm(Value::Num(
+                u64::from_str_radix(text, 8).unwrap() as f64
+                    * if is_negative { -1.0 } else { 1.0 },
+            ))
+        }
+        crate::parser::SyntaxKind::HEXADECIMAL_NUMBER => {
+            let text = token.text();
+            let (is_negative, text) = match text.as_bytes() {
+                [b'+', b'0', b'x' | b'X', ..] => (false, &text[3..]),
+                [b'-', b'0', b'x' | b'X', ..] => (true, &text[3..]),
+                _ => (false, &text[2..]),
+            };
+            #[allow(clippy::cast_precision_loss)]
+            ExpressionKind::Imm(Value::Num(
+                u64::from_str_radix(text, 16).unwrap() as f64
+                    * if is_negative { -1.0 } else { 1.0 },
+            ))
         }
         crate::parser::SyntaxKind::STRING => parse_string_literal(token.text())
             .map_or(ExpressionKind::Error, |s| {
