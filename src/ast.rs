@@ -202,6 +202,7 @@ pub enum Statement {
     While(While),
     Until(Until),
     For(For),
+    Return(Return),
     Expr(Expression),
 }
 
@@ -221,6 +222,7 @@ impl AstNode for Statement {
             WHILE => AstNode::cast(node).map(Self::While),
             UNTIL => AstNode::cast(node).map(Self::Until),
             FOR => AstNode::cast(node).map(Self::For),
+            RETURN => AstNode::cast(node).map(Self::Return),
             _ => Expression::cast(node).map(Self::Expr),
         }
     }
@@ -234,6 +236,7 @@ impl AstNode for Statement {
             Self::While(inner) => &inner.syntax,
             Self::Until(inner) => &inner.syntax,
             Self::For(inner) => &inner.syntax,
+            Self::Return(inner) => &inner.syntax,
             Self::Expr(inner) => inner.syntax(),
         }
     }
@@ -335,6 +338,14 @@ impl For {
     }
 
     pub fn body(&self) -> Option<Block> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
+ast_node!(Return: RETURN);
+
+impl Return {
+    pub fn expression(&self) -> Option<Expression> {
         rowan::ast::support::child(&self.syntax)
     }
 }

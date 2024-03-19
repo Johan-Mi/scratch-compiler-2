@@ -65,6 +65,7 @@ pub enum SyntaxKind {
     LIST_LITERAL,
     TYPE_ASCRIPTION,
     METHOD_CALL,
+    RETURN,
 
     #[token("(")]
     LPAREN,
@@ -141,6 +142,8 @@ pub enum SyntaxKind {
     KW_COMPTIME,
     #[token("as")]
     KW_AS,
+    #[token("return")]
+    KW_RETURN,
 
     #[regex(r"[\p{XID_Start}_][\p{XID_Continue}-]*")]
     IDENTIFIER,
@@ -294,6 +297,7 @@ impl Parser<'_> {
             KW_WHILE => self.parse_while(),
             KW_UNTIL => self.parse_until(),
             KW_FOR => self.parse_for(),
+            KW_RETURN => self.parse_return(),
             LPAREN => {
                 self.bump();
                 while !self.at(EOF) && !self.eat(RPAREN) {
@@ -606,6 +610,13 @@ impl Parser<'_> {
         self.builder.finish_node();
     }
 
+    fn parse_return(&mut self) {
+        self.start_node(RETURN);
+        self.bump(); // KW_RETURN
+        self.parse_expression();
+        self.builder.finish_node();
+    }
+
     fn parse_statement(&mut self) {
         match self.peek() {
             KW_LET => self.parse_let(),
@@ -615,6 +626,7 @@ impl Parser<'_> {
             KW_WHILE => self.parse_while(),
             KW_UNTIL => self.parse_until(),
             KW_FOR => self.parse_for(),
+            KW_RETURN => self.parse_return(),
             _ => self.parse_expression(),
         }
     }

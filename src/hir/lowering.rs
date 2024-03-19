@@ -349,6 +349,13 @@ impl Statement {
                 ),
                 body: Block::lower_opt(for_.body(), file, tcx),
             },
+            ast::Statement::Return(return_) => {
+                tcx.diagnostics.error(
+                    "`return` statements are not implemented yet",
+                    [primary(span(file, return_.syntax().text_range()), "")],
+                );
+                Self::Error
+            }
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, tcx))
             }
