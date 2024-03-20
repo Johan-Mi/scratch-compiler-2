@@ -70,6 +70,7 @@ module.exports = grammar({
         $.repeat_loop,
         $.forever_loop,
         $.for_loop,
+        $.return_statement,
       ),
 
     variable_definition: $ => seq("let", $.identifier, "=", $._expression),
@@ -87,6 +88,8 @@ module.exports = grammar({
     repeat_loop: $ => seq("repeat", $._expression, $.block),
     forever_loop: $ => seq("forever", $.block),
     for_loop: $ => seq("for", $.identifier, $._expression, $.block),
+
+    return_statement: $ => seq("return", $._expression),
 
     _expression: $ =>
       choice(

@@ -25,6 +25,7 @@
   "forever"
   "for"
 ] @keyword.control.repeat
+"return" @keyword.control.return
 "fn" @keyword.function
 [
   "sprite"
