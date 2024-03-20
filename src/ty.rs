@@ -190,10 +190,10 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     {
         if actual_return_ty != *return_ty {
             tcx.diagnostics.error(
-                "function has wrong return type",
+                "return type mismatch",
                 [primary(
                     function.name.span,
-                    format!("according to the signature, this function should return `{return_ty}` but it actually returns `{actual_return_ty}`"),
+                    format!("expected `{return_ty}` because of function return type, got `{actual_return_ty}`"),
                 )],
             );
         }
