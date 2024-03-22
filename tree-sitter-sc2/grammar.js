@@ -144,7 +144,7 @@ module.exports = grammar({
         /[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?/,
       ),
 
-    string_literal: $ => /"[^"\n]*"?/,
+    string_literal: $ => /"([^"\n\\]|\\[^\n])*[\\"]?/,
 
     comment: $ => /#.*/,
   },
