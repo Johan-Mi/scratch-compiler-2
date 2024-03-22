@@ -186,7 +186,12 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     );
 
     let actual_return_ty = check_block(&function.body, tcx);
-    check_return(&actual_return_ty, function.name.span, tcx);
+    let return_span = function
+        .body
+        .statements
+        .last()
+        .map_or(function.name.span, |it| it.span);
+    check_return(&actual_return_ty, return_span, tcx);
 }
 
 fn check_return(ty: &Result<Ty, ()>, span: Span, tcx: &mut Context) {
