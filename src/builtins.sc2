@@ -12,9 +12,9 @@ fn delete-all[T](_ comptime list: List[T]) {}
 
 fn insert[T](_ comptime list: List[T], _ item: T, at index: Num) {}
 
-fn replace[T](_ comptime list: List[T], index _: Num, with item: Num) {}
+fn replace[T](_ comptime list: List[T], index _: Num, with item: T) {}
 
-fn replace-last[T](_ comptime list: List[T], with item: Num) {}
+fn replace-last[T](_ comptime list: List[T], with item: T) {}
 
 fn at[T](_ comptime list: List[T], _ index: Num) -> T {}
 
