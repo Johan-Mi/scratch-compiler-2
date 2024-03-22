@@ -564,7 +564,7 @@ fn compile_regular_intrinsic(
         "stamp" => f! { stamp() },
         "stop-all" => f! { stop_all() },
         "wait" => f! { wait(seconds) },
-        _ => unreachable!(),
+        _ => panic!("invalid intrinsic: {name:?}"),
     }
 }
 

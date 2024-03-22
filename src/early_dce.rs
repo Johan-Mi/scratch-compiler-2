@@ -56,10 +56,10 @@ struct DceVisitor<'a> {
 
 impl Visitor for DceVisitor<'_> {
     fn visit_expression(&mut self, expr: &crate::hir::Expression) {
-        if !matches!(expr.kind, ExpressionKind::FunctionCall { .. }) {
+        let ExpressionKind::FunctionCall { name_span, .. } = expr.kind else {
             return;
-        }
-        let Some(&function) = self.resolved_calls.get(&expr.span.low()) else {
+        };
+        let Some(&function) = self.resolved_calls.get(&name_span.low()) else {
             return;
         };
         if !self.required_functions.contains(&function) {

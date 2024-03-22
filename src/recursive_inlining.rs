@@ -58,10 +58,10 @@ struct CallGraphVisitor<'a> {
 
 impl Visitor for CallGraphVisitor<'_> {
     fn visit_expression(&mut self, expr: &hir::Expression) {
-        if !matches!(expr.kind, ExpressionKind::FunctionCall { .. }) {
+        let ExpressionKind::FunctionCall { name_span, .. } = expr.kind else {
             return;
         };
-        let Some(index) = self.resolved_calls.get(&expr.span.low()) else {
+        let Some(index) = self.resolved_calls.get(&name_span.low()) else {
             return;
         };
         self.graph.add_edge(self.caller, self.nodes[&index], ());

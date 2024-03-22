@@ -189,7 +189,7 @@ impl Expression {
                 let name = desugar_function_call_name(name_or_operator);
                 let (resolved, return_ty) =
                     function::resolve(name, arguments, *name_span, tcx)?;
-                tcx.resolved_calls.insert(self.span.low(), resolved);
+                tcx.resolved_calls.insert(name_span.low(), resolved);
 
                 for (param, (_, arg)) in std::iter::zip(
                     &tcx.functions[&resolved].parameters,

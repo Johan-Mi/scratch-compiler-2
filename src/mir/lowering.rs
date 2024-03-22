@@ -272,6 +272,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         hir::ExpressionKind::Imm(imm) => Some(Value::Imm(imm)),
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
+            name_span,
             arguments,
             ..
         } => {
@@ -281,7 +282,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 .map(|(_, arg)| lower_expression(arg, cx).unwrap())
                 .collect::<Vec<_>>();
 
-            let function = cx.resolved_calls[&expr.span.low()];
+            let function = cx.resolved_calls[&name_span.low()];
             let signature = cx.functions[&function];
 
             let variable = signature
