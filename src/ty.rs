@@ -302,7 +302,12 @@ fn check_statement(
             times,
             body,
         } => Ok(check_for(variable, times, body, tcx)),
-        hir::StatementKind::Return { .. } => todo!("type-check `return`"),
+        hir::StatementKind::Return(value) => {
+            let ascribed = tcx.function_return_ty.clone().ok();
+            let ty = value.ty(ascribed.as_ref(), tcx);
+            check_return(&ty, statement.span, tcx);
+            Ok(Ty::Unit)
+        }
         hir::StatementKind::Expr(expr) => expr.ty(None, tcx),
         hir::StatementKind::Error => Err(()),
     }
