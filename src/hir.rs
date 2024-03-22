@@ -12,7 +12,7 @@ use crate::{
     ty::{self, Context, Ty},
 };
 use codemap::{Span, Spanned};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{hash_map::Entry, BTreeMap, HashMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -29,7 +29,14 @@ pub struct Document<Func = Function> {
 
 impl<Func> Document<Func> {
     pub fn merge(&mut self, other: Self) {
-        self.sprites.extend(other.sprites);
+        for (name, sprite) in other.sprites {
+            match self.sprites.entry(name) {
+                Entry::Occupied(mut existing) => {
+                    existing.get_mut().merge(sprite);
+                }
+                Entry::Vacant(new) => _ = new.insert(sprite),
+            }
+        }
         self.functions.extend(other.functions);
         self.variables.extend(other.variables);
     }
