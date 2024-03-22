@@ -170,6 +170,7 @@ fn check_global_variable(
 
 fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     tcx.sprite = function.owning_sprite.clone();
+    tcx.function_return_ty = function.return_ty.node.clone();
 
     tcx.variable_types
         .extend(function.parameters.iter().map(|parameter| {
@@ -185,15 +186,20 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     );
 
     let actual_return_ty = check_block(&function.body, tcx);
-    if let (Ok(return_ty), Ok(actual_return_ty)) =
-        (&function.return_ty.node, actual_return_ty)
-    {
-        if actual_return_ty != *return_ty {
+    check_return(&actual_return_ty, function.name.span, tcx);
+}
+
+fn check_return(ty: &Result<Ty, ()>, span: Span, tcx: &mut Context) {
+    if let (Ok(return_ty), Ok(ty)) = (&tcx.function_return_ty, ty) {
+        if ty != return_ty {
             tcx.diagnostics.error(
                 "return type mismatch",
                 [primary(
-                    function.name.span,
-                    format!("expected `{return_ty}` because of function return type, got `{actual_return_ty}`"),
+                    span,
+                    format!(
+                        "expected `{return_ty}` because of function \
+                        return type, got `{ty}`"
+                    ),
                 )],
             );
         }
@@ -457,6 +463,7 @@ pub struct Context<'a> {
     pub variable_types: HashMap<SyntaxToken, Result<Ty, ()>>,
     pub comptime_known_variables: HashMap<SyntaxToken, Option<comptime::Value>>,
     pub resolved_calls: &'a mut ResolvedCalls,
+    pub function_return_ty: Result<Ty, ()>,
 }
 
 impl Context<'_> {

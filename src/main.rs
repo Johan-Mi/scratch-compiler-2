@@ -95,6 +95,7 @@ fn compile_or_check(
         variable_types: HashMap::new(),
         comptime_known_variables: HashMap::new(),
         resolved_calls: &mut resolved_calls,
+        function_return_ty: Err(()),
     };
 
     let mut generator = generator::Generator::default();
