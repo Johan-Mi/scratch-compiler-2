@@ -210,8 +210,8 @@ fn check_statement(
     statement: &hir::Statement,
     tcx: &mut Context<'_>,
 ) -> Result<Ty, ()> {
-    match statement {
-        hir::Statement::Let { variable, value } => {
+    match &statement.kind {
+        hir::StatementKind::Let { variable, value } => {
             let ty = value.ty(None, tcx);
             if matches!(ty, Ok(Ty::List(_))) {
                 tcx.comptime_known_variables.insert(variable.clone(), None);
@@ -219,7 +219,7 @@ fn check_statement(
             tcx.variable_types.insert(variable.clone(), ty);
             Ok(Ty::Unit)
         }
-        hir::Statement::If {
+        hir::StatementKind::If {
             condition,
             then,
             else_,
@@ -243,7 +243,7 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
-        hir::Statement::Repeat { times, body } => {
+        hir::StatementKind::Repeat { times, body } => {
             if let Ok(times_ty) = times.ty(None, tcx) {
                 if times_ty != Ty::Num {
                     tcx.diagnostics.error(
@@ -260,22 +260,24 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
-        hir::Statement::Forever { body, .. } => {
+        hir::StatementKind::Forever { body, .. } => {
             if let Ok(body) = body {
                 let _ = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
-        hir::Statement::While { condition, body }
-        | hir::Statement::Until { condition, body } => {
+        hir::StatementKind::While { condition, body }
+        | hir::StatementKind::Until { condition, body } => {
             if let Ok(condition_ty) = condition.ty(None, tcx) {
                 if condition_ty != Ty::Bool {
-                    let message =
-                        if matches!(statement, hir::Statement::While { .. }) {
-                            "`while` condition must be a `Bool`"
-                        } else {
-                            "`until` condition must be a `Bool`"
-                        };
+                    let message = if matches!(
+                        statement.kind,
+                        hir::StatementKind::While { .. }
+                    ) {
+                        "`while` condition must be a `Bool`"
+                    } else {
+                        "`until` condition must be a `Bool`"
+                    };
                     tcx.diagnostics.error(
                         message,
                         [primary(
@@ -290,14 +292,14 @@ fn check_statement(
             }
             Ok(Ty::Unit)
         }
-        hir::Statement::For {
+        hir::StatementKind::For {
             variable,
             times,
             body,
         } => Ok(check_for(variable, times, body, tcx)),
-        hir::Statement::Return { .. } => todo!("type-check `return`"),
-        hir::Statement::Expr(expr) => expr.ty(None, tcx),
-        hir::Statement::Error => Err(()),
+        hir::StatementKind::Return { .. } => todo!("type-check `return`"),
+        hir::StatementKind::Expr(expr) => expr.ty(None, tcx),
+        hir::StatementKind::Error => Err(()),
     }
 }
 

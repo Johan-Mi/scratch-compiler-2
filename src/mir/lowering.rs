@@ -151,12 +151,12 @@ fn lower_statement(
     statement: hir::Statement,
     cx: &mut Context,
 ) -> Option<Value> {
-    match statement {
-        hir::Statement::Let { variable, value } => {
+    match statement.kind {
+        hir::StatementKind::Let { variable, value } => {
             lower_variable_initialization(variable, value, cx);
             None
         }
-        hir::Statement::If {
+        hir::StatementKind::If {
             condition,
             then,
             else_,
@@ -173,7 +173,7 @@ fn lower_statement(
             });
             None
         }
-        hir::Statement::Repeat { times, body } => {
+        hir::StatementKind::Repeat { times, body } => {
             let times = lower_expression(times, cx).unwrap();
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
@@ -183,18 +183,18 @@ fn lower_statement(
             });
             None
         }
-        hir::Statement::Forever { body, .. } => {
+        hir::StatementKind::Forever { body, .. } => {
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::Forever { body });
             None
         }
-        hir::Statement::While { condition, body } => {
+        hir::StatementKind::While { condition, body } => {
             let condition = lower_expression(condition, cx).unwrap();
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::While { condition, body });
             None
         }
-        hir::Statement::Until { condition, body } => {
+        hir::StatementKind::Until { condition, body } => {
             // desugar `until condition { ... }`
             //    into `while not(condition) { ... }`
             let condition = lower_expression(condition, cx).unwrap();
@@ -211,7 +211,7 @@ fn lower_statement(
             });
             None
         }
-        hir::Statement::For {
+        hir::StatementKind::For {
             variable,
             times,
             body,
@@ -227,13 +227,13 @@ fn lower_statement(
             });
             None
         }
-        hir::Statement::Return { value, .. } => {
+        hir::StatementKind::Return(value) => {
             let value = lower_expression(value, cx).unwrap();
             cx.block.ops.push(Op::Return(value));
             None
         }
-        hir::Statement::Expr(expr) => lower_expression(expr, cx),
-        hir::Statement::Error => unreachable!(),
+        hir::StatementKind::Expr(expr) => lower_expression(expr, cx),
+        hir::StatementKind::Error => unreachable!(),
     }
 }
 

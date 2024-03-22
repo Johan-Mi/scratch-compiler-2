@@ -1,5 +1,6 @@
 use super::{
     Block, Document, Expression, ExpressionKind, GlobalVariable, Statement,
+    StatementKind,
 };
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
@@ -39,13 +40,13 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
 
     fn traverse_statement(&mut self, statement: &Statement) {
         self.visit_statement(statement);
-        match statement {
-            Statement::Let { value, .. }
-            | Statement::Return { value, .. }
-            | Statement::Expr(value) => {
+        match &statement.kind {
+            StatementKind::Let { value, .. }
+            | StatementKind::Return(value)
+            | StatementKind::Expr(value) => {
                 self.traverse_expression(value);
             }
-            Statement::If {
+            StatementKind::If {
                 condition,
                 then,
                 else_,
@@ -58,21 +59,21 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
                     self.traverse_block(else_);
                 }
             }
-            Statement::Forever { body, .. } => {
+            StatementKind::Forever { body, .. } => {
                 if let Ok(body) = body {
                     self.traverse_block(body);
                 }
             }
-            Statement::Repeat { times: value, body }
-            | Statement::While {
+            StatementKind::Repeat { times: value, body }
+            | StatementKind::While {
                 condition: value,
                 body,
             }
-            | Statement::Until {
+            | StatementKind::Until {
                 condition: value,
                 body,
             }
-            | Statement::For {
+            | StatementKind::For {
                 times: value, body, ..
             } => {
                 self.traverse_expression(value);
@@ -80,7 +81,7 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
                     self.traverse_block(body);
                 }
             }
-            Statement::Error => {}
+            StatementKind::Error => {}
         }
     }
 

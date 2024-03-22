@@ -1,6 +1,9 @@
 use crate::{
     diagnostics::{primary, span, Diagnostics},
-    hir::{Document, ExpressionKind, GlobalVariable, Statement, Visitor},
+    hir::{
+        Document, ExpressionKind, GlobalVariable, Statement, StatementKind,
+        Visitor,
+    },
     name::Name,
     parser::SyntaxToken,
 };
@@ -30,7 +33,7 @@ impl Visitor<crate::hir::Function> for LintVisitor {
     }
 
     fn visit_statement(&mut self, statement: &Statement) {
-        if let Statement::Let { variable, .. } = statement {
+        if let StatementKind::Let { variable, .. } = &statement.kind {
             self.unused_variables.insert(variable.clone());
         }
     }

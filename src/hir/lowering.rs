@@ -1,6 +1,7 @@
 use super::{
     parse_string_literal, Block, Costume, Document, Expression, ExpressionKind,
     Function, GlobalVariable, Parameter, Result, Sprite, Statement,
+    StatementKind,
 };
 use crate::{
     ast,
@@ -252,14 +253,14 @@ impl Block {
 
 impl Statement {
     fn lower(ast: &ast::Statement, file: &File, tcx: &mut Context) -> Self {
-        match ast {
-            ast::Statement::Let(let_) => {
+        let kind = match ast {
+            ast::Statement::Let(let_) => 'blk: {
                 let Some(variable) = let_.variable() else {
                     tcx.diagnostics.error(
                         "expected variable name after `let`",
                         [primary(span(file, ast.syntax().text_range()), "")],
                     );
-                    return Self::Error;
+                    break 'blk StatementKind::Error;
                 };
 
                 let value = if let Some(value) = let_.value() {
@@ -280,9 +281,9 @@ impl Statement {
                     &value,
                 );
 
-                Self::Let { variable, value }
+                StatementKind::Let { variable, value }
             }
-            ast::Statement::If(if_) => Self::If {
+            ast::Statement::If(if_) => StatementKind::If {
                 condition: Expression::lower_opt(
                     if_.condition(),
                     file,
@@ -308,7 +309,7 @@ impl Statement {
                     })
                     .ok_or(()),
             },
-            ast::Statement::Repeat(repeat_) => Self::Repeat {
+            ast::Statement::Repeat(repeat_) => StatementKind::Repeat {
                 times: Expression::lower_opt(
                     repeat_.times(),
                     file,
@@ -317,11 +318,10 @@ impl Statement {
                 ),
                 body: Block::lower_opt(repeat_.body(), file, tcx),
             },
-            ast::Statement::Forever(forever) => Self::Forever {
+            ast::Statement::Forever(forever) => StatementKind::Forever {
                 body: Block::lower_opt(forever.body(), file, tcx),
-                span: span(file, ast.syntax().text_range()),
             },
-            ast::Statement::While(while_) => Self::While {
+            ast::Statement::While(while_) => StatementKind::While {
                 body: Block::lower_opt(while_.body(), file, tcx),
                 condition: Expression::lower_opt(
                     while_.condition(),
@@ -330,7 +330,7 @@ impl Statement {
                     ast.syntax().text_range(),
                 ),
             },
-            ast::Statement::Until(until_) => Self::Until {
+            ast::Statement::Until(until_) => StatementKind::Until {
                 body: Block::lower_opt(until_.body(), file, tcx),
                 condition: Expression::lower_opt(
                     until_.condition(),
@@ -339,7 +339,7 @@ impl Statement {
                     ast.syntax().text_range(),
                 ),
             },
-            ast::Statement::For(for_) => Self::For {
+            ast::Statement::For(for_) => StatementKind::For {
                 variable: for_.variable().ok_or(()),
                 times: Expression::lower_opt(
                     for_.times(),
@@ -350,20 +350,21 @@ impl Statement {
                 body: Block::lower_opt(for_.body(), file, tcx),
             },
             ast::Statement::Return(return_) => {
-                let text_range = return_.syntax().text_range();
-                Self::Return {
-                    value: Expression::lower_opt(
-                        return_.expression(),
-                        file,
-                        tcx,
-                        text_range,
-                    ),
-                    span: span(file, text_range),
-                }
+                StatementKind::Return(Expression::lower_opt(
+                    return_.expression(),
+                    file,
+                    tcx,
+                    return_.syntax().text_range(),
+                ))
             }
             ast::Statement::Expr(expr) => {
-                Self::Expr(Expression::lower(expr, file, tcx))
+                StatementKind::Expr(Expression::lower(expr, file, tcx))
             }
+        };
+
+        Self {
+            kind,
+            span: span(file, ast.syntax().text_range()),
         }
     }
 }

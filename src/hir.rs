@@ -96,7 +96,13 @@ pub struct Block {
 }
 
 #[derive(Debug)]
-pub enum Statement {
+pub struct Statement {
+    pub kind: StatementKind,
+    pub span: Span,
+}
+
+#[derive(Debug)]
+pub enum StatementKind {
     Let {
         variable: SyntaxToken,
         value: Expression,
@@ -112,7 +118,6 @@ pub enum Statement {
     },
     Forever {
         body: Result<Block>,
-        span: Span,
     },
     While {
         condition: Expression,
@@ -127,10 +132,7 @@ pub enum Statement {
         times: Expression,
         body: Result<Block>,
     },
-    Return {
-        value: Expression,
-        span: Span,
-    },
+    Return(Expression),
     Expr(Expression),
     Error,
 }

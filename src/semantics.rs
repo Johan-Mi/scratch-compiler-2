@@ -41,8 +41,8 @@ impl Visitor for SemanticVisitor<'_> {
             .iter()
             // A `forever` loop at the end of the block is fine.
             .take(block.statements.len().saturating_sub(1))
-            .find_map(|statement| match statement {
-                hir::Statement::Forever { span, .. } => Some(*span),
+            .find_map(|statement| match statement.kind {
+                hir::StatementKind::Forever { .. } => Some(statement.span),
                 _ => None,
             })
         else {
@@ -56,10 +56,10 @@ impl Visitor for SemanticVisitor<'_> {
 
     fn visit_statement(&mut self, statement: &hir::Statement) {
         if self.is_inline {
-            if let hir::Statement::Return { span, .. } = *statement {
+            if let hir::StatementKind::Return(_) = statement.kind {
                 self.diagnostics.error(
                     "`return` is not supported in inline functions yet",
-                    [primary(span, "")],
+                    [primary(statement.span, "")],
                 );
             }
         }
