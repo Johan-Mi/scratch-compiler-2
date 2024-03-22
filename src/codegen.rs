@@ -559,6 +559,7 @@ fn compile_regular_intrinsic(
         "set-y" => f! { set_y(y) },
         "show" => f! { show() },
         "stamp" => f! { stamp() },
+        "stop-all" => f! { stop_all() },
         "wait" => f! { wait(seconds) },
         _ => unreachable!(),
     }
