@@ -15,15 +15,21 @@ pub fn check(document: &Document, diagnostics: &mut Diagnostics) {
         diagnostics.help("try creating a stage: `sprite Stage {}`", []);
     }
 
-    SemanticVisitor { diagnostics }.traverse_document(document);
+    SemanticVisitor {
+        diagnostics,
+        is_inline: false,
+    }
+    .traverse_document(document);
 }
 
 struct SemanticVisitor<'a> {
     diagnostics: &'a mut Diagnostics,
+    is_inline: bool,
 }
 
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &Function) {
+        self.is_inline = function.is_inline;
         self.check_generics(function);
         self.check_special_function(function);
         self.check_function_staging(function);
@@ -46,6 +52,17 @@ impl Visitor for SemanticVisitor<'_> {
             "unreachable code",
             [primary(span, "any code after this loop is unreachable")],
         );
+    }
+
+    fn visit_statement(&mut self, statement: &hir::Statement) {
+        if self.is_inline {
+            if let hir::Statement::Return { span, .. } = *statement {
+                self.diagnostics.error(
+                    "`return` is not supported in inline functions yet",
+                    [primary(span, "")],
+                );
+            }
+        }
     }
 
     fn visit_expression(&mut self, expr: &hir::Expression) {

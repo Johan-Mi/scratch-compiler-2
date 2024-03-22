@@ -227,7 +227,7 @@ fn lower_statement(
             });
             None
         }
-        hir::Statement::Return(value) => {
+        hir::Statement::Return { value, .. } => {
             let value = lower_expression(value, cx).unwrap();
             cx.block.ops.push(Op::Return(value));
             None

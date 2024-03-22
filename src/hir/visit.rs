@@ -41,7 +41,7 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
         self.visit_statement(statement);
         match statement {
             Statement::Let { value, .. }
-            | Statement::Return(value)
+            | Statement::Return { value, .. }
             | Statement::Expr(value) => {
                 self.traverse_expression(value);
             }

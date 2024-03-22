@@ -350,12 +350,16 @@ impl Statement {
                 body: Block::lower_opt(for_.body(), file, tcx),
             },
             ast::Statement::Return(return_) => {
-                Self::Return(Expression::lower_opt(
-                    return_.expression(),
-                    file,
-                    tcx,
-                    return_.syntax().text_range(),
-                ))
+                let text_range = return_.syntax().text_range();
+                Self::Return {
+                    value: Expression::lower_opt(
+                        return_.expression(),
+                        file,
+                        tcx,
+                        text_range,
+                    ),
+                    span: span(file, text_range),
+                }
             }
             ast::Statement::Expr(expr) => {
                 Self::Expr(Expression::lower(expr, file, tcx))

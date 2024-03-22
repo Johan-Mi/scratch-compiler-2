@@ -127,7 +127,10 @@ pub enum Statement {
         times: Expression,
         body: Result<Block>,
     },
-    Return(Expression),
+    Return {
+        value: Expression,
+        span: Span,
+    },
     Expr(Expression),
     Error,
 }
