@@ -125,7 +125,10 @@ fn lower_block(block: hir::Block, cx: &mut Context) -> Block {
         .last()
         .flatten()
     {
-        cx.block.ops.push(Op::Return(return_value));
+        cx.block.ops.push(Op::Return {
+            value: return_value,
+            is_explicit: false,
+        });
     }
     std::mem::replace(&mut cx.block, old_block)
 }
@@ -229,7 +232,10 @@ fn lower_statement(
         }
         hir::StatementKind::Return(value) => {
             let value = lower_expression(value, cx).unwrap();
-            cx.block.ops.push(Op::Return(value));
+            cx.block.ops.push(Op::Return {
+                value,
+                is_explicit: true,
+            });
             None
         }
         hir::StatementKind::Expr(expr) => lower_expression(expr, cx),

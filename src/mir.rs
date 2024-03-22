@@ -163,7 +163,10 @@ impl Value {
 
 #[derive(Debug, Clone)]
 pub enum Op {
-    Return(Value),
+    Return {
+        value: Value,
+        is_explicit: bool,
+    },
     If {
         condition: Value,
         then: Block,

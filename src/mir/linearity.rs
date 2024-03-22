@@ -74,7 +74,7 @@ impl Visitor for Finder {
 
 fn direct_args(op: &Op) -> &[Value] {
     match op {
-        Op::Return(value)
+        Op::Return { value, .. }
         | Op::If {
             condition: value, ..
         }

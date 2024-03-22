@@ -93,7 +93,10 @@ impl Visitor for Inliner<'_> {
             .traverse_block(&mut cloned_body);
 
             if let Some(variable) = *variable {
-                let Some(Op::Return(return_value)) = cloned_body.ops.pop()
+                let Some(Op::Return {
+                    value: return_value,
+                    ..
+                }) = cloned_body.ops.pop()
                 else {
                     unreachable!()
                 };

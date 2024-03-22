@@ -32,7 +32,7 @@ pub(super) trait Visitor {
     fn traverse_op(&mut self, op: &mut Op) {
         self.visit_op(op);
         match op {
-            Op::Return(value) => self.visit_value(value),
+            Op::Return { value, .. } => self.visit_value(value),
             Op::If {
                 condition,
                 then,

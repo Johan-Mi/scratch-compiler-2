@@ -211,10 +211,13 @@ fn compile_block(block: mir::Block, cx: &mut Context) {
 
 fn compile_op(op: mir::Op, cx: &mut Context) {
     match op {
-        mir::Op::Return(value) => {
+        mir::Op::Return { value, is_explicit } => {
             let value = compile_value(value, cx);
             let return_variable = cx.return_variable.clone().unwrap();
             cx.sprite.put(block::set_variable(return_variable, value));
+            if is_explicit {
+                cx.sprite.put(block::stop_this_script());
+            }
         }
         mir::Op::If {
             condition,
