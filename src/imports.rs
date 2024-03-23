@@ -23,7 +23,7 @@ pub fn import(
         }
 
         let source_code = std::fs::read_to_string(&absolute_path)?;
-        done.insert(absolute_path);
+        done.insert(absolute_path.clone());
         let file = code_map.add_file(path_name, source_code);
         let document = crate::parser::parse(&file, tcx.diagnostics);
         crate::syntax_errors::check(&document, &file, tcx.diagnostics);
@@ -34,7 +34,9 @@ pub fn import(
             .filter_map(|it| it.path())
             .filter_map(|it| crate::hir::parse_string_literal(&it).ok())
         {
-            let absolute_path = std::fs::canonicalize(&import)?;
+            let absolute_path = std::fs::canonicalize(
+                &absolute_path.parent().unwrap().join(&import),
+            )?;
             if !done.contains(&absolute_path) {
                 pending.push((absolute_path, import));
             }
