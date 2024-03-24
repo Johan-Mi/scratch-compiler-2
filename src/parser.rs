@@ -741,7 +741,7 @@ impl Parser<'_> {
     }
 
     fn parse(mut self) -> SyntaxNode {
-        self.start_node(DOCUMENT);
+        self.builder.start_node(DOCUMENT.into());
         while !self.at(EOF) {
             self.parse_top_level_item();
         }
