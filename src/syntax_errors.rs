@@ -26,7 +26,20 @@ pub fn check(
                 }
             }
             rowan::NodeOrToken::Token(token) => {
-                if token.kind() == STRING && !token.text().ends_with('"') {
+                if token.kind() == IDENTIFIER {
+                    if token.text().ends_with('-') {
+                        let span = span(file, token.text_range());
+                        diagnostics.warning(
+                            "suspicious identifier",
+                            [primary(span, "")],
+                        );
+                        diagnostics.note(
+                            "to avoid confusion, don't end an identifier with `-`",
+                            [],
+                        );
+                    }
+                } else if token.kind() == STRING && !token.text().ends_with('"')
+                {
                     let span = span(file, token.text_range());
                     diagnostics.error(
                         "unterminated string literal",
