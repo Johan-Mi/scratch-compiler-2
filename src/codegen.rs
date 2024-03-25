@@ -547,6 +547,8 @@ fn compile_regular_intrinsic(
         "change-y" => f! { change_y(amount) },
         "erase-all" => f! { erase_all() },
         "go-to" => f! { go_to_xy(x, y) },
+        "go-to-back-layer" => f! { go_to_back_layer() },
+        "go-to-front-layer" => f! { go_to_front_layer() },
         "hide" => f! { hide() },
         "move" => f! { move_steps(steps) },
         "pen-down" => f! { pen_down() },

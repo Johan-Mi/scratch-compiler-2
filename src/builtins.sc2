@@ -92,6 +92,10 @@ fn erase-all() {}
 
 fn go-to(x _: Num, y _: Num) {}
 
+fn go-to-back-layer() {}
+
+fn go-to-front-layer() {}
+
 fn hide() {}
 
 fn move(steps _: Num) {}
