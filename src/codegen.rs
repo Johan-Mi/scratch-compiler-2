@@ -551,6 +551,7 @@ fn compile_regular_intrinsic(
         "move" => f! { move_steps(steps) },
         "pen-down" => f! { pen_down() },
         "pen-up" => f! { pen_up() },
+        "pressing-key" => f! { = key_is_pressed(key) },
         "reset-timer" => f! { reset_timer() },
         "say" if arguments.len() == 1 => f! { say(message) },
         "say" => f! { say_for_seconds(seconds, message) },
