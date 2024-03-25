@@ -102,6 +102,8 @@ fn pen-up() {}
 
 fn pressing-key(_ key: String) -> Bool {}
 
+fn random(between low: Num, and high: Num) -> Num {}
+
 fn reset-timer() {}
 
 fn say(_ message: String) {}

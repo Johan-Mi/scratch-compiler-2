@@ -199,7 +199,7 @@ pub enum Op {
 impl Op {
     fn has_side_effects(&self) -> bool {
         !matches!(self, Self::Intrinsic { name, .. } if matches!(&**name,
-            "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt" | "not" | "join" | "to-string" | "to-num" | "length" | "letter" | "answer" | "pressing-key" | "timer"
+            "add" | "sub" | "mul" | "div" | "mod" | "lt" | "eq" | "gt" | "not" | "join" | "to-string" | "to-num" | "length" | "letter" | "answer" | "pressing-key" | "timer" | "random"
         ))
     }
 
