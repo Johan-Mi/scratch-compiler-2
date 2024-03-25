@@ -126,4 +126,6 @@ fn stamp() {}
 
 fn stop-all() {}
 
+fn timer() -> Num {}
+
 fn wait(seconds _: Num) {}

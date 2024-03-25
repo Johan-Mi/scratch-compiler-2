@@ -564,6 +564,7 @@ fn compile_regular_intrinsic(
         "show" => f! { show() },
         "stamp" => f! { stamp() },
         "stop-all" => f! { stop_all() },
+        "timer" => f! { = timer() },
         "wait" => f! { wait(seconds) },
         _ => panic!("invalid intrinsic: {name:?}"),
     }
