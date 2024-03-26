@@ -163,10 +163,6 @@ impl Function {
 
         let parameters = ast
             .parameters()
-            .ok_or_else(|| {
-                tcx.diagnostics
-                    .error("function has no parameter list", defined_here());
-            })
             .into_iter()
             .flat_map(|p| p.parameters())
             .map(|parameter| Parameter::lower(&parameter, file, tcx))

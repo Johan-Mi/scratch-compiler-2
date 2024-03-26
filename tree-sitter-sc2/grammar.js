@@ -40,7 +40,7 @@ module.exports = grammar({
         $.identifier,
         optional($.string_literal),
         optional($.generics),
-        $.function_parameters,
+        optional($.function_parameters),
         optional(seq("->", $._expression)),
         $.block,
       ),
