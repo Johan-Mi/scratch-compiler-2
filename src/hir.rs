@@ -72,6 +72,7 @@ pub struct Costume {
 pub struct Function {
     pub owning_sprite: Option<String>,
     pub name: Spanned<String>,
+    pub tag: Option<String>,
     pub generics: Vec<SyntaxToken>,
     pub parameters: Vec<Parameter>,
     pub return_ty: Expression,

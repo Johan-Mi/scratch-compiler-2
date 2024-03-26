@@ -159,6 +159,8 @@ impl Function {
             span: span(file, name_text_range),
         };
 
+        let tag = ast.tag().map(|it| parse_string_literal(&it)).transpose()?;
+
         let parameters = ast
             .parameters()
             .ok_or_else(|| {
@@ -186,6 +188,7 @@ impl Function {
         Ok(Self {
             owning_sprite,
             name,
+            tag,
             generics,
             parameters,
             return_ty,
