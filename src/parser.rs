@@ -659,6 +659,7 @@ impl Parser<'_> {
         }
         self.builder.start_node_at(checkpoint, FN.into());
         self.expect(IDENTIFIER);
+        self.eat(STRING);
         if self.at(LBRACKET) {
             self.parse_generics();
         }

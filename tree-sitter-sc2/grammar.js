@@ -38,6 +38,7 @@ module.exports = grammar({
         optional("inline"),
         "fn",
         $.identifier,
+        optional($.string_literal),
         optional($.generics),
         $.function_parameters,
         optional(seq("->", $._expression)),
