@@ -80,7 +80,7 @@ fn not(_ bool: Bool) -> Bool {}
 
 fn join(_ lhs: String, _ rhs: String) -> String {}
 
-fn answer() -> String {}
+fn answer -> String {}
 
 fn ask(_ question: String) {}
 
@@ -88,27 +88,27 @@ fn change-x(by amount: Num) {}
 
 fn change-y(by amount: Num) {}
 
-fn erase-all() {}
+fn erase-all {}
 
 fn go-to(x _: Num, y _: Num) {}
 
-fn go-to-back-layer() {}
+fn go-to-back-layer {}
 
-fn go-to-front-layer() {}
+fn go-to-front-layer {}
 
-fn hide() {}
+fn hide {}
 
 fn move(steps _: Num) {}
 
-fn pen-down() {}
+fn pen-down {}
 
-fn pen-up() {}
+fn pen-up {}
 
 fn pressing-key(_ key: String) -> Bool {}
 
 fn random(between low: Num, and high: Num) -> Num {}
 
-fn reset-timer() {}
+fn reset-timer {}
 
 fn say(_ message: String) {}
 fn say(_ message: String, seconds _: Num) {}
@@ -126,12 +126,12 @@ fn set-x(to _: Num) {}
 
 fn set-y(to _: Num) {}
 
-fn show() {}
+fn show {}
 
-fn stamp() {}
+fn stamp {}
 
-fn stop-all() {}
+fn stop-all {}
 
-fn timer() -> Num {}
+fn timer -> Num {}
 
 fn wait(seconds _: Num) {}

@@ -161,6 +161,18 @@ impl Function {
 
         let tag = ast.tag().map(|it| parse_string_literal(&it)).transpose()?;
 
+        if let Some(parameters) = ast.parameters() {
+            if parameters.parameters().next().is_none() {
+                tcx.diagnostics.warning(
+                    "empty function parameter list is redundant",
+                    [primary(
+                        span(file, parameters.syntax().text_range()),
+                        "remove these parentheses",
+                    )],
+                );
+            }
+        }
+
         let parameters = ast
             .parameters()
             .into_iter()
