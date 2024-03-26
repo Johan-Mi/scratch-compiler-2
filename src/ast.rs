@@ -122,6 +122,10 @@ impl Function {
         rowan::ast::support::token(&self.syntax, IDENTIFIER)
     }
 
+    pub fn tag(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, STRING)
+    }
+
     pub fn generics(&self) -> Option<Generics> {
         rowan::ast::support::child(&self.syntax)
     }
