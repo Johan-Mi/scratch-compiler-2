@@ -190,6 +190,12 @@ fn compile_function(
             cx.sprite.start_script(block::when_flag_clicked());
             None
         }
+        Ok(function::Special::WhenKeyPressed) => {
+            cx.sprite.start_script(block::when_key_pressed(
+                function.tag.take().unwrap(),
+            ));
+            None
+        }
         Err(()) => {
             let compiled_ref = cx.compiled_functions.get_mut(&index).unwrap();
             cx.sprite

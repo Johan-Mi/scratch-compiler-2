@@ -121,6 +121,24 @@ impl SemanticVisitor<'_> {
                     );
                 }
             }
+            function::Special::WhenKeyPressed => {
+                if !function.parameters.is_empty()
+                    || function
+                        .return_ty
+                        .as_ref()
+                        .is_ok_and(|it| *it != Ty::Unit)
+                    || function.tag.is_none()
+                {
+                    self.diagnostics.error(
+                    "special function `when-key-pressed` has incorrect signature",
+                    [primary(function.name.span, "")],
+                );
+                    self.diagnostics.note(
+                        "expected signature: `fn when-key-pressed \"key-name\"()`",
+                        [],
+                    );
+                }
+            }
         }
     }
 

@@ -13,6 +13,7 @@ pub type Document = super::Document<Function>;
 pub struct Function {
     pub owning_sprite: Option<String>,
     pub name: Spanned<String>,
+    pub tag: Option<String>,
     pub generics: Vec<SyntaxToken>,
     pub parameters: Vec<Parameter>,
     pub return_ty: Spanned<Result<Ty>>,
@@ -70,6 +71,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
     Function {
         owning_sprite: it.owning_sprite,
         name: it.name,
+        tag: it.tag,
         generics: it.generics,
         parameters: it
             .parameters

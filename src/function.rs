@@ -109,6 +109,7 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
 
 pub enum Special {
     WhenFlagClicked,
+    WhenKeyPressed,
 }
 
 impl TryFrom<&str> for Special {
@@ -117,6 +118,7 @@ impl TryFrom<&str> for Special {
     fn try_from(name: &str) -> Result<Self> {
         match name {
             "when-flag-clicked" => Ok(Self::WhenFlagClicked),
+            "when-key-pressed" => Ok(Self::WhenKeyPressed),
             _ => Err(()),
         }
     }

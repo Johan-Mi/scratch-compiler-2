@@ -44,6 +44,7 @@ pub struct Document {
 pub struct Function {
     pub owning_sprite: Option<String>,
     pub name: String,
+    pub tag: Option<String>,
     pub parameters: Vec<Parameter>,
     pub body: Block,
     pub returns_something: bool,

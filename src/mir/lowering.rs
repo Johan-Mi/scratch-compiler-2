@@ -108,6 +108,7 @@ fn lower_function(
 
     Function {
         name: function.name.node,
+        tag: function.tag,
         parameters,
         body: lower_block(function.body, cx),
         returns_something: !function.return_ty.node.unwrap().is_zero_sized(),
