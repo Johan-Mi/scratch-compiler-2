@@ -61,6 +61,7 @@ fn real_main(
             })?;
             if args.next().is_some() {
                 diagnostics.error("too many command line arguments", []);
+                return Err(());
             }
             let only_check = command == "check";
             compile_or_check(source_file, diagnostics, code_map, only_check)
@@ -68,6 +69,7 @@ fn real_main(
         "format" => {
             if args.next().is_some() {
                 diagnostics.error("too many command line arguments", []);
+                return Err(());
             }
             formatter::format_stdin_to_stdout(diagnostics)
         }
