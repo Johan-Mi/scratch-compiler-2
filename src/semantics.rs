@@ -115,10 +115,8 @@ impl SemanticVisitor<'_> {
                     "special function `when-flag-clicked` has incorrect signature",
                     [primary(function.name.span, "")],
                 );
-                    self.diagnostics.note(
-                        "expected signature: `fn when-flag-clicked()`",
-                        [],
-                    );
+                    self.diagnostics
+                        .note("expected signature: `fn when-flag-clicked`", []);
                 }
             }
             function::Special::WhenKeyPressed => {
@@ -134,7 +132,7 @@ impl SemanticVisitor<'_> {
                     [primary(function.name.span, "")],
                 );
                     self.diagnostics.note(
-                        "expected signature: `fn when-key-pressed \"key-name\"()`",
+                        "expected signature: `fn when-key-pressed \"key-name\"`",
                         [],
                     );
                 }
