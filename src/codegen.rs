@@ -546,6 +546,18 @@ fn compile_regular_intrinsic(
             // (see the comment regarding boolean literals)
             Some(cx.sprite.eq(operand, "false".to_owned().into()))
         }
+        "and" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            let lhs = cx.sprite.eq(lhs, "true".to_owned().into());
+            let rhs = cx.sprite.eq(rhs, "true".to_owned().into());
+            Some(cx.sprite.and(lhs, rhs))
+        }
+        "or" => {
+            let [lhs, rhs] = arguments.try_into().ok().unwrap();
+            let lhs = cx.sprite.eq(lhs, "true".to_owned().into());
+            let rhs = cx.sprite.eq(rhs, "true".to_owned().into());
+            Some(cx.sprite.or(lhs, rhs))
+        }
         "join" => f! { = join(lhs, rhs) },
         "answer" => f! { = answer() },
         "ask" => f! { ask(question) },

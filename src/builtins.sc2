@@ -78,6 +78,10 @@ fn atan(_ num: Num) -> Num {}
 
 fn not(_ bool: Bool) -> Bool {}
 
+fn and(_ lhs: Bool, _ rhs: Bool) -> Bool {}
+
+fn or(_ lhs: Bool, _ rhs: Bool) -> Bool {}
+
 fn join(_ lhs: String, _ rhs: String) -> String {}
 
 fn answer -> String {}
