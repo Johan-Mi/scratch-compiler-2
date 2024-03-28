@@ -251,7 +251,7 @@ checksum = "4950d85bc52415f8432144c97c4791bd0c4f7954de32a7270ee9cccd3c22b12b"
 [[package]]
 name = "sb3-builder"
 version = "0.1.0"
-source = "git+https://github.com/Johan-Mi/sb3-builder#752785dee9af46239087d7d7260e87f9180cd6db"
+source = "git+https://github.com/Johan-Mi/sb3-builder#e881284210c2cec601dec1866ff6dd2bd5f1dd43"
 dependencies = [
  "md5",
  "serde",

@@ -33,6 +33,12 @@ fn compile_sprite(
         project.add_sprite(name.to_owned())
     };
 
+    if name == "Stage" {
+        if let Ok(comment) = std::env::var("SC2_COMMENT") {
+            sprite.add_comment(comment);
+        }
+    }
+
     for costume in hir.costumes {
         sprite.add_costume(Costume::from_file(
             costume.name,
