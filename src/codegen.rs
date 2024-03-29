@@ -237,7 +237,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             else_,
         } => {
             let condition = compile_value(condition, cx);
-            let condition = cx.sprite.eq(condition, "true".to_owned().into());
+            let condition = to_bool(condition, &mut cx.sprite);
             let after = if else_.ops.is_empty() {
                 let after = cx.sprite.if_(condition);
                 compile_block(then, cx);
@@ -257,7 +257,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         }
         mir::Op::While { condition, body } => {
             let condition = compile_value(condition, cx);
-            let condition = cx.sprite.eq(condition, "true".to_owned().into());
+            let condition = to_bool(condition, &mut cx.sprite);
             let after = cx.sprite.while_(condition);
             compile_block(body, cx);
             cx.sprite.insert_at(after);
@@ -548,20 +548,19 @@ fn compile_regular_intrinsic(
         "atan" => Some(mathop("atan", arguments, cx)),
         "not" => {
             let [operand] = arguments.try_into().ok().unwrap();
-            // FIXME: actually use the `not` block
-            // (see the comment regarding boolean literals)
-            Some(cx.sprite.eq(operand, "false".to_owned().into()))
+            let operand = to_bool(operand, &mut cx.sprite);
+            Some(cx.sprite.not(operand))
         }
         "and" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            let lhs = cx.sprite.eq(lhs, "true".to_owned().into());
-            let rhs = cx.sprite.eq(rhs, "true".to_owned().into());
+            let lhs = to_bool(lhs, &mut cx.sprite);
+            let rhs = to_bool(rhs, &mut cx.sprite);
             Some(cx.sprite.and(lhs, rhs))
         }
         "or" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            let lhs = cx.sprite.eq(lhs, "true".to_owned().into());
-            let rhs = cx.sprite.eq(rhs, "true".to_owned().into());
+            let lhs = to_bool(lhs, &mut cx.sprite);
+            let rhs = to_bool(rhs, &mut cx.sprite);
             Some(cx.sprite.or(lhs, rhs))
         }
         "join" => f! { = join(lhs, rhs) },
@@ -604,4 +603,8 @@ fn mathop(
 ) -> Operand {
     let [operand] = arguments.try_into().ok().unwrap();
     cx.sprite.mathop(operation, operand)
+}
+
+fn to_bool(operand: Operand, sprite: &mut Target) -> Operand {
+    sprite.eq(operand, "true".to_owned().into())
 }
