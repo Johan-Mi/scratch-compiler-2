@@ -79,6 +79,7 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
         ("join", [Imm(String(lhs)), Imm(String(rhs))]) => {
             Some(Imm(String(format!("{lhs}{rhs}"))))
         }
+        ("ceil", [Imm(Num(lhs))]) => Some(Imm(Num(lhs.ceil()))),
 
         #[allow(clippy::float_cmp)]
         ("add", [n, Imm(Num(identity))]) if *identity == 0.0 => {
