@@ -554,6 +554,13 @@ fn compile_regular_intrinsic(
                 Some(S(cx.sprite.$block($($param.s()),*)))
             }
         };
+
+        (= B $block:ident($($param:ident),*)) => {
+            {
+                let [$($param),*] = arguments.try_into().ok().unwrap();
+                Some(B(cx.sprite.$block($($param.s()),*)))
+            }
+        };
     }
 
     match name {
@@ -565,9 +572,9 @@ fn compile_regular_intrinsic(
         "mul" => f! { = mul(lhs, rhs) },
         "div" => f! { = div(lhs, rhs) },
         "mod" => f! { = modulo(lhs, rhs) },
-        "lt" => f! { = lt(lhs, rhs) },
-        "eq" => f! { = eq(lhs, rhs) },
-        "gt" => f! { = gt(lhs, rhs) },
+        "lt" => f! { = B lt(lhs, rhs) },
+        "eq" => f! { = B eq(lhs, rhs) },
+        "gt" => f! { = B gt(lhs, rhs) },
         "abs" => Some(mathop("abs", arguments, cx)),
         "floor" => Some(mathop("floor", arguments, cx)),
         "ceil" => Some(mathop("ceiling", arguments, cx)),
@@ -612,7 +619,7 @@ fn compile_regular_intrinsic(
         "move" => f! { move_steps(steps) },
         "pen-down" => f! { pen_down() },
         "pen-up" => f! { pen_up() },
-        "pressing-key" => f! { = key_is_pressed(key) },
+        "pressing-key" => f! { = B key_is_pressed(key) },
         "random" => f! { = random(low, high) },
         "reset-timer" => f! { reset_timer() },
         "say" if arguments.len() == 1 => f! { say(message) },
