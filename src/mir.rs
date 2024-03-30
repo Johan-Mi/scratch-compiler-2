@@ -15,10 +15,7 @@ use visit::*;
 use crate::{
     comptime::Value as Imm, generator::Generator, hir::Sprite, ty::Ty,
 };
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt,
-};
+use std::{collections::BTreeMap, fmt};
 
 pub fn optimize(document: &mut Document, generator: &mut Generator) {
     struct OptimizationVistior;
@@ -36,7 +33,7 @@ pub fn optimize(document: &mut Document, generator: &mut Generator) {
 
 #[derive(Debug)]
 pub struct Document {
-    pub sprites: HashMap<String, Sprite>,
+    pub sprites: BTreeMap<String, Sprite>,
     pub functions: BTreeMap<usize, Function>,
 }
 
