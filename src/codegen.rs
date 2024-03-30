@@ -10,6 +10,30 @@ use std::{
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+enum CompiledOperand {
+    String(Operand),
+    Bool(Operand),
+}
+
+impl CompiledOperand {
+    fn s(self) -> Operand {
+        match self {
+            Self::String(operand) | Self::Bool(operand) => operand,
+        }
+    }
+
+    fn b(self, sprite: &mut Target) -> Operand {
+        match self {
+            Self::String(operand) => {
+                sprite.eq(operand, "true".to_owned().into())
+            }
+            Self::Bool(operand) => operand,
+        }
+    }
+}
+
+use CompiledOperand::{Bool as B, String as S};
+
 pub fn generate(mut document: mir::Document, output_path: &Path) -> Result<()> {
     let mut project = Project::default();
 
@@ -114,7 +138,7 @@ impl Context<'_> {
 }
 
 enum CompiledSsaVar {
-    Linear(Operand),
+    Linear(CompiledOperand),
     Relevant(VariableRef),
     CustomBlockParameter(Parameter),
 }
@@ -226,7 +250,8 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         mir::Op::Return { value, is_explicit } => {
             let value = compile_value(value, cx);
             let return_variable = cx.return_variable.clone().unwrap();
-            cx.sprite.put(block::set_variable(return_variable, value));
+            cx.sprite
+                .put(block::set_variable(return_variable, value.s()));
             if is_explicit {
                 cx.sprite.put(block::stop_this_script());
             }
@@ -237,7 +262,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             else_,
         } => {
             let condition = compile_value(condition, cx);
-            let condition = to_bool(condition, &mut cx.sprite);
+            let condition = condition.b(&mut cx.sprite);
             let after = if else_.ops.is_empty() {
                 let after = cx.sprite.if_(condition);
                 compile_block(then, cx);
@@ -257,7 +282,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
         }
         mir::Op::While { condition, body } => {
             let condition = compile_value(condition, cx);
-            let condition = to_bool(condition, &mut cx.sprite);
+            let condition = condition.b(&mut cx.sprite);
             let after = cx.sprite.while_(condition);
             compile_block(body, cx);
             cx.sprite.insert_at(after);
@@ -274,9 +299,9 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                 });
                 cx.compiled_ssa_vars
                     .insert(variable, CompiledSsaVar::Relevant(var.clone()));
-                cx.sprite.for_(var, times)
+                cx.sprite.for_(var, times.s())
             } else {
-                cx.sprite.repeat(times)
+                cx.sprite.repeat(times.s())
             };
             compile_block(body, cx);
             cx.sprite.insert_at(after);
@@ -303,13 +328,13 @@ fn compile_intrinsic(
     name: &str,
     mut args: Vec<mir::Value>,
     cx: &mut Context<'_>,
-) -> Option<Operand> {
+) -> Option<CompiledOperand> {
     match name {
         "get" => {
             let [mir::Value::Lvalue(var)] = *args else {
                 unreachable!()
             };
-            Some(cx.compile_real_var(var).into())
+            Some(S(cx.compile_real_var(var).into()))
         }
         "set" => {
             let mir::Value::Lvalue(var) = args[0] else {
@@ -317,7 +342,7 @@ fn compile_intrinsic(
             };
             let var = cx.compile_real_var(var);
             let value = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::set_variable(var, value));
+            cx.sprite.put(block::set_variable(var, value.s()));
             None
         }
         "push" => {
@@ -326,7 +351,7 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let value = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::append(list, value));
+            cx.sprite.put(block::append(list, value.s()));
             None
         }
         "delete" => {
@@ -335,7 +360,7 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::delete_of_list(list, index));
+            cx.sprite.put(block::delete_of_list(list, index.s()));
             None
         }
         "pop" => {
@@ -362,7 +387,8 @@ fn compile_intrinsic(
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
             let item = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::insert_at_list(list, item, index));
+            cx.sprite
+                .put(block::insert_at_list(list, item.s(), index.s()));
             None
         }
         "replace" => {
@@ -372,7 +398,7 @@ fn compile_intrinsic(
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
             let index = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::replace(list, index, item));
+            cx.sprite.put(block::replace(list, index.s(), item.s()));
             None
         }
         "replace-last" => {
@@ -381,8 +407,11 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            cx.sprite
-                .put(block::replace(list, "last".to_owned().into(), item));
+            cx.sprite.put(block::replace(
+                list,
+                "last".to_owned().into(),
+                item.s(),
+            ));
             None
         }
         "at" => {
@@ -391,14 +420,14 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let index = compile_value(args.pop().unwrap(), cx);
-            Some(cx.sprite.item_of_list(list, index))
+            Some(S(cx.sprite.item_of_list(list, index.s())))
         }
         "last" => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
-            Some(cx.sprite.item_of_list(list, "last".to_owned().into()))
+            Some(S(cx.sprite.item_of_list(list, "last".to_owned().into())))
         }
         "index" => {
             let mir::Value::List(list) = args[0] else {
@@ -406,14 +435,14 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            Some(cx.sprite.item_num_of_list(list, item))
+            Some(S(cx.sprite.item_num_of_list(list, item.s())))
         }
         "length" if matches!(&*args, [mir::Value::List(_)]) => {
             let mir::Value::List(list) = args[0] else {
                 unreachable!()
             };
             let list = cx.compile_real_list(list);
-            Some(cx.sprite.length_of_list(list))
+            Some(S(cx.sprite.length_of_list(list)))
         }
         "contains" => {
             let mir::Value::List(list) = args[0] else {
@@ -421,7 +450,7 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            Some(cx.sprite.list_contains_item(list, item))
+            Some(S(cx.sprite.list_contains_item(list, item.s())))
         }
         _ => {
             let args =
@@ -437,17 +466,24 @@ fn compile_function_call(
     variable: Option<mir::SsaVar>,
     cx: &mut Context,
 ) {
-    let args = args.into_iter().map(|arg| compile_value(arg, cx)).collect();
+    let args = args
+        .into_iter()
+        .map(|arg| compile_value(arg, cx).s())
+        .collect();
     let compiled_ref = &cx.compiled_functions[&function];
     cx.sprite.use_custom_block(&compiled_ref.block, args);
     if let Some(variable) = variable {
         let return_variable =
-            compiled_ref.return_variable.clone().unwrap().into();
+            S(compiled_ref.return_variable.clone().unwrap().into());
         store_result(variable, return_variable, cx);
     }
 }
 
-fn store_result(variable: mir::SsaVar, operand: Operand, cx: &mut Context) {
+fn store_result(
+    variable: mir::SsaVar,
+    operand: CompiledOperand,
+    cx: &mut Context,
+) {
     if cx.is_linear.contains(&variable) {
         cx.compiled_ssa_vars
             .insert(variable, CompiledSsaVar::Linear(operand));
@@ -455,13 +491,13 @@ fn store_result(variable: mir::SsaVar, operand: Operand, cx: &mut Context) {
         let var = cx.sprite.add_variable(Variable {
             name: variable.to_string(),
         });
-        cx.sprite.put(block::set_variable(var.clone(), operand));
+        cx.sprite.put(block::set_variable(var.clone(), operand.s()));
         cx.compiled_ssa_vars
             .insert(variable, CompiledSsaVar::Relevant(var));
     }
 }
 
-fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
+fn compile_value(value: mir::Value, cx: &mut Context) -> CompiledOperand {
     match value {
         mir::Value::Var(var) => {
             let Entry::Occupied(mut entry) = cx.compiled_ssa_vars.entry(var)
@@ -469,9 +505,9 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
                 panic!("undefined SSA variable: {var:?}");
             };
             match entry.get_mut() {
-                CompiledSsaVar::Relevant(var_ref) => var_ref.clone().into(),
+                CompiledSsaVar::Relevant(var_ref) => S(var_ref.clone().into()),
                 CompiledSsaVar::CustomBlockParameter(param) => {
-                    cx.sprite.custom_block_parameter(param.clone())
+                    S(cx.sprite.custom_block_parameter(param.clone()))
                 }
                 CompiledSsaVar::Linear(_) => {
                     if let CompiledSsaVar::Linear(operand) = entry.remove() {
@@ -487,8 +523,8 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
         )
         | mir::Value::Lvalue(_)
         | mir::Value::List(_) => unreachable!(),
-        mir::Value::Imm(comptime::Value::Num(n)) => n.into(),
-        mir::Value::Imm(comptime::Value::String(s)) => s.into(),
+        mir::Value::Imm(comptime::Value::Num(n)) => S(n.into()),
+        mir::Value::Imm(comptime::Value::String(s)) => S(s.into()),
         // TODO: booleans are tricky since Scratch doesn't have literals,
         // variables or lists for them. We'll probably need a parameter to
         // specify what kind of slot the expression will be used in so we
@@ -500,14 +536,14 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> Operand {
 
 fn compile_regular_intrinsic(
     name: &str,
-    mut arguments: Vec<Operand>,
+    mut arguments: Vec<CompiledOperand>,
     cx: &mut Context,
-) -> Option<Operand> {
+) -> Option<CompiledOperand> {
     macro_rules! f {
         ($block:ident($($param:ident),*)) => {
             {
                 let [$($param),*] = arguments.try_into().ok().unwrap();
-                cx.sprite.put(block::$block($($param),*));
+                cx.sprite.put(block::$block($($param.s()),*));
                 None
             }
         };
@@ -515,7 +551,7 @@ fn compile_regular_intrinsic(
         (= $block:ident($($param:ident),*)) => {
             {
                 let [$($param),*] = arguments.try_into().ok().unwrap();
-                Some(cx.sprite.$block($($param),*))
+                Some(S(cx.sprite.$block($($param.s()),*)))
             }
         };
     }
@@ -548,20 +584,20 @@ fn compile_regular_intrinsic(
         "atan" => Some(mathop("atan", arguments, cx)),
         "not" => {
             let [operand] = arguments.try_into().ok().unwrap();
-            let operand = to_bool(operand, &mut cx.sprite);
-            Some(cx.sprite.not(operand))
+            let operand = operand.b(&mut cx.sprite);
+            Some(B(cx.sprite.not(operand)))
         }
         "and" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            let lhs = to_bool(lhs, &mut cx.sprite);
-            let rhs = to_bool(rhs, &mut cx.sprite);
-            Some(cx.sprite.and(lhs, rhs))
+            let lhs = lhs.b(&mut cx.sprite);
+            let rhs = rhs.b(&mut cx.sprite);
+            Some(B(cx.sprite.and(lhs, rhs)))
         }
         "or" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
-            let lhs = to_bool(lhs, &mut cx.sprite);
-            let rhs = to_bool(rhs, &mut cx.sprite);
-            Some(cx.sprite.or(lhs, rhs))
+            let lhs = lhs.b(&mut cx.sprite);
+            let rhs = rhs.b(&mut cx.sprite);
+            Some(B(cx.sprite.or(lhs, rhs)))
         }
         "join" => f! { = join(lhs, rhs) },
         "answer" => f! { = answer() },
@@ -598,13 +634,9 @@ fn compile_regular_intrinsic(
 
 fn mathop(
     operation: &'static str,
-    arguments: Vec<Operand>,
+    arguments: Vec<CompiledOperand>,
     cx: &mut Context,
-) -> Operand {
+) -> CompiledOperand {
     let [operand] = arguments.try_into().ok().unwrap();
-    cx.sprite.mathop(operation, operand)
-}
-
-fn to_bool(operand: Operand, sprite: &mut Target) -> Operand {
-    sprite.eq(operand, "true".to_owned().into())
+    S(cx.sprite.mathop(operation, operand.s()))
 }
