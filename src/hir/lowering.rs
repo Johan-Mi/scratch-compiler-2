@@ -14,7 +14,7 @@ use crate::{
 };
 use codemap::{File, Spanned};
 use rowan::{ast::AstNode, TextRange};
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::{btree_map::Entry, BTreeMap};
 
 impl Document {
     pub fn lower(
@@ -23,7 +23,7 @@ impl Document {
         file: &File,
         tcx: &mut Context,
     ) -> Self {
-        let mut sprites = HashMap::<_, Sprite>::new();
+        let mut sprites = BTreeMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
             let Ok((name, sprite)) = Sprite::lower(&sprite, file, tcx) else {

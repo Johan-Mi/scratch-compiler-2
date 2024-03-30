@@ -12,7 +12,7 @@ use crate::{
     ty::{self, Context, Ty},
 };
 use codemap::{Span, Spanned};
-use std::collections::{hash_map::Entry, BTreeMap, HashMap};
+use std::collections::{btree_map::Entry, BTreeMap};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -22,7 +22,7 @@ type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
 pub struct Document<Func = Function> {
-    pub sprites: HashMap<String, Sprite>,
+    pub sprites: BTreeMap<String, Sprite>,
     pub functions: BTreeMap<usize, Func>,
     pub variables: Vec<GlobalVariable>,
 }
