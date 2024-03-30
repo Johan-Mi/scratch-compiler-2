@@ -450,7 +450,7 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            Some(S(cx.sprite.list_contains_item(list, item.s())))
+            Some(B(cx.sprite.list_contains_item(list, item.s())))
         }
         _ => {
             let args =
