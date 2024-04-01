@@ -1,7 +1,7 @@
 use crate::{comptime, function, mir, ty::Ty};
 use sb3_builder::{
-    block, Costume, CustomBlock, InsertionPoint, List, ListRef, Operand,
-    Parameter, ParameterKind, Project, Target, Variable, VariableRef,
+    block, Constant, Costume, CustomBlock, InsertionPoint, List, ListRef,
+    Operand, Parameter, ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
     collections::{hash_map::Entry, BTreeMap, HashMap, HashSet},
@@ -120,6 +120,8 @@ impl Context<'_> {
             .or_insert_with(|| {
                 self.sprite.add_variable(Variable {
                     name: var.to_string(),
+                    // FIXME: use initializer specified in source code
+                    value: Constant::Number(0.0),
                 })
             })
             .clone()
@@ -131,6 +133,8 @@ impl Context<'_> {
             .or_insert_with(|| {
                 self.sprite.add_list(List {
                     name: list.to_string(),
+                    // FIXME: use initializer specified in source code
+                    items: Vec::new(),
                 })
             })
             .clone()
@@ -188,6 +192,7 @@ impl CompiledFunctionRef {
         let return_variable = function.returns_something.then(|| {
             sprite.add_variable(Variable {
                 name: format!("return {}", function.name),
+                value: Constant::Number(0.0),
             })
         });
 
@@ -296,6 +301,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             let after = if let Some(variable) = variable {
                 let var = cx.sprite.add_variable(Variable {
                     name: variable.to_string(),
+                    value: Constant::Number(0.0),
                 });
                 cx.compiled_ssa_vars
                     .insert(variable, CompiledSsaVar::Relevant(var.clone()));
@@ -490,6 +496,7 @@ fn store_result(
     } else {
         let var = cx.sprite.add_variable(Variable {
             name: variable.to_string(),
+            value: Constant::Number(0.0),
         });
         cx.sprite.put(block::set_variable(var.clone(), operand.s()));
         cx.compiled_ssa_vars
