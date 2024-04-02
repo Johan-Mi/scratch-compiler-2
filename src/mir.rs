@@ -201,6 +201,7 @@ impl Op {
             | "lt" | "eq" | "gt"
             | "not" | "and" | "or"
             | "join" | "to-string" | "to-num" | "length" | "letter" | "answer" | "pressing-key" | "timer" | "random"
+            | "x-pos" | "y-pos"
         ))
     }
 

@@ -139,3 +139,7 @@ fn stop-all {}
 fn timer -> Num {}
 
 fn wait(seconds _: Num) {}
+
+fn x-pos -> Num {}
+
+fn y-pos -> Num {}

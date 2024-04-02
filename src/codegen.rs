@@ -642,6 +642,8 @@ fn compile_regular_intrinsic(
         "stop-all" => f! { stop_all() },
         "timer" => f! { = timer() },
         "wait" => f! { wait(seconds) },
+        "x-pos" => f! { = x_position() },
+        "y-pos" => f! { = y_position() },
         _ => panic!("invalid intrinsic: {name:?}"),
     }
 }
