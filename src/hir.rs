@@ -251,7 +251,7 @@ impl Expression {
                 };
 
                 if let Ok(inner_ty) = inner.ty(Some(ty), tcx) {
-                    if inner_ty != *ty {
+                    if !(inner_ty == Ty::Never || inner_ty == *ty) {
                         tcx.diagnostics.error(
                             "type ascription mismatch",
                             [primary(
