@@ -199,7 +199,7 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
 
 fn check_return(ty: &Result<Ty, ()>, span: Span, tcx: &mut Context) {
     if let (Ok(return_ty), Ok(ty)) = (&tcx.function_return_ty, ty) {
-        if ty != return_ty {
+        if !(*ty == Ty::Never || ty == return_ty) {
             tcx.diagnostics.error(
                 "return type mismatch",
                 [primary(
