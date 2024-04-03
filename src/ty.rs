@@ -14,6 +14,7 @@ use std::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
+    Never,
     Unit,
     Num,
     String,
@@ -29,6 +30,7 @@ pub enum Ty {
 impl fmt::Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Never => write!(f, "Never"),
             Self::Unit => write!(f, "Unit"),
             Self::Num => write!(f, "Num"),
             Self::String => write!(f, "String"),
@@ -47,6 +49,7 @@ impl TryFrom<name::Builtin> for Ty {
 
     fn try_from(builtin: name::Builtin) -> Result<Self, ()> {
         match builtin {
+            name::Builtin::Never => Ok(Self::Never),
             name::Builtin::Unit => Ok(Self::Unit),
             name::Builtin::Num => Ok(Self::Num),
             name::Builtin::String => Ok(Self::String),
@@ -58,11 +61,11 @@ impl TryFrom<name::Builtin> for Ty {
 }
 
 impl Ty {
-    pub fn is_zero_sized(&self) -> bool {
-        *self == Self::Unit
+    pub const fn is_zero_sized(&self) -> bool {
+        matches!(self, Self::Never | Self::Unit)
     }
 
-    pub fn has_runtime_repr(&self) -> bool {
+    pub const fn has_runtime_repr(&self) -> bool {
         matches!(
             self,
             Self::Num | Self::String | Self::Bool
@@ -402,7 +405,8 @@ pub fn of_builtin_name(
     diagnostics: &mut Diagnostics,
 ) -> Result<Ty, ()> {
     match builtin {
-        name::Builtin::Unit
+        name::Builtin::Never
+        | name::Builtin::Unit
         | name::Builtin::Num
         | name::Builtin::String
         | name::Builtin::Bool

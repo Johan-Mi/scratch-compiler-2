@@ -12,6 +12,7 @@ pub enum Name {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Builtin {
+    Never,
     Unit,
     Num,
     String,
@@ -24,6 +25,7 @@ pub enum Builtin {
 impl Builtin {
     fn resolve(identifier: &str) -> Option<Self> {
         match identifier {
+            "Never" => Some(Self::Never),
             "Unit" => Some(Self::Unit),
             "Num" => Some(Self::Num),
             "String" => Some(Self::String),

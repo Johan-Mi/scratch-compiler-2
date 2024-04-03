@@ -261,7 +261,8 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         }
         hir::ExpressionKind::Variable(Name::Builtin(builtin)) => {
             match builtin {
-                name::Builtin::Unit
+                name::Builtin::Never
+                | name::Builtin::Unit
                 | name::Builtin::Num
                 | name::Builtin::String
                 | name::Builtin::Bool

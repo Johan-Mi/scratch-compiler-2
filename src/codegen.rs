@@ -209,7 +209,12 @@ fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
         Ty::Unit => None,
         Ty::Num | Ty::String => Some(ParameterKind::StringOrNumber),
         Ty::Bool => Some(ParameterKind::Boolean),
-        Ty::Sprite | Ty::Ty | Ty::Var(_) | Ty::List(_) | Ty::Generic(_) => {
+        Ty::Never
+        | Ty::Sprite
+        | Ty::Ty
+        | Ty::Var(_)
+        | Ty::List(_)
+        | Ty::Generic(_) => {
             unreachable!()
         }
     }
