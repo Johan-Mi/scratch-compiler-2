@@ -272,7 +272,7 @@ fn check_statement(
             if let Ok(body) = body {
                 let _ = check_block(body, tcx);
             }
-            Ok(Ty::Unit)
+            Ok(Ty::Never)
         }
         hir::StatementKind::While { condition, body }
         | hir::StatementKind::Until { condition, body } => {
