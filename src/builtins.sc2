@@ -92,6 +92,8 @@ fn change-x(by amount: Num) {}
 
 fn change-y(by amount: Num) {}
 
+fn clone-self {}
+
 fn erase-all {}
 
 fn go-to(x _: Num, y _: Num) {}

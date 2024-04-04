@@ -107,9 +107,11 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
     );
 }
 
+#[allow(clippy::enum_variant_names)]
 pub enum Special {
     WhenFlagClicked,
     WhenKeyPressed,
+    WhenCloned,
 }
 
 impl TryFrom<&str> for Special {
@@ -119,6 +121,7 @@ impl TryFrom<&str> for Special {
         match name {
             "when-flag-clicked" => Ok(Self::WhenFlagClicked),
             "when-key-pressed" => Ok(Self::WhenKeyPressed),
+            "when-cloned" => Ok(Self::WhenCloned),
             _ => Err(()),
         }
     }

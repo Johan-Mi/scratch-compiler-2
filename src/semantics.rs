@@ -137,6 +137,21 @@ impl SemanticVisitor<'_> {
                     );
                 }
             }
+            function::Special::WhenCloned => {
+                if !function.parameters.is_empty()
+                    || function
+                        .return_ty
+                        .as_ref()
+                        .is_ok_and(|it| *it != Ty::Unit)
+                {
+                    self.diagnostics.error(
+                    "special function `when-cloned` has incorrect signature",
+                    [primary(function.name.span, "")],
+                );
+                    self.diagnostics
+                        .note("expected signature: `fn when-cloned`", []);
+                }
+            }
         }
     }
 

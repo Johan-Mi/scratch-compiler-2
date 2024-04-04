@@ -236,6 +236,10 @@ fn compile_function(
             ));
             None
         }
+        Ok(function::Special::WhenCloned) => {
+            cx.sprite.start_script(block::when_cloned());
+            None
+        }
         Err(()) => {
             let compiled_ref = cx.compiled_functions.get_mut(&index).unwrap();
             cx.sprite
@@ -623,6 +627,10 @@ fn compile_regular_intrinsic(
         "ask" => f! { ask(question) },
         "change-x" => f! { change_x(amount) },
         "change-y" => f! { change_y(amount) },
+        "clone-self" => {
+            cx.sprite.clone_self();
+            None
+        }
         "erase-all" => f! { erase_all() },
         "go-to" => f! { go_to_xy(x, y) },
         "go-to-back-layer" => f! { go_to_back_layer() },
