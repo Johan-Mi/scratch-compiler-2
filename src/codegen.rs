@@ -240,6 +240,12 @@ fn compile_function(
             cx.sprite.start_script(block::when_cloned());
             None
         }
+        Ok(function::Special::WhenReceived) => {
+            cx.sprite.start_script(block::when_received(
+                function.tag.take().unwrap(),
+            ));
+            None
+        }
         Err(()) => {
             let compiled_ref = cx.compiled_functions.get_mut(&index).unwrap();
             cx.sprite
@@ -625,6 +631,7 @@ fn compile_regular_intrinsic(
         "join" => f! { = join(lhs, rhs) },
         "answer" => f! { = answer() },
         "ask" => f! { ask(question) },
+        "broadcast-and-wait" => f! { broadcast_and_wait(message) },
         "change-x" => f! { change_x(amount) },
         "change-y" => f! { change_y(amount) },
         "clone-self" => {

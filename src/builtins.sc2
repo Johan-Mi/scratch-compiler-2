@@ -88,6 +88,8 @@ fn answer -> String {}
 
 fn ask(_ question: String) {}
 
+fn broadcast-and-wait(_ message: String) {}
+
 fn change-x(by amount: Num) {}
 
 fn change-y(by amount: Num) {}

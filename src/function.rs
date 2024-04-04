@@ -112,6 +112,7 @@ pub enum Special {
     WhenFlagClicked,
     WhenKeyPressed,
     WhenCloned,
+    WhenReceived,
 }
 
 impl TryFrom<&str> for Special {
@@ -122,6 +123,7 @@ impl TryFrom<&str> for Special {
             "when-flag-clicked" => Ok(Self::WhenFlagClicked),
             "when-key-pressed" => Ok(Self::WhenKeyPressed),
             "when-cloned" => Ok(Self::WhenCloned),
+            "when-received" => Ok(Self::WhenReceived),
             _ => Err(()),
         }
     }

@@ -152,6 +152,24 @@ impl SemanticVisitor<'_> {
                         .note("expected signature: `fn when-cloned`", []);
                 }
             }
+            function::Special::WhenReceived => {
+                if !function.parameters.is_empty()
+                    || function
+                        .return_ty
+                        .as_ref()
+                        .is_ok_and(|it| *it != Ty::Unit)
+                    || function.tag.is_none()
+                {
+                    self.diagnostics.error(
+                    "special function `when-received` has incorrect signature",
+                    [primary(function.name.span, "")],
+                );
+                    self.diagnostics.note(
+                        "expected signature: `fn when-received \"message\"`",
+                        [],
+                    );
+                }
+            }
         }
     }
 
