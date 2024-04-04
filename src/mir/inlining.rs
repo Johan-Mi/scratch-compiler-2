@@ -4,6 +4,8 @@ use crate::mir::{
 };
 use std::{collections::HashMap, mem};
 
+use super::Call;
+
 pub fn inline(document: &mut Document, generator: &mut Generator) {
     while let Some(id) = document
         .functions
@@ -31,15 +33,7 @@ struct SsaVarRefresher<'a> {
 
 impl Visitor for SsaVarRefresher<'_> {
     fn visit_op(&mut self, op: &mut Op) {
-        let (Op::Call {
-            variable: Some(variable),
-            ..
-        }
-        | Op::Intrinsic {
-            variable: Some(variable),
-            ..
-        }) = op
-        else {
+        let Op::Call(Some(variable), _) = op else {
             return;
         };
         let new_var = self.generator.new_ssa_var();
@@ -68,11 +62,11 @@ impl Visitor for Inliner<'_> {
             .iter_mut()
             .enumerate()
             .find_map(|(index, op)| match op {
-                Op::Call {
-                    variable,
-                    function,
-                    args,
-                } if *function == self.id => Some((index, variable, args)),
+                Op::Call(variable, Call::Custom { function, args })
+                    if *function == self.id =>
+                {
+                    Some((index, variable, args))
+                }
                 _ => None,
             })
         {

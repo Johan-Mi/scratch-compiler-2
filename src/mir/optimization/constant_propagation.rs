@@ -2,18 +2,15 @@ use std::mem;
 
 use crate::mir::{
     visit::{SsaVarReplacer, Visitor},
-    Block, Op, Value,
+    Block, Call, Op, Value,
 };
 
 pub(super) fn propagate_constants(block: &mut Block) -> bool {
     let mut dirty = false;
     let mut index = 0;
     while index < block.ops.len() {
-        if let Op::Intrinsic {
-            variable: Some(variable),
-            name,
-            args,
-        } = &mut block.ops[index]
+        if let Op::Call(Some(variable), Call::Intrinsic { name, args }) =
+            &mut block.ops[index]
         {
             let variable = *variable;
             if let Some(value) = evaluate_intrinsic(name, args) {

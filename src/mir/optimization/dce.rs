@@ -33,10 +33,7 @@ struct Eliminator {
 
 impl Visitor for Eliminator {
     fn visit_op(&mut self, op: &mut Op) {
-        if let Op::Call { variable, .. }
-        | Op::Intrinsic { variable, .. }
-        | Op::For { variable, .. } = op
-        {
+        if let Op::Call(variable, _) | Op::For { variable, .. } = op {
             if matches!(variable, Some(var) if !self.used.contains(var)) {
                 *variable = None;
                 self.dirty = true;
@@ -52,7 +49,7 @@ pub(super) fn eliminate_useless_ops(block: &mut Block) -> bool {
 }
 
 fn is_useless(op: &Op) -> bool {
-    matches!(op, Op::Intrinsic { variable: None, .. } if !op.has_side_effects())
+    matches!(op, Op::Call(None, _) if !op.has_side_effects())
         || matches!(op,
             Op::If {
                 then, else_, ..

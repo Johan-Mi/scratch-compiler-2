@@ -1,11 +1,12 @@
 use crate::mir::{
+    Call,
     Imm::Num,
     Op,
     Value::{Imm, Var},
 };
 
 pub(super) fn icalize(op: &mut Op) -> bool {
-    if let Op::Intrinsic { name, args, .. } = op {
+    if let Op::Call(_, Call::Intrinsic { name, args }) = op {
         if matches!(&**name, "add" | "mul")
             && matches!(&**args, [Imm(_), Var(_)])
         {

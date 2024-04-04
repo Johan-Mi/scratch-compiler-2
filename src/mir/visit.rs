@@ -1,4 +1,4 @@
-use super::{Block, Document, Function, Op, SsaVar, Value};
+use super::{Block, Call, Document, Function, Op, SsaVar, Value};
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the MIR.
@@ -53,7 +53,10 @@ pub(super) trait Visitor {
                 self.visit_value(condition);
                 self.traverse_block(body);
             }
-            Op::Call { args, .. } | Op::Intrinsic { args, .. } => {
+            Op::Call(
+                _,
+                Call::Custom { args, .. } | Call::Intrinsic { args, .. },
+            ) => {
                 for arg in args {
                     self.visit_value(arg);
                 }

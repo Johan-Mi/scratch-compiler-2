@@ -1,4 +1,4 @@
-use super::{Document, Op, Visitor};
+use super::{Call, Document, Op, Visitor};
 use std::collections::BTreeSet;
 
 pub fn perform(document: &mut Document) {
@@ -32,7 +32,7 @@ struct DceVisitor {
 
 impl Visitor for DceVisitor {
     fn visit_op(&mut self, op: &mut Op) {
-        let Op::Call { function, .. } = *op else {
+        let Op::Call(_, Call::Custom { function, .. }) = *op else {
             return;
         };
         if !self.required_functions.contains(&function) {

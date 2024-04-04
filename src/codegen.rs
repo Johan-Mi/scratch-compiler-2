@@ -327,16 +327,10 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             compile_block(body, cx);
             cx.sprite.insert_at(after);
         }
-        mir::Op::Call {
-            variable,
-            function,
-            args,
-        } => compile_function_call(function, args, variable, cx),
-        mir::Op::Intrinsic {
-            variable,
-            name,
-            args,
-        } => {
+        mir::Op::Call(variable, mir::Call::Custom { function, args }) => {
+            compile_function_call(function, args, variable, cx);
+        }
+        mir::Op::Call(variable, mir::Call::Intrinsic { name, args }) => {
             let res = compile_intrinsic(&name, args, cx);
             if let Some(variable) = variable {
                 store_result(variable, res.unwrap(), cx);

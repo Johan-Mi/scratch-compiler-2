@@ -182,21 +182,12 @@ pub enum Op {
         times: Value,
         body: Block,
     },
-    Call {
-        variable: Option<SsaVar>,
-        function: usize,
-        args: Vec<Value>,
-    },
-    Intrinsic {
-        variable: Option<SsaVar>,
-        name: String,
-        args: Vec<Value>,
-    },
+    Call(Option<SsaVar>, Call),
 }
 
 impl Op {
     fn has_side_effects(&self) -> bool {
-        !matches!(self, Self::Intrinsic { name, .. } if matches!(&**name,
+        !matches!(self, Self::Call(_, Call::Intrinsic { name, ..}) if matches!(&**name,
             "add" | "sub" | "mul" | "div" | "mod"
             | "lt" | "eq" | "gt"
             | "not" | "and" | "or"
@@ -210,4 +201,10 @@ impl Op {
             || matches!(self, Self::If { then, else_, .. }
                 if then.is_guaranteed_to_diverge() && else_.is_guaranteed_to_diverge())
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum Call {
+    Custom { function: usize, args: Vec<Value> },
+    Intrinsic { name: String, args: Vec<Value> },
 }

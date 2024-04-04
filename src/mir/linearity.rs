@@ -1,4 +1,4 @@
-use super::{Block, Function, Op, SsaVar, Value, Visitor};
+use super::{Block, Call, Function, Op, SsaVar, Value, Visitor};
 use std::{
     collections::{HashMap, HashSet},
     slice,
@@ -44,14 +44,7 @@ impl Visitor for Finder {
         let mut candidates = HashSet::new();
         for op in block.ops.iter().rev() {
             let this_is_linear = match *op {
-                Op::Call {
-                    variable: Some(variable),
-                    ..
-                }
-                | Op::Intrinsic {
-                    variable: Some(variable),
-                    ..
-                } if candidates.remove(&variable) => {
+                Op::Call(Some(variable), _) if candidates.remove(&variable) => {
                     self.is_linear.insert(variable);
                     true
                 }
@@ -83,6 +76,9 @@ fn direct_args(op: &Op) -> &[Value] {
         }
         | Op::For { times: value, .. } => slice::from_ref(value),
         Op::Forever { .. } => &[],
-        Op::Call { args, .. } | Op::Intrinsic { args, .. } => args,
+        Op::Call(
+            _,
+            Call::Custom { args, .. } | Call::Intrinsic { args, .. },
+        ) => args,
     }
 }

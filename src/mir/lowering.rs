@@ -1,5 +1,6 @@
 use super::{
-    Block, Document, Function, Generator, Op, Parameter, RealVar, Sprite, Value,
+    Block, Call, Document, Function, Generator, Op, Parameter, RealVar, Sprite,
+    Value,
 };
 use crate::{
     function::ResolvedCalls,
@@ -141,11 +142,13 @@ fn lower_variable_initialization(
 ) {
     let value = lower_expression(initializer, cx).unwrap();
     if let Some(&real_var) = cx.real_vars.get(&variable) {
-        cx.block.ops.push(Op::Intrinsic {
-            variable: None,
-            name: "set".to_owned(),
-            args: vec![Value::Lvalue(real_var), value],
-        });
+        cx.block.ops.push(Op::Call(
+            None,
+            Call::Intrinsic {
+                name: "set".to_owned(),
+                args: vec![Value::Lvalue(real_var), value],
+            },
+        ));
     } else {
         cx.vars.insert(variable, value);
     }
@@ -203,11 +206,13 @@ fn lower_statement(
             //    into `while not(condition) { ... }`
             let condition = lower_expression(condition, cx).unwrap();
             let not_condition = cx.generator.new_ssa_var();
-            cx.block.ops.push(Op::Intrinsic {
-                variable: Some(not_condition),
-                name: "not".to_owned(),
-                args: vec![condition],
-            });
+            cx.block.ops.push(Op::Call(
+                Some(not_condition),
+                Call::Intrinsic {
+                    name: "not".to_owned(),
+                    args: vec![condition],
+                },
+            ));
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::While {
                 condition: Value::Var(not_condition),
@@ -249,11 +254,13 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         hir::ExpressionKind::Variable(Name::User(variable)) => {
             if let Some(&real_var) = cx.real_vars.get(&variable) {
                 let ssa_var = cx.generator.new_ssa_var();
-                cx.block.ops.push(Op::Intrinsic {
-                    variable: Some(ssa_var),
-                    name: "get".to_owned(),
-                    args: vec![Value::Lvalue(real_var)],
-                });
+                cx.block.ops.push(Op::Call(
+                    Some(ssa_var),
+                    Call::Intrinsic {
+                        name: "get".to_owned(),
+                        args: vec![Value::Lvalue(real_var)],
+                    },
+                ));
                 Some(Value::Var(ssa_var))
             } else {
                 Some(cx.vars[&variable].clone())
@@ -290,19 +297,17 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             let variable = signature
                 .returns_something
                 .then(|| cx.generator.new_ssa_var());
-            cx.block.ops.push(if signature.is_intrinsic {
-                Op::Intrinsic {
-                    variable,
-                    name: name.to_owned(),
-                    args,
-                }
-            } else {
-                Op::Call {
-                    variable,
-                    function,
-                    args,
-                }
-            });
+            cx.block.ops.push(Op::Call(
+                variable,
+                if signature.is_intrinsic {
+                    Call::Intrinsic {
+                        name: name.to_owned(),
+                        args,
+                    }
+                } else {
+                    Call::Custom { function, args }
+                },
+            ));
 
             variable.map(Value::Var)
         }
@@ -311,18 +316,22 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
         }
         hir::ExpressionKind::ListLiteral(elements) => {
             let list = cx.generator.new_real_list();
-            cx.block.ops.push(Op::Intrinsic {
-                variable: None,
-                name: "delete-all".to_owned(),
-                args: vec![Value::List(list)],
-            });
+            cx.block.ops.push(Op::Call(
+                None,
+                Call::Intrinsic {
+                    name: "delete-all".to_owned(),
+                    args: vec![Value::List(list)],
+                },
+            ));
             for element in elements {
                 let element = lower_expression(element, cx).unwrap();
-                cx.block.ops.push(Op::Intrinsic {
-                    variable: None,
-                    name: "push".to_owned(),
-                    args: vec![Value::List(list), element],
-                });
+                cx.block.ops.push(Op::Call(
+                    None,
+                    Call::Intrinsic {
+                        name: "push".to_owned(),
+                        args: vec![Value::List(list), element],
+                    },
+                ));
             }
             Some(Value::List(list))
         }
