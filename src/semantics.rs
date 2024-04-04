@@ -103,73 +103,39 @@ impl SemanticVisitor<'_> {
             );
         }
 
-        match special {
-            function::Special::WhenFlagClicked => {
-                if !function.parameters.is_empty()
-                    || function
-                        .return_ty
-                        .as_ref()
-                        .is_ok_and(|it| *it != Ty::Unit)
-                {
-                    self.diagnostics.error(
-                    "special function `when-flag-clicked` has incorrect signature",
-                    [primary(function.name.span, "")],
-                );
-                    self.diagnostics
-                        .note("expected signature: `fn when-flag-clicked`", []);
-                }
-            }
-            function::Special::WhenKeyPressed => {
-                if !function.parameters.is_empty()
-                    || function
-                        .return_ty
-                        .as_ref()
-                        .is_ok_and(|it| *it != Ty::Unit)
-                    || function.tag.is_none()
-                {
-                    self.diagnostics.error(
-                    "special function `when-key-pressed` has incorrect signature",
-                    [primary(function.name.span, "")],
-                );
-                    self.diagnostics.note(
-                        "expected signature: `fn when-key-pressed \"key-name\"`",
-                        [],
-                    );
-                }
-            }
-            function::Special::WhenCloned => {
-                if !function.parameters.is_empty()
-                    || function
-                        .return_ty
-                        .as_ref()
-                        .is_ok_and(|it| *it != Ty::Unit)
-                {
-                    self.diagnostics.error(
-                    "special function `when-cloned` has incorrect signature",
-                    [primary(function.name.span, "")],
-                );
-                    self.diagnostics
-                        .note("expected signature: `fn when-cloned`", []);
-                }
-            }
-            function::Special::WhenReceived => {
-                if !function.parameters.is_empty()
-                    || function
-                        .return_ty
-                        .as_ref()
-                        .is_ok_and(|it| *it != Ty::Unit)
-                    || function.tag.is_none()
-                {
-                    self.diagnostics.error(
-                    "special function `when-received` has incorrect signature",
-                    [primary(function.name.span, "")],
-                );
-                    self.diagnostics.note(
-                        "expected signature: `fn when-received \"message\"`",
-                        [],
-                    );
-                }
-            }
+        if let Some(expected_signature) = match special {
+            function::Special::WhenFlagClicked => (!function
+                .parameters
+                .is_empty()
+                || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit))
+            .then_some("fn when-flag-clicked"),
+            function::Special::WhenKeyPressed => (!function
+                .parameters
+                .is_empty()
+                || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
+                || function.tag.is_none())
+            .then_some("fn when-key-pressed \"key-name\""),
+            function::Special::WhenCloned => (!function.parameters.is_empty()
+                || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit))
+            .then_some("fn when-cloned"),
+            function::Special::WhenReceived => (!function
+                .parameters
+                .is_empty()
+                || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
+                || function.tag.is_none())
+            .then_some("fn when-received \"message\""),
+        } {
+            self.diagnostics.error(
+                format!(
+                    "special function `{}` has incorrect signature",
+                    *function.name,
+                ),
+                [primary(function.name.span, "")],
+            );
+            self.diagnostics.note(
+                format!("expected signature: `{expected_signature}`"),
+                [],
+            );
         }
     }
 
