@@ -63,6 +63,10 @@ impl Formatter {
                         self.indentation =
                             self.indentation.saturating_sub(INDENTATION_SIZE);
                         indented = false;
+                    } else if node.kind() == METHOD_CALL && token.kind() == DOT
+                    {
+                        self.indentation += INDENTATION_SIZE;
+                        indented = true;
                     }
                     self.token(
                         &token,
