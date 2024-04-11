@@ -110,6 +110,8 @@ pub enum SyntaxKind {
 
     #[token("import")]
     KW_IMPORT,
+    #[token("struct")]
+    KW_STRUCT,
     #[token("sprite")]
     KW_SPRITE,
     #[token("inline")]
