@@ -35,6 +35,8 @@ pub enum SyntaxKind {
 
     DOCUMENT,
     IMPORT,
+    STRUCT,
+    FIELD_DEFINITION,
     SPRITE,
     COSTUME_LIST,
     COSTUME,
@@ -289,6 +291,7 @@ impl Parser<'_> {
     fn parse_anything(&mut self) {
         match self.peek() {
             KW_IMPORT => self.parse_import(),
+            KW_STRUCT => self.parse_struct(),
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
             KW_COSTUMES => self.parse_costume_list(),
@@ -343,6 +346,32 @@ impl Parser<'_> {
         self.start_node(IMPORT);
         self.bump(); // KW_IMPORT
         self.expect(STRING);
+        self.builder.finish_node();
+    }
+
+    fn parse_struct(&mut self) {
+        self.start_node(STRUCT);
+        self.bump(); // KW_STRUCT
+        if !self.at(LBRACE) {
+            self.expect(IDENTIFIER);
+        }
+        if self.eat(LBRACE) {
+            while !self.at(EOF) && !self.eat(RBRACE) {
+                if self.at(IDENTIFIER) {
+                    self.parse_field_definition();
+                } else {
+                    self.error();
+                }
+            }
+        }
+        self.builder.finish_node();
+    }
+
+    fn parse_field_definition(&mut self) {
+        self.start_node(FIELD_DEFINITION);
+        self.bump(); // IDENTIFIER
+        self.expect(COLON);
+        self.parse_expression();
         self.builder.finish_node();
     }
 
@@ -736,6 +765,7 @@ impl Parser<'_> {
     fn parse_top_level_item(&mut self) {
         match self.peek() {
             KW_IMPORT => self.parse_import(),
+            KW_STRUCT => self.parse_struct(),
             KW_SPRITE => self.parse_sprite(),
             KW_INLINE | KW_FN => self.parse_function(),
             KW_LET => self.parse_let(),
