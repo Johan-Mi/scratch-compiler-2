@@ -60,6 +60,30 @@ impl Import {
     }
 }
 
+ast_node!(Struct: STRUCT);
+
+impl Struct {
+    pub fn name(&self) -> Option<SyntaxToken> {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+    }
+
+    pub fn fields(&self) -> impl Iterator<Item = Field> {
+        rowan::ast::support::children(&self.syntax)
+    }
+}
+
+ast_node!(Field: FIELD_DEFINITION);
+
+impl Field {
+    pub fn name(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+    }
+
+    pub fn ty(&self) -> Option<Expression> {
+        rowan::ast::support::child(&self.syntax)
+    }
+}
+
 ast_node!(Sprite: SPRITE);
 
 impl Sprite {
