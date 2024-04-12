@@ -372,6 +372,7 @@ impl Parser<'_> {
         self.bump(); // IDENTIFIER
         self.expect(COLON);
         self.parse_expression();
+        self.eat(COMMA);
         self.builder.finish_node();
     }
 
