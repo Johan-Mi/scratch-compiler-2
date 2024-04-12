@@ -5,7 +5,7 @@ pub use visit::Visitor;
 
 use crate::{
     comptime::{self, Value},
-    diagnostics::{primary, secondary},
+    diagnostics::{primary, secondary, Diagnostics},
     function,
     name::Name,
     parser::{SyntaxKind, SyntaxToken},
@@ -29,7 +29,20 @@ pub struct Document<Func = Function> {
 }
 
 impl<Func> Document<Func> {
-    pub fn merge(&mut self, other: Self) {
+    pub fn merge(&mut self, other: Self, diagnostics: &mut Diagnostics) {
+        for (name, struct_) in other.structs {
+            if let Some(old_struct) = self.structs.get(&name) {
+                diagnostics.error(
+                    format!("multiple definitions of struct `{name}`"),
+                    [
+                        primary(struct_.name_span, ""),
+                        primary(old_struct.name_span, ""),
+                    ],
+                );
+            } else {
+                self.structs.insert(name, struct_);
+            }
+        }
         for (name, sprite) in other.sprites {
             match self.sprites.entry(name) {
                 Entry::Occupied(mut existing) => {

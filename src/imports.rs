@@ -46,7 +46,7 @@ pub fn import(
             crate::hir::Document::lower(&document, generator, &file, tcx);
         crate::linter::lint(&document, &file, tcx.diagnostics);
 
-        root.merge(document);
+        root.merge(document, tcx.diagnostics);
     }
 
     Ok(())
