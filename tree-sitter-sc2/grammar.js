@@ -28,7 +28,7 @@ module.exports = grammar({
         "}",
       ),
 
-    field_definition: $ => seq($.identifier, ":", $._expression),
+    field_definition: $ => seq($.identifier, ":", $._expression, optional(",")),
 
     sprite: $ => seq("sprite", $.identifier, $.sprite_body),
 
