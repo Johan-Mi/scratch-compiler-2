@@ -1,7 +1,9 @@
+#![allow(clippy::similar_names)]
+
 use super::{
     parse_string_literal, Block, Costume, Document, Expression, ExpressionKind,
     Function, GlobalVariable, Parameter, Result, Sprite, Statement,
-    StatementKind,
+    StatementKind, Struct,
 };
 use crate::{
     ast,
@@ -23,6 +25,29 @@ impl Document {
         file: &File,
         tcx: &mut Context,
     ) -> Self {
+        let mut structs = BTreeMap::<_, Struct>::new();
+
+        for struct_ in ast.structs() {
+            let Ok((name, struct_)) = Struct::lower(&struct_, file, tcx) else {
+                continue;
+            };
+
+            if let Some(old_struct) = structs.get(&name) {
+                tcx.diagnostics.error(
+                    format!("redefinition of struct `{name}`"),
+                    [
+                        primary(struct_.name_span, "defined here"),
+                        primary(
+                            old_struct.name_span,
+                            "previously defined here",
+                        ),
+                    ],
+                );
+            } else {
+                structs.insert(name, struct_);
+            }
+        }
+
         let mut sprites = BTreeMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
@@ -83,10 +108,54 @@ impl Document {
             .collect();
 
         Self {
+            structs,
             sprites,
             functions,
             variables,
         }
+    }
+}
+
+impl Struct {
+    fn lower(
+        ast: &ast::Struct,
+        file: &File,
+        tcx: &mut Context,
+    ) -> Result<(String, Self)> {
+        let name = ast.name().ok_or_else(|| {
+            tcx.diagnostics.error(
+                "struct has no name",
+                [primary(
+                    span(file, ast.syntax().text_range()),
+                    "defined here",
+                )],
+            );
+        })?;
+
+        let name_span = span(file, name.text_range());
+
+        let fields = ast
+            .fields()
+            .map(|it| Self::lower_field(&it, file, tcx))
+            .collect();
+
+        Ok((name.to_string(), Self { name_span, fields }))
+    }
+
+    fn lower_field(
+        ast: &ast::Field,
+        file: &File,
+        tcx: &mut Context,
+    ) -> (String, Expression) {
+        (
+            ast.name().to_string(),
+            Expression::lower_opt(
+                ast.ty(),
+                file,
+                tcx,
+                ast.syntax().text_range(),
+            ),
+        )
     }
 }
 

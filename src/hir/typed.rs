@@ -34,6 +34,7 @@ pub struct Parameter {
 
 pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
     Document {
+        structs: it.structs,
         sprites: it.sprites,
         functions: it
             .functions

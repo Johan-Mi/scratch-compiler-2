@@ -22,6 +22,7 @@ type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
 pub struct Document<Func = Function> {
+    pub structs: BTreeMap<String, Struct>,
     pub sprites: BTreeMap<String, Sprite>,
     pub functions: BTreeMap<usize, Func>,
     pub variables: Vec<GlobalVariable>,
@@ -49,6 +50,12 @@ pub struct GlobalVariable {
     // FIXME: ensure that truly global variables belong to the stage and not to
     // a sprite that uses them and just so happens to get compiled earlier
     owning_sprite: String,
+}
+
+#[derive(Debug)]
+pub struct Struct {
+    name_span: Span,
+    pub fields: Vec<(String, Expression)>,
 }
 
 #[derive(Debug)]
