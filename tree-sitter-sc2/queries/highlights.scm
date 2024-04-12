@@ -28,6 +28,7 @@
 "return" @keyword.control.return
 "fn" @keyword.function
 [
+  "struct"
   "sprite"
   "let"
 ] @keyword.storage.type
@@ -69,6 +70,9 @@
 
 (named_argument
   . (identifier) @label)
+
+(field_definition
+  . (identifier) @variable.other.member)
 
 (generics
   (identifier) @type.parameter)

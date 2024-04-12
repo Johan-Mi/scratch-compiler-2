@@ -10,6 +10,7 @@ module.exports = grammar({
       repeat(
         choice(
           $.import,
+          $.struct,
           $.sprite,
           $.function_definition,
           $.variable_definition,
@@ -17,6 +18,17 @@ module.exports = grammar({
       ),
 
     import: $ => seq("import", $.string_literal),
+
+    struct: $ =>
+      seq(
+        "struct",
+        optional($.identifier),
+        "{",
+        repeat($.field_definition),
+        "}",
+      ),
+
+    field_definition: $ => seq($.identifier, ":", $._expression),
 
     sprite: $ => seq("sprite", $.identifier, $.sprite_body),
 
