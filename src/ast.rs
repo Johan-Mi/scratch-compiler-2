@@ -39,6 +39,10 @@ impl Document {
         rowan::ast::support::children(&self.syntax)
     }
 
+    pub fn structs(&self) -> impl Iterator<Item = Struct> {
+        rowan::ast::support::children(&self.syntax)
+    }
+
     pub fn sprites(&self) -> impl Iterator<Item = Sprite> {
         rowan::ast::support::children(&self.syntax)
     }

@@ -57,9 +57,10 @@ fn all_in_exact_scope_at(
     match scope.kind() {
         DOCUMENT => {
             let document = ast::Document::cast(scope).unwrap();
+            let structs = document.structs().filter_map(|it| it.name());
             let sprites = document.sprites().filter_map(|sprite| sprite.name());
             let lets = document.lets().filter_map(|it| it.variable());
-            Box::new(sprites.chain(lets))
+            Box::new(structs.chain(sprites).chain(lets))
         }
         SPRITE => Box::new(
             ast::Sprite::cast(scope)
