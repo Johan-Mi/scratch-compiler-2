@@ -18,6 +18,17 @@ To keep the grammar simple, there are no block comments.
 Identifiers use the regex `[\p{XID_Start}_][\p{XID_Continue}-]*`.
 Notably, this includes hyphens, which should be used instead of underscores.
 
+Following are some examples of valid identifiers:
+
+- `temp`
+- `Type`
+- `LOUD-VARIABLE`
+- `the-number-42`
+- `XML-HTTP-Request`
+- `smörgåsbord`
+- `π`
+- `Δx`
+
 ## Functions
 
 TODO
