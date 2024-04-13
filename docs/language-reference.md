@@ -34,6 +34,22 @@ There are three primitive types:
 - `String`: strings of characters
 - `Bool`: `true` or `false`
 
+### Aggregate types
+
+> [!WARNING]
+> Aggregate types are not fully implemented and are not usable yet.
+
+Aggregate types, also known as *product types* or *structs*, consist of named
+fields of other types. They are defined with the `struct` keyword:
+
+```sc2
+struct Cat {
+    name: String,
+    age: Number,
+    is-fluffy: Bool,
+}
+```
+
 ### Variables
 
 Variables are defined with the `let` keyword:
