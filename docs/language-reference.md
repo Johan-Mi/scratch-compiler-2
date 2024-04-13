@@ -119,7 +119,7 @@ A variable containing a `T` has type `Var[T]`. This type cannot be passed around
 at runtime, but you can use it as a `comptime` parameter:
 
 ```sc2
-fn multiply-by-10(_ comptime var: Var[Num]) {
+inline fn multiply-by-10(_ comptime var: Var[Num]) {
     # Since `var` is a function parameter, it does not implicitly decay to its
     # value. We must therefore use `get` explicitly.
     #
