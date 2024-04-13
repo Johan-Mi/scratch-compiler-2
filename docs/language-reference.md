@@ -121,4 +121,16 @@ let my-empty-list-of-numbers = [] as List[Num]
 
 ### Type aliases
 
-TODO
+> [!WARNING]
+> Type aliases are not fully supported yet due to limitations of the compiler's
+> intermediate representations. Expect crashes.
+
+Since types are values, variables can be used as type aliases:
+
+```sc2
+let Acceleration = Num
+
+fn g -> Acceleration {
+    9.82
+}
+```
