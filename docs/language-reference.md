@@ -1,6 +1,6 @@
 # Language Reference
 
-> [!NOTE]
+> [!WARNING]
 > This documentation is a work in progress.
 
 ## Syntax
