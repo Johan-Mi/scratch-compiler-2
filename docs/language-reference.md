@@ -28,7 +28,11 @@ TODO
 
 ### Primitive types
 
-TODO
+There are three primitive types:
+
+- `Num`: 64-bit floating point numbers
+- `String`: strings of characters
+- `Bool`: `true` or `false`
 
 ### Variables
 
