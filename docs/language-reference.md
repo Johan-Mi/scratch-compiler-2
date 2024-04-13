@@ -106,7 +106,7 @@ fn multiply-by-10(_ comptime var: Var[Num]) {
     # Since `var` is a function parameter, it does not implicitly decay to its
     # value. We must therefore use `get` explicitly.
     #
-    # The signature of get is `fn get[T](_ comptime var: Var[T]) -> T`.
+    # The signature of `get` is `fn get[T](_ comptime var: Var[T]) -> T`.
     # This means that it can handle variables of any type.
     var = get(var) * 10
 }
