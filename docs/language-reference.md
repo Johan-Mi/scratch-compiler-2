@@ -40,7 +40,16 @@ TODO
 
 ### Type ascription
 
-TODO
+In some cases, the type of an expression is ambiguous.
+To fix this, you can use type ascription to specify an explicit type:
+
+```sc2
+# error: cannot infer type of empty list literal
+let my-empty-list-of-numbers = []
+
+# OK
+let my-empty-list-of-numbers = [] as List[Num]
+```
 
 ## Metaprogramming
 
