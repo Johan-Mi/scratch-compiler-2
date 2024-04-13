@@ -5,12 +5,18 @@
 
 ## Syntax
 
+SC2 uses a Rust-like syntax with some simplifications
+that make semicolons unnecessary.
+
 ### Comments
 
 Line comments start with `#`.
 To keep the grammar simple, there are no block comments.
 
-TODO
+### Identifiers
+
+Identifiers use the regex `[\p{XID_Start}_][\p{XID_Continue}-]*`.
+Notably, this includes hyphens, which should be used instead of underscores.
 
 ## Functions
 
