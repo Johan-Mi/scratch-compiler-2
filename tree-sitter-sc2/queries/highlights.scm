@@ -87,4 +87,9 @@
   (#match? @type.builtin "^(Never|Unit|Num|String|Bool|Var|List|Type)$")
 )
 
+(
+  (identifier) @type
+  (#match? @type "^[A-Z]")
+)
+
 (identifier) @variable
