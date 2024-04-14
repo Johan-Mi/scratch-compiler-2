@@ -76,6 +76,23 @@ for 𝐯𝐚𝐫 𝐭𝐢𝐦𝐞𝐬 {
 }
 ```
 
+### Operator overloading
+
+The following binary operators desugar to function calls
+and can therefore be overloaded.
+
+| Operator | Function |
+|----------|----------|
+| +        | add      |
+| -        | sub      |
+| *        | mul      |
+| /        | div      |
+| %        | mod      |
+| <        | lt       |
+| ==       | eq       |
+| >        | gt       |
+| =        | set      |
+
 ## Type system
 
 TODO
