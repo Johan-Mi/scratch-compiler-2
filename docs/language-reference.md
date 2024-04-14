@@ -172,7 +172,37 @@ multiply-by-10(&n)
 
 ### Lists
 
-TODO
+A list can contain any number of elements of a single type.
+You can create a list by assigning a list literal to a variable:
+
+```sc2
+let primes = [2, 3, 5, 7, 11]
+```
+
+Lists, unlike primitive types, use reference semantics. This means that each
+list literal has a sense of "identity" and reassigning it to a new variable
+won't create a new list:
+
+```sc2
+let original = [1]
+let aliased = original
+aliased.push(2)
+# `original` now contains 1 and 2.
+```
+
+A list of `T`s has type `List[T]` and, like variables, can be used as a
+`comptime` function parameter:
+
+```sc2
+fn first-number(of comptime numbers: List[Num]) -> Num {
+    numbers.at(1)
+}
+
+let squares = [1, 4, 9, 16]
+let one = first-number(of: squares)
+```
+
+There are several intrinsics for list manipulation, see `builtins.sc2`.
 
 ### Type ascription
 
