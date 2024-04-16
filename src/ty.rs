@@ -148,6 +148,13 @@ pub fn check<'tcx>(
 ) {
     tcx.functions = &document.functions;
 
+    tcx.variable_types.extend(
+        document
+            .structs
+            .values()
+            .map(|struct_| (struct_.name_token.clone(), Ok(Ty::Ty))),
+    );
+
     tcx.comptime_known_variables
         .extend(document.structs.iter().map(|(name, struct_)| {
             (
