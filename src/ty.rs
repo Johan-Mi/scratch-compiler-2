@@ -148,6 +148,19 @@ pub fn check<'tcx>(
 ) {
     tcx.functions = &document.functions;
 
+    tcx.comptime_known_variables
+        .extend(document.structs.iter().map(|(name, struct_)| {
+            (
+                struct_.name_token.clone(),
+                Some(comptime::Value::Ty(Ty::Struct {
+                    name: Spanned {
+                        node: name.clone(),
+                        span: struct_.name_span,
+                    },
+                })),
+            )
+        }));
+
     for variable in &document.variables {
         check_global_variable(variable, tcx);
     }

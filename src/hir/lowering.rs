@@ -139,7 +139,14 @@ impl Struct {
             .map(|it| Self::lower_field(&it, file, tcx))
             .collect();
 
-        Ok((name.to_string(), Self { name_span, fields }))
+        Ok((
+            name.to_string(),
+            Self {
+                name_span,
+                name_token: name,
+                fields,
+            },
+        ))
     }
 
     fn lower_field(

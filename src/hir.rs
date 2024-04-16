@@ -68,6 +68,7 @@ pub struct GlobalVariable {
 #[derive(Debug)]
 pub struct Struct {
     name_span: Span,
+    name_token: SyntaxToken,
     pub fields: Vec<Spanned<Field>>,
 }
 

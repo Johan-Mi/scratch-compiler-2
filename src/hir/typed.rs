@@ -11,7 +11,8 @@ use codemap::{Span, Spanned};
 pub type Document = super::Document<Function, Struct>;
 
 pub struct Struct {
-    name_span: Span,
+    pub name_span: Span,
+    pub name_token: SyntaxToken,
     pub fields: Vec<Spanned<Field>>,
 }
 
@@ -112,6 +113,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
 pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
     Struct {
         name_span: it.name_span,
+        name_token: it.name_token,
         fields: it
             .fields
             .into_iter()
