@@ -604,11 +604,7 @@ fn compile_regular_intrinsic(
         "asin" => Some(mathop("asin", arguments, cx)),
         "acos" => Some(mathop("acos", arguments, cx)),
         "atan" => Some(mathop("atan", arguments, cx)),
-        "not" => {
-            let [operand] = arguments.try_into().ok().unwrap();
-            let operand = operand.b(&mut cx.sprite);
-            Some(B(cx.sprite.not(operand)))
-        }
+        "not" => Some(not(arguments, cx)),
         "and" => {
             let [lhs, rhs] = arguments.try_into().ok().unwrap();
             let lhs = lhs.b(&mut cx.sprite);
@@ -659,6 +655,15 @@ fn compile_regular_intrinsic(
         "y-pos" => f! { = y_position() },
         _ => panic!("invalid intrinsic: {name:?}"),
     }
+}
+
+fn not(
+    arguments: Vec<CompiledOperand>,
+    cx: &mut Context<'_>,
+) -> CompiledOperand {
+    let [operand] = arguments.try_into().ok().unwrap();
+    let operand = operand.b(&mut cx.sprite);
+    B(cx.sprite.not(operand))
 }
 
 fn mathop(
