@@ -93,7 +93,10 @@ fn constructor(name: &str, struct_: &Struct) -> Function {
                 span: field.span,
             })
             .collect(),
-        return_ty: todo!(),
+        return_ty: Spanned {
+            node: Ok(Ty::Struct),
+            span: struct_.name_span,
+        },
         body: Block::default(),
         is_from_builtins: false,
         is_intrinsic: true,

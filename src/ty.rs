@@ -25,6 +25,8 @@ pub enum Ty {
     Var(Box<Self>),
     List(Box<Self>),
     Generic(SyntaxToken),
+    // TODO: which struct is it?
+    Struct,
 }
 
 impl fmt::Display for Ty {
@@ -40,6 +42,7 @@ impl fmt::Display for Ty {
             Self::Var(inner) => write!(f, "Var[{inner}]"),
             Self::List(inner) => write!(f, "List[{inner}]"),
             Self::Generic(token) => write!(f, "{token}"),
+            Self::Struct => write!(f, "Struct"),
         }
     }
 }
