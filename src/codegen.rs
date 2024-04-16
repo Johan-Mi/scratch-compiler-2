@@ -215,7 +215,7 @@ fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
         | Ty::Var(_)
         | Ty::List(_)
         | Ty::Generic(_)
-        | Ty::Struct => unreachable!(),
+        | Ty::Struct { .. } => unreachable!(),
     }
 }
 

@@ -77,7 +77,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
     Function {
         owning_sprite: None,
         name: Spanned {
-            node: name,
+            node: name.clone(),
             span: struct_.name_span,
         },
         tag: None,
@@ -94,7 +94,12 @@ fn constructor(name: String, struct_: &Struct) -> Function {
             })
             .collect(),
         return_ty: Spanned {
-            node: Ok(Ty::Struct),
+            node: Ok(Ty::Struct {
+                name: Spanned {
+                    node: name,
+                    span: struct_.name_span,
+                },
+            }),
             span: struct_.name_span,
         },
         body: Block::default(),

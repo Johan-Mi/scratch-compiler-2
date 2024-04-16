@@ -6,7 +6,7 @@ use crate::{
     name::{self, Name},
     parser::SyntaxToken,
 };
-use codemap::Span;
+use codemap::{Span, Spanned};
 use std::{
     collections::{BTreeMap, HashMap},
     fmt,
@@ -26,7 +26,9 @@ pub enum Ty {
     List(Box<Self>),
     Generic(SyntaxToken),
     // TODO: which struct is it?
-    Struct,
+    Struct {
+        name: Spanned<String>,
+    },
 }
 
 impl fmt::Display for Ty {
@@ -42,7 +44,7 @@ impl fmt::Display for Ty {
             Self::Var(inner) => write!(f, "Var[{inner}]"),
             Self::List(inner) => write!(f, "List[{inner}]"),
             Self::Generic(token) => write!(f, "{token}"),
-            Self::Struct => write!(f, "Struct"),
+            Self::Struct { name } => write!(f, "{}", name.node),
         }
     }
 }
@@ -71,7 +73,7 @@ impl Ty {
     pub const fn has_runtime_repr(&self) -> bool {
         matches!(
             self,
-            Self::Num | Self::String | Self::Bool | Self::Struct
+            Self::Num | Self::String | Self::Bool | Self::Struct { .. }
             // Generics are limited to runtime types for now.
             | Self::Generic(_)
         ) || self.is_zero_sized()
