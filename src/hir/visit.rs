@@ -16,7 +16,7 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
 
     fn visit_expression(&mut self, _expr: &Expression) {}
 
-    fn traverse_document(&mut self, document: &Document<Func>) {
+    fn traverse_document<Struc>(&mut self, document: &Document<Func, Struc>) {
         for variable in &document.variables {
             self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);

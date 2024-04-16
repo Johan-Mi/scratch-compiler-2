@@ -21,7 +21,7 @@ use std::collections::{btree_map::Entry, BTreeMap};
 type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
-pub struct Document<Func = Function> {
+pub struct Document<Func = Function, Struct = self::Struct> {
     pub structs: BTreeMap<String, Struct>,
     pub sprites: BTreeMap<String, Sprite>,
     pub functions: BTreeMap<usize, Func>,

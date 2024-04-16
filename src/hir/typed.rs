@@ -7,7 +7,11 @@ use crate::{
 };
 use codemap::{Span, Spanned};
 
-pub type Document = super::Document<Function>;
+pub type Document = super::Document<Function, Struct>;
+
+pub struct Struct {
+    pub fields: Vec<(String, Result<Ty>)>,
+}
 
 #[derive(Debug)]
 pub struct Function {
@@ -34,7 +38,11 @@ pub struct Parameter {
 
 pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
     Document {
-        structs: it.structs,
+        structs: it
+            .structs
+            .into_iter()
+            .map(|(name, it)| (name, lower_struct(it, tcx)))
+            .collect(),
         sprites: it.sprites,
         functions: it
             .functions
@@ -42,6 +50,40 @@ pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
             .map(|(id, function)| (id, lower_function(function, tcx)))
             .collect(),
         variables: it.variables,
+    }
+}
+
+pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
+    Struct {
+        fields: it
+            .fields
+            .into_iter()
+            .map(|(name, ty)| {
+                let ty = ty.ty(None, tcx).and_then(|ty_ty| {
+                    if !matches!(ty_ty, Ty::Ty) {
+                        tcx.diagnostics.error(
+                            "struct field type must be a type",
+                            [primary(
+                                ty.span,
+                                format!("expected `Type`, got `{ty_ty}`"),
+                            )],
+                        );
+                    };
+                    match ty.kind {
+                        ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+                        ExpressionKind::Imm(_) => Err(()),
+                        _ => {
+                            tcx.diagnostics.error(
+                                "struct field type must be comptime-known",
+                                [primary(ty.span, "")],
+                            );
+                            Err(())
+                        }
+                    }
+                });
+                (name, ty)
+            })
+            .collect(),
     }
 }
 
