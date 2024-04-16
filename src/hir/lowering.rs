@@ -11,7 +11,7 @@ use crate::{
     diagnostics::{primary, span},
     generator::Generator,
     name::Name,
-    parser::SyntaxKind,
+    parser::{SyntaxKind, SyntaxToken},
     ty::{self, Context, Ty},
 };
 use codemap::{File, Spanned};
@@ -146,9 +146,9 @@ impl Struct {
         ast: &ast::Field,
         file: &File,
         tcx: &mut Context,
-    ) -> (String, Expression) {
+    ) -> (SyntaxToken, Expression) {
         (
-            ast.name().to_string(),
+            ast.name(),
             Expression::lower_opt(
                 ast.ty(),
                 file,

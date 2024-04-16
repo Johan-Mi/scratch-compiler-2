@@ -11,7 +11,7 @@ pub type Document = super::Document<Function, Struct>;
 
 pub struct Struct {
     name_span: Span,
-    pub fields: Vec<(String, Result<Ty>)>,
+    pub fields: Vec<(SyntaxToken, Result<Ty>)>,
 }
 
 #[derive(Debug)]
