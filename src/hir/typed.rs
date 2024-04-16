@@ -11,7 +11,7 @@ pub type Document = super::Document<Function, Struct>;
 
 pub struct Struct {
     name_span: Span,
-    pub fields: Vec<(SyntaxToken, Result<Ty>)>,
+    pub fields: Vec<(SyntaxToken, Spanned<Result<Ty>>)>,
 }
 
 #[derive(Debug)]
@@ -61,6 +61,7 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
             .fields
             .into_iter()
             .map(|(name, ty)| {
+                let ty_span = ty.span;
                 let ty = ty.ty(None, tcx).and_then(|ty_ty| {
                     if !matches!(ty_ty, Ty::Ty) {
                         tcx.diagnostics.error(
@@ -83,7 +84,13 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
                         }
                     }
                 });
-                (name, ty)
+                (
+                    name,
+                    Spanned {
+                        node: ty,
+                        span: ty_span,
+                    },
+                )
             })
             .collect(),
     }
