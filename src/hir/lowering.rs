@@ -344,35 +344,7 @@ impl Block {
 impl Statement {
     fn lower(ast: &ast::Statement, file: &File, tcx: &mut Context) -> Self {
         let kind = match ast {
-            ast::Statement::Let(let_) => 'blk: {
-                let Some(variable) = let_.variable() else {
-                    tcx.diagnostics.error(
-                        "expected variable name after `let`",
-                        [primary(span(file, ast.syntax().text_range()), "")],
-                    );
-                    break 'blk StatementKind::Error;
-                };
-
-                let value = if let Some(value) = let_.value() {
-                    Expression::lower(&value, file, tcx)
-                } else {
-                    tcx.diagnostics.error(
-                        "expected expression after `=` in variable definition",
-                        [primary(span(file, ast.syntax().text_range()), "")],
-                    );
-                    Expression {
-                        kind: ExpressionKind::Error,
-                        span: span(file, variable.text_range()),
-                    }
-                };
-
-                tcx.maybe_define_comptime_known_variable(
-                    variable.clone(),
-                    &value,
-                );
-
-                StatementKind::Let { variable, value }
-            }
+            ast::Statement::Let(let_) => lower_let(let_, file, tcx),
             ast::Statement::If(if_) => StatementKind::If {
                 condition: Expression::lower_opt(
                     if_.condition(),
@@ -457,6 +429,37 @@ impl Statement {
             span: span(file, ast.syntax().text_range()),
         }
     }
+}
+
+fn lower_let(
+    let_: &ast::Let,
+    file: &File,
+    tcx: &mut Context<'_>,
+) -> StatementKind {
+    let Some(variable) = let_.variable() else {
+        tcx.diagnostics.error(
+            "expected variable name after `let`",
+            [primary(span(file, let_.syntax().text_range()), "")],
+        );
+        return StatementKind::Error;
+    };
+
+    let value = if let Some(value) = let_.value() {
+        Expression::lower(&value, file, tcx)
+    } else {
+        tcx.diagnostics.error(
+            "expected expression after `=` in variable definition",
+            [primary(span(file, let_.syntax().text_range()), "")],
+        );
+        Expression {
+            kind: ExpressionKind::Error,
+            span: span(file, variable.text_range()),
+        }
+    };
+
+    tcx.maybe_define_comptime_known_variable(variable.clone(), &value);
+
+    StatementKind::Let { variable, value }
 }
 
 impl Expression {
