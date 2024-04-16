@@ -10,6 +10,7 @@ use codemap::{Span, Spanned};
 pub type Document = super::Document<Function, Struct>;
 
 pub struct Struct {
+    name_span: Span,
     pub fields: Vec<(String, Result<Ty>)>,
 }
 
@@ -55,6 +56,7 @@ pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
 
 pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
     Struct {
+        name_span: it.name_span,
         fields: it
             .fields
             .into_iter()
