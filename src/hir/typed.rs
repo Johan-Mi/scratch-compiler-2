@@ -64,7 +64,7 @@ pub fn lower(
     };
 
     for (name, struct_) in &document.structs {
-        let function = constructor(name, struct_);
+        let function = constructor(name.clone(), struct_);
         document
             .functions
             .insert(usize::from(generator.new_u16()), function);
@@ -73,11 +73,11 @@ pub fn lower(
     document
 }
 
-fn constructor(name: &str, struct_: &Struct) -> Function {
+fn constructor(name: String, struct_: &Struct) -> Function {
     Function {
         owning_sprite: None,
         name: Spanned {
-            node: name.to_owned(),
+            node: name,
             span: struct_.name_span,
         },
         tag: None,
