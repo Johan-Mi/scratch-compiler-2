@@ -2,6 +2,7 @@ use super::{Block, ExpressionKind, Result};
 use crate::{
     comptime::Value,
     diagnostics::primary,
+    generator::Generator,
     parser::SyntaxToken,
     ty::{Context, Ty},
 };
@@ -11,7 +12,12 @@ pub type Document = super::Document<Function, Struct>;
 
 pub struct Struct {
     name_span: Span,
-    pub fields: Vec<(SyntaxToken, Spanned<Result<Ty>>)>,
+    pub fields: Vec<Spanned<Field>>,
+}
+
+pub struct Field {
+    name: SyntaxToken,
+    ty: Spanned<Result<Ty>>,
 }
 
 #[derive(Debug)]
@@ -37,8 +43,12 @@ pub struct Parameter {
     pub span: Span,
 }
 
-pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
-    Document {
+pub fn lower(
+    it: super::Document,
+    tcx: &mut Context,
+    generator: &mut Generator,
+) -> Document {
+    let mut document = Document {
         structs: it
             .structs
             .into_iter()
@@ -51,6 +61,43 @@ pub fn lower(it: super::Document, tcx: &mut Context) -> Document {
             .map(|(id, function)| (id, lower_function(function, tcx)))
             .collect(),
         variables: it.variables,
+    };
+
+    for (name, struct_) in &document.structs {
+        let function = constructor(name, struct_);
+        document
+            .functions
+            .insert(usize::from(generator.new_u16()), function);
+    }
+
+    document
+}
+
+fn constructor(name: &str, struct_: &Struct) -> Function {
+    Function {
+        owning_sprite: None,
+        name: Spanned {
+            node: name.to_owned(),
+            span: struct_.name_span,
+        },
+        tag: None,
+        generics: Vec::new(),
+        parameters: struct_
+            .fields
+            .iter()
+            .map(|field| Parameter {
+                external_name: Some(field.name.to_string()),
+                internal_name: field.name.clone(),
+                ty: field.ty.clone(),
+                is_comptime: false,
+                span: field.span,
+            })
+            .collect(),
+        return_ty: todo!(),
+        body: Block::default(),
+        is_from_builtins: false,
+        is_intrinsic: true,
+        is_inline: false,
     }
 }
 
@@ -60,37 +107,41 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
         fields: it
             .fields
             .into_iter()
-            .map(|(name, ty)| {
-                let ty_span = ty.span;
-                let ty = ty.ty(None, tcx).and_then(|ty_ty| {
+            .map(|field| {
+                let name = field.node.name.clone();
+                let ty_span = field.ty.span;
+                let ty = field.ty.ty(None, tcx).and_then(|ty_ty| {
                     if !matches!(ty_ty, Ty::Ty) {
                         tcx.diagnostics.error(
                             "struct field type must be a type",
                             [primary(
-                                ty.span,
+                                field.node.ty.span,
                                 format!("expected `Type`, got `{ty_ty}`"),
                             )],
                         );
                     };
-                    match ty.kind {
+                    match field.node.ty.kind {
                         ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
                         ExpressionKind::Imm(_) => Err(()),
                         _ => {
                             tcx.diagnostics.error(
                                 "struct field type must be comptime-known",
-                                [primary(ty.span, "")],
+                                [primary(field.node.ty.span, "")],
                             );
                             Err(())
                         }
                     }
                 });
-                (
-                    name,
-                    Spanned {
-                        node: ty,
-                        span: ty_span,
+                Spanned {
+                    node: Field {
+                        name,
+                        ty: Spanned {
+                            node: ty,
+                            span: ty_span,
+                        },
                     },
-                )
+                    span: field.span,
+                }
             })
             .collect(),
     }

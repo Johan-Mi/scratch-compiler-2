@@ -68,7 +68,13 @@ pub struct GlobalVariable {
 #[derive(Debug)]
 pub struct Struct {
     name_span: Span,
-    pub fields: Vec<(SyntaxToken, Expression)>,
+    pub fields: Vec<Spanned<Field>>,
+}
+
+#[derive(Debug)]
+pub struct Field {
+    name: SyntaxToken,
+    ty: Expression,
 }
 
 #[derive(Debug)]
@@ -111,7 +117,7 @@ pub struct Parameter {
     pub span: Span,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Block {
     pub statements: Vec<Statement>,
 }

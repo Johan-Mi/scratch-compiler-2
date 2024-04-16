@@ -2,7 +2,7 @@
 
 use super::{
     parse_string_literal, Block, Costume, Document, Expression, ExpressionKind,
-    Function, GlobalVariable, Parameter, Result, Sprite, Statement,
+    Field, Function, GlobalVariable, Parameter, Result, Sprite, Statement,
     StatementKind, Struct,
 };
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
     diagnostics::{primary, span},
     generator::Generator,
     name::Name,
-    parser::{SyntaxKind, SyntaxToken},
+    parser::SyntaxKind,
     ty::{self, Context, Ty},
 };
 use codemap::{File, Spanned};
@@ -146,16 +146,19 @@ impl Struct {
         ast: &ast::Field,
         file: &File,
         tcx: &mut Context,
-    ) -> (SyntaxToken, Expression) {
-        (
-            ast.name(),
-            Expression::lower_opt(
-                ast.ty(),
-                file,
-                tcx,
-                ast.syntax().text_range(),
-            ),
-        )
+    ) -> Spanned<Field> {
+        Spanned {
+            node: Field {
+                name: ast.name(),
+                ty: Expression::lower_opt(
+                    ast.ty(),
+                    file,
+                    tcx,
+                    ast.syntax().text_range(),
+                ),
+            },
+            span: span(file, ast.syntax().text_range()),
+        }
     }
 }
 
