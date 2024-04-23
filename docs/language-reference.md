@@ -35,6 +35,12 @@ TODO
 
 ## Statements and expressions
 
+There are three kinds of statements:
+
+- Variable definitions
+- Control flow constructs
+- Expressions (usually calls to functions returning `Unit`)
+
 ### Control flow
 
 ```sc2
