@@ -74,6 +74,8 @@ repeat 𝐭𝐢𝐦𝐞𝐬 {
 for 𝐯𝐚𝐫 𝐭𝐢𝐦𝐞𝐬 {
     # …
 }
+
+return 𝐯𝐚𝐥𝐮𝐞
 ```
 
 ### Operator overloading
