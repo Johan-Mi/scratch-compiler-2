@@ -10,12 +10,14 @@ use codemap::{Span, Spanned};
 
 pub type Document = super::Document<Function, Struct>;
 
+#[derive(Debug)]
 pub struct Struct {
     pub name_span: Span,
     pub name_token: SyntaxToken,
     pub fields: Vec<Spanned<Field>>,
 }
 
+#[derive(Debug)]
 pub struct Field {
     name: SyntaxToken,
     ty: Spanned<Result<Ty>>,

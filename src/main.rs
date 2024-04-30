@@ -116,6 +116,9 @@ fn compile_or_check(
     })?;
 
     let mut document = hir::typed::lower(document, &mut tcx, &mut generator);
+    if std::env::var_os("DUMP_THIR").is_some() {
+        eprintln!("{document:#?}");
+    }
     ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
