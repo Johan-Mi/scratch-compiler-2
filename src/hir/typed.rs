@@ -33,6 +33,7 @@ pub struct Function {
     pub is_from_builtins: bool,
     pub is_intrinsic: bool,
     pub is_inline: bool,
+    pub is_constructor: bool,
 }
 
 #[derive(Debug)]
@@ -107,6 +108,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
         is_from_builtins: false,
         is_intrinsic: true,
         is_inline: false,
+        is_constructor: true,
     }
 }
 
@@ -199,6 +201,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
         is_from_builtins: it.is_from_builtins,
         is_intrinsic: it.is_intrinsic,
         is_inline: it.is_inline,
+        is_constructor: false,
     }
 }
 

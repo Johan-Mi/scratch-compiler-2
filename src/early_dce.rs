@@ -43,8 +43,12 @@ pub fn perform(
 
 fn warn(diagnostics: &mut Diagnostics, function: &Function) {
     if !function.is_from_builtins {
-        diagnostics
-            .warning("unused function", [primary(function.name.span, "")]);
+        let message = if function.is_constructor {
+            "struct is never constructed"
+        } else {
+            "unused function"
+        };
+        diagnostics.warning(message, [primary(function.name.span, "")]);
     }
 }
 
