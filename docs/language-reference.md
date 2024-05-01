@@ -129,6 +129,13 @@ struct Cat {
 }
 ```
 
+Defining a struct implicitly creates a function with the same name,
+referred to as a *constructor*:
+
+```sc2
+let jonesy = Cat(name: "Jones", age: 44, is-fluffy: false)
+```
+
 ### Variables
 
 Variables are defined with the `let` keyword:
