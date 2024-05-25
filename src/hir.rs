@@ -60,9 +60,7 @@ impl<Func> Document<Func> {
 pub struct GlobalVariable {
     pub token: SyntaxToken,
     pub initializer: Expression,
-    // FIXME: ensure that truly global variables belong to the stage and not to
-    // a sprite that uses them and just so happens to get compiled earlier
-    owning_sprite: String,
+    pub belongs_to_stage: bool,
 }
 
 #[derive(Debug)]

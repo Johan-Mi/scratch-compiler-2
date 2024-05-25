@@ -34,11 +34,36 @@ impl CompiledOperand {
 
 use CompiledOperand::{Bool as B, String as S};
 
-pub fn generate(mut document: mir::Document, output_path: &Path) -> Result<()> {
+pub fn generate(
+    mut document: mir::Document,
+    output_path: &Path,
+    stage_variables: &HashSet<mir::RealVar>,
+) -> Result<()> {
     let mut project = Project::default();
 
+    let mut stage = project.stage();
+    let mut compiled_real_vars = stage_variables
+        .iter()
+        .map(|&var| {
+            (
+                var,
+                stage.add_variable(Variable {
+                    name: var.to_string(),
+                    // FIXME: use initializer specified in source code
+                    value: Constant::Number(0.0),
+                }),
+            )
+        })
+        .collect();
+
     for (name, sprite) in document.sprites {
-        compile_sprite(sprite, &name, &mut document.functions, &mut project)?;
+        compile_sprite(
+            sprite,
+            &name,
+            &mut document.functions,
+            &mut project,
+            &mut compiled_real_vars,
+        )?;
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -50,6 +75,7 @@ fn compile_sprite(
     name: &str,
     functions: &mut BTreeMap<usize, mir::Function>,
     project: &mut Project,
+    compiled_real_vars: &mut HashMap<mir::RealVar, VariableRef>,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
         project.stage()
@@ -87,7 +113,7 @@ fn compile_sprite(
     let mut cx = Context {
         sprite,
         compiled_ssa_vars,
-        compiled_real_vars: HashMap::new(),
+        compiled_real_vars,
         compiled_real_lists: HashMap::new(),
         compiled_functions,
         return_variable: None,
@@ -106,7 +132,7 @@ fn compile_sprite(
 struct Context<'a> {
     sprite: Target<'a>,
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
-    compiled_real_vars: HashMap<mir::RealVar, VariableRef>,
+    compiled_real_vars: &'a mut HashMap<mir::RealVar, VariableRef>,
     compiled_real_lists: HashMap<mir::RealList, ListRef>,
     compiled_functions: HashMap<usize, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,

@@ -8,13 +8,13 @@ use crate::{
     name::{self, Name},
     parser::SyntaxToken,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub fn lower(
     document: hir::typed::Document,
     resolved_calls: &ResolvedCalls,
     generator: &mut Generator,
-) -> Document {
+) -> (Document, HashSet<RealVar>) {
     let functions = document
         .functions
         .iter()
@@ -30,12 +30,17 @@ pub fn lower(
         block: Block::default(),
     };
 
+    let mut stage_variables = HashSet::new();
     for variable in document.variables {
         lower_variable_initialization(
-            variable.token,
+            variable.token.clone(),
             variable.initializer,
             &mut cx,
         );
+
+        if variable.belongs_to_stage {
+            stage_variables.extend(cx.real_vars.get(&variable.token));
+        }
     }
 
     let functions = document
@@ -44,7 +49,7 @@ pub fn lower(
         .map(|(index, function)| (index, lower_function(function, &mut cx)))
         .collect();
 
-    Document {
+    let document = Document {
         sprites: document
             .sprites
             .into_iter()
@@ -58,7 +63,9 @@ pub fn lower(
             })
             .collect(),
         functions,
-    }
+    };
+
+    (document, stage_variables)
 }
 
 #[derive(Clone, Copy)]

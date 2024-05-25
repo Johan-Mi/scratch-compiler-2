@@ -133,13 +133,15 @@ fn compile_or_check(
         return Ok(());
     }
 
-    let mut document = mir::lower(document, &resolved_calls, &mut generator);
+    let (mut document, stage_variables) =
+        mir::lower(document, &resolved_calls, &mut generator);
     mir::optimize(&mut document, &mut generator);
     if std::env::var_os("DUMP_MIR").is_some() {
         eprintln!("{document:#?}");
     }
-    codegen::generate(document, Path::new("project.sb3")).map_err(|err| {
-        diagnostics.error("failed to create project file", []);
-        diagnostics.note(err.to_string(), []);
-    })
+    codegen::generate(document, Path::new("project.sb3"), &stage_variables)
+        .map_err(|err| {
+            diagnostics.error("failed to create project file", []);
+            diagnostics.note(err.to_string(), []);
+        })
 }

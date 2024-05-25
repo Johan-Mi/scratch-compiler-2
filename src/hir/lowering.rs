@@ -86,13 +86,10 @@ impl Document {
             .filter_map(|it| {
                 let token = it.variable()?;
                 let text_range = token.text_range();
-                let owning_sprite = token
+                let belongs_to_stage = token
                     .parent()
                     .and_then(|it| ast::Sprite::cast(it.parent()?)?.name())
-                    .map_or_else(
-                        || "Stage".to_owned(),
-                        |it| it.text().to_owned(),
-                    );
+                    .is_none();
                 let initializer =
                     Expression::lower_opt(it.value(), file, tcx, text_range);
                 tcx.maybe_define_comptime_known_variable(
@@ -102,7 +99,7 @@ impl Document {
                 Some(GlobalVariable {
                     token,
                     initializer,
-                    owning_sprite,
+                    belongs_to_stage,
                 })
             })
             .collect();
