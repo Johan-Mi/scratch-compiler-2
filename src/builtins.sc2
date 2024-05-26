@@ -106,6 +106,10 @@ fn go-to-front-layer {}
 
 fn hide {}
 
+fn mouse-x -> Num {}
+
+fn mouse-y -> Num {}
+
 fn move(steps _: Num) {}
 
 fn pen-down {}

@@ -659,6 +659,8 @@ fn compile_regular_intrinsic(
         "go-to-front-layer" => f! { go_to_front_layer() },
         "hide" => f! { hide() },
         "move" => f! { move_steps(steps) },
+        "mouse-x" => f! { = mouse_x() },
+        "mouse-y" => f! { = mouse_y() },
         "pen-down" => f! { pen_down() },
         "pen-up" => f! { pen_up() },
         "pressing-key" => f! { = B key_is_pressed(key) },
