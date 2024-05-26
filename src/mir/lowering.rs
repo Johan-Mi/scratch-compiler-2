@@ -1,6 +1,6 @@
 use super::{
-    Block, Call, Document, Function, Generator, Op, Parameter, RealVar, Sprite,
-    Value,
+    Block, Call, Document, Function, Generator, Op, Parameter, RealList,
+    RealVar, Sprite, Value,
 };
 use crate::{
     function::ResolvedCalls,
@@ -14,7 +14,7 @@ pub fn lower(
     document: hir::typed::Document,
     resolved_calls: &ResolvedCalls,
     generator: &mut Generator,
-) -> (Document, HashSet<RealVar>) {
+) -> (Document, HashSet<RealVar>, HashSet<RealList>) {
     let functions = document
         .functions
         .iter()
@@ -65,7 +65,10 @@ pub fn lower(
         functions,
     };
 
-    (document, stage_variables)
+    // TODO
+    let stage_lists = HashSet::new();
+
+    (document, stage_variables, stage_lists)
 }
 
 #[derive(Clone, Copy)]

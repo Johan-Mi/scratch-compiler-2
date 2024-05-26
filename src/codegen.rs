@@ -38,6 +38,7 @@ pub fn generate(
     mut document: mir::Document,
     output_path: &Path,
     stage_variables: &HashSet<mir::RealVar>,
+    stage_lists: &HashSet<mir::RealList>,
 ) -> Result<()> {
     let mut project = Project::default();
 
@@ -55,6 +56,19 @@ pub fn generate(
             )
         })
         .collect();
+    let mut compiled_real_lists = stage_lists
+        .iter()
+        .map(|&list| {
+            (
+                list,
+                stage.add_list(List {
+                    name: list.to_string(),
+                    // FIXME: use initializer specified in source code
+                    items: Vec::new(),
+                }),
+            )
+        })
+        .collect();
 
     for (name, sprite) in document.sprites {
         compile_sprite(
@@ -63,6 +77,7 @@ pub fn generate(
             &mut document.functions,
             &mut project,
             &mut compiled_real_vars,
+            &mut compiled_real_lists,
         )?;
     }
 
@@ -76,6 +91,7 @@ fn compile_sprite(
     functions: &mut BTreeMap<usize, mir::Function>,
     project: &mut Project,
     compiled_real_vars: &mut HashMap<mir::RealVar, VariableRef>,
+    compiled_real_lists: &mut HashMap<mir::RealList, ListRef>,
 ) -> Result<()> {
     let mut sprite = if name == "Stage" {
         project.stage()
@@ -114,7 +130,7 @@ fn compile_sprite(
         sprite,
         compiled_ssa_vars,
         compiled_real_vars,
-        compiled_real_lists: HashMap::new(),
+        compiled_real_lists,
         compiled_functions,
         return_variable: None,
         is_linear: HashSet::new(),
@@ -133,7 +149,7 @@ struct Context<'a> {
     sprite: Target<'a>,
     compiled_ssa_vars: HashMap<mir::SsaVar, CompiledSsaVar>,
     compiled_real_vars: &'a mut HashMap<mir::RealVar, VariableRef>,
-    compiled_real_lists: HashMap<mir::RealList, ListRef>,
+    compiled_real_lists: &'a mut HashMap<mir::RealList, ListRef>,
     compiled_functions: HashMap<usize, CompiledFunctionRef>,
     return_variable: Option<VariableRef>,
     is_linear: HashSet<mir::SsaVar>,
