@@ -31,6 +31,83 @@ Following are some examples of valid identifiers:
 
 ## Functions
 
+The simplest possible function takes no parameters and returns nothing:
+
+```sc2
+fn say-hi {
+    say("Hello")
+}
+
+say-hi()
+```
+
+Functions can take parameters and return a value:
+
+```sc2
+fn sum(_ a: Num, _ b: Num) -> Num {
+    # Since the function body ends with an expression,
+    # it is implicitly returned.
+    a + b
+}
+
+let n = sum(1, 2) # 3
+```
+
+To make your code easier to understand, function parameters can be named:
+
+```sc2
+fn say-hi(to name: String) {
+    say("Hello, ".join(name))
+}
+
+say-hi(to: "Susie")
+```
+
+If the first parameter is unnamed, you can use the method syntax, which should
+be familiar to users of object oriented languages:
+
+```sc2
+fn squared(_ n: Num) -> Num {
+    n * n
+}
+
+let x = 5
+squared(x) == x.squared()
+
+let numbers = [10, 20, 30]
+at(numbers, 3) == numbers.at(3)
+```
+
+If the implicit return at the end of the function body is not enough, you can
+explicitly `return` values anywhere within the function:
+
+```sc2
+fn max(_ a: Num, _ b: Num) -> Num {
+    if a > b {
+        return a
+    }
+    b
+}
+```
+
+### Inline functions
+
+Some functions are so small that it's best to just copy their body to the
+call site, thus avoiding the overhead of function calls and enabling further
+optimizations. To do this, use the `inline` keyword:
+
+```sc2
+inline fn succ(_ n: Num) -> Num {
+    n + 1
+}
+
+let year = succ(2023)
+```
+
+Here, inlining turns `succ(2023)` into `2023 + 1`, which can be simplified at compile-time.
+
+### Comptime parameters
+
 TODO
 
 ## Statements and expressions
