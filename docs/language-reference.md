@@ -106,7 +106,15 @@ let year = succ(2023)
 
 Here, inlining turns `succ(2023)` into `2023 + 1`, which can be simplified at compile-time.
 
+### Generic functions
+
+TODO
+
 ### Comptime parameters
+
+TODO
+
+### Special functions
 
 TODO
 
