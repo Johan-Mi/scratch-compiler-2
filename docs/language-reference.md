@@ -116,6 +116,16 @@ TODO
 
 ### Special functions
 
+```sc2
+fn when-flag-clicked {}
+
+fn when-key-pressed "key-name" {}
+
+fn when-cloned {}
+
+fn when-received "broadcast-name" {}
+```
+
 TODO
 
 ## Statements and expressions
