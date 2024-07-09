@@ -250,6 +250,7 @@ impl AstNode for Statement {
             || Until::can_cast(kind)
             || For::can_cast(kind)
             || Return::can_cast(kind)
+            || Expression::can_cast(kind)
     }
 
     fn cast(node: SyntaxNode) -> Option<Self> {
