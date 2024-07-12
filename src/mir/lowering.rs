@@ -295,7 +295,6 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             arguments,
             ..
         } => {
-            let name = desugar_function_call_name(&name_or_operator);
             let args = arguments
                 .into_iter()
                 .map(|(_, arg)| lower_expression(arg, cx).unwrap())
@@ -310,6 +309,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             cx.block.ops.push(Op::Call(
                 variable,
                 if signature.is_intrinsic {
+                    let name = desugar_function_call_name(&name_or_operator);
                     Call::Intrinsic {
                         name: name.to_owned(),
                         args,
