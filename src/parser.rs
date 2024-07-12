@@ -25,6 +25,26 @@ pub fn parse(
     .parse()
 }
 
+pub fn parse_string_literal(token: &SyntaxToken) -> Result<String, ()> {
+    let mut res = String::new();
+    let mut chars = token.text().chars().skip(1);
+    loop {
+        match chars.next() {
+            Some('"') => return Ok(res),
+            Some('\\') => match chars.next() {
+                Some(c @ ('"' | '\\')) => res.push(c),
+                Some('n') => res.push('\n'),
+                Some(_) => todo!("invalid escape sequence"),
+                None => todo!("unfinished escape sequence"),
+            },
+            Some(c) => res.push(c),
+            // Unterminated string literal. This is already checked for in
+            // `syntax_errors`.
+            None => return Err(()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Logos)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 #[repr(u16)]

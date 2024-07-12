@@ -1,9 +1,9 @@
 #![allow(clippy::similar_names)]
 
 use super::{
-    parse_string_literal, Block, Costume, Document, Expression, ExpressionKind,
-    Field, Function, GlobalVariable, Parameter, Result, Sprite, Statement,
-    StatementKind, Struct,
+    Block, Costume, Document, Expression, ExpressionKind, Field, Function,
+    GlobalVariable, Parameter, Result, Sprite, Statement, StatementKind,
+    Struct,
 };
 use crate::{
     ast,
@@ -11,7 +11,7 @@ use crate::{
     diagnostics::{primary, span},
     generator::Generator,
     name::Name,
-    parser::SyntaxKind,
+    parser::{parse_string_literal, SyntaxKind},
     ty::{self, Context, Ty},
 };
 use codemap::{File, Spanned};
