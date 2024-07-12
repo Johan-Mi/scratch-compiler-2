@@ -4,12 +4,11 @@ mod visit;
 pub use visit::Visitor;
 
 use crate::{
-    comptime::{self, Value},
-    diagnostics::{primary, secondary, Diagnostics},
-    function,
+    comptime::Value,
+    diagnostics::{primary, Diagnostics},
     name::Name,
-    parser::{SyntaxKind, SyntaxToken},
-    ty::{self, Context, Ty},
+    parser::SyntaxToken,
+    ty,
 };
 use codemap::{Span, Spanned};
 use std::collections::{btree_map::Entry, BTreeMap};
@@ -192,111 +191,8 @@ pub enum ExpressionKind {
 
 pub type Argument = (Option<String>, Expression);
 
-impl Expression {
-    pub fn ty(&self, ascribed: Option<&Ty>, tcx: &mut Context) -> Result<Ty> {
-        match &self.kind {
-            ExpressionKind::Variable(Name::User(variable)) => tcx
-                .variable_types
-                .get(variable)
-                .unwrap_or_else(|| {
-                    panic!("variable `{variable:?}` has no type")
-                })
-                .clone(),
-            ExpressionKind::Variable(Name::Builtin(builtin)) => {
-                ty::of_builtin_name(*builtin, self.span, tcx.diagnostics)
-            }
-            ExpressionKind::Imm(value) => Ok(value.ty()),
-            ExpressionKind::FunctionCall {
-                name_or_operator,
-                name_span,
-                arguments,
-            } => {
-                let name = desugar_function_call_name(name_or_operator);
-                let (resolved, return_ty) =
-                    function::resolve(name, arguments, *name_span, tcx)?;
-                tcx.resolved_calls.insert(name_span.low(), resolved);
-
-                for (param, (_, arg)) in std::iter::zip(
-                    &tcx.functions[&resolved].parameters,
-                    arguments,
-                ) {
-                    if param.is_comptime && !comptime::is_known(arg, tcx) {
-                        tcx.diagnostics.error(
-                            "function argument is not comptime-known",
-                            [
-                                primary(arg.span, ""),
-                                secondary(
-                                    param.span,
-                                    "comptime parameter declared here",
-                                ),
-                            ],
-                        );
-                    }
-                }
-
-                return_ty
-            }
-            ExpressionKind::Lvalue(var) => {
-                tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
-            }
-            ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
-                ty::check_generic_type_instantiation(
-                    *generic, arguments, self.span, tcx,
-                );
-                Ok(Ty::Ty)
-            }
-            ExpressionKind::ListLiteral(list) => {
-                ty::of_list_literal(list, self.span, ascribed, tcx)
-            }
-            ExpressionKind::TypeAscription { inner, ty } => {
-                let Ok(ty_ty) = ty.ty(None, tcx) else {
-                    return Err(());
-                };
-                if !matches!(ty_ty, Ty::Ty) {
-                    tcx.diagnostics.error(
-                        "ascribed type must be a type",
-                        [primary(
-                            ty.span,
-                            format!("expected `Type`, got `{ty_ty}`"),
-                        )],
-                    );
-                };
-
-                let ty = match &ty.kind {
-                    ExpressionKind::Imm(Value::Ty(ty)) => ty,
-                    ExpressionKind::Imm(_) => return Err(()),
-                    _ => {
-                        tcx.diagnostics.error(
-                            "ascribed type must be comptime-known",
-                            [primary(ty.span, "")],
-                        );
-                        return Err(());
-                    }
-                };
-
-                if let Ok(inner_ty) = inner.ty(Some(ty), tcx) {
-                    if !(inner_ty == Ty::Never || inner_ty == *ty) {
-                        tcx.diagnostics.error(
-                            "type ascription mismatch",
-                            [primary(
-                                inner.span,
-                                format!(
-                                    "expected type `{ty}`, got `{inner_ty}`"
-                                ),
-                            )],
-                        );
-                    }
-                }
-
-                Ok(ty.clone())
-            }
-            ExpressionKind::Error => Err(()),
-        }
-    }
-}
-
 pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
-    use SyntaxKind::*;
+    use crate::parser::SyntaxKind::*;
     match token.kind() {
         PLUS => "add",
         MINUS => "sub",

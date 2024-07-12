@@ -1,6 +1,6 @@
 use crate::{
     comptime,
-    diagnostics::{primary, Diagnostics},
+    diagnostics::{primary, secondary, Diagnostics},
     function::ResolvedCalls,
     hir,
     name::{self, Name},
@@ -182,7 +182,7 @@ fn check_global_variable(
     variable: &hir::GlobalVariable,
     tcx: &mut Context<'_>,
 ) {
-    let ty = variable.initializer.ty(None, tcx);
+    let ty = of_expression(&variable.initializer, None, tcx);
     if matches!(ty, Ok(Ty::List(_))) {
         tcx.comptime_known_variables
             .insert(variable.token.clone(), None);
@@ -245,7 +245,7 @@ fn check_statement(
 ) -> Result<Ty, ()> {
     match &statement.kind {
         hir::StatementKind::Let { variable, value } => {
-            let ty = value.ty(None, tcx);
+            let ty = of_expression(value, None, tcx);
             if matches!(ty, Ok(Ty::List(_))) {
                 tcx.comptime_known_variables.insert(variable.clone(), None);
             }
@@ -257,7 +257,7 @@ fn check_statement(
             then,
             else_,
         } => {
-            if let Ok(condition_ty) = condition.ty(None, tcx) {
+            if let Ok(condition_ty) = of_expression(condition, None, tcx) {
                 if condition_ty != Ty::Bool {
                     tcx.diagnostics.error(
                         "`if` condition must be a `Bool`",
@@ -277,7 +277,7 @@ fn check_statement(
             Ok(Ty::Unit)
         }
         hir::StatementKind::Repeat { times, body } => {
-            if let Ok(times_ty) = times.ty(None, tcx) {
+            if let Ok(times_ty) = of_expression(times, None, tcx) {
                 if times_ty != Ty::Num {
                     tcx.diagnostics.error(
                         "repetition count must be a number",
@@ -301,7 +301,7 @@ fn check_statement(
         }
         hir::StatementKind::While { condition, body }
         | hir::StatementKind::Until { condition, body } => {
-            if let Ok(condition_ty) = condition.ty(None, tcx) {
+            if let Ok(condition_ty) = of_expression(condition, None, tcx) {
                 if condition_ty != Ty::Bool {
                     let message = if matches!(
                         statement.kind,
@@ -332,11 +332,11 @@ fn check_statement(
         } => Ok(check_for(variable, times, body, tcx)),
         hir::StatementKind::Return(value) => {
             let ascribed = tcx.function_return_ty.clone().ok();
-            let ty = value.ty(ascribed.as_ref(), tcx);
+            let ty = of_expression(value, ascribed.as_ref(), tcx);
             check_return(&ty, statement.span, tcx);
             Ok(Ty::Unit)
         }
-        hir::StatementKind::Expr(expr) => expr.ty(None, tcx),
+        hir::StatementKind::Expr(expr) => of_expression(expr, None, tcx),
         hir::StatementKind::Error => Err(()),
     }
 }
@@ -347,7 +347,7 @@ fn check_for(
     body: &Result<hir::Block, ()>,
     tcx: &mut Context,
 ) -> Ty {
-    if let Ok(times_ty) = times.ty(None, tcx) {
+    if let Ok(times_ty) = of_expression(times, None, tcx) {
         if times_ty != Ty::Num {
             tcx.diagnostics.error(
                 "repetition count must be a number",
@@ -424,6 +424,111 @@ impl hir::typed::Parameter {
     }
 }
 
+pub fn of_expression(
+    expression: &hir::Expression,
+    ascribed: Option<&Ty>,
+    tcx: &mut Context,
+) -> Result<Ty, ()> {
+    use hir::ExpressionKind;
+
+    match &expression.kind {
+        ExpressionKind::Variable(Name::User(variable)) => tcx
+            .variable_types
+            .get(variable)
+            .unwrap_or_else(|| panic!("variable `{variable:?}` has no type"))
+            .clone(),
+        ExpressionKind::Variable(Name::Builtin(builtin)) => {
+            of_builtin_name(*builtin, expression.span, tcx.diagnostics)
+        }
+        ExpressionKind::Imm(value) => Ok(value.ty()),
+        ExpressionKind::FunctionCall {
+            name_or_operator,
+            name_span,
+            arguments,
+        } => {
+            let name = hir::desugar_function_call_name(name_or_operator);
+            let (resolved, return_ty) =
+                crate::function::resolve(name, arguments, *name_span, tcx)?;
+            tcx.resolved_calls.insert(name_span.low(), resolved);
+
+            for (param, (_, arg)) in
+                std::iter::zip(&tcx.functions[&resolved].parameters, arguments)
+            {
+                if param.is_comptime && !comptime::is_known(arg, tcx) {
+                    tcx.diagnostics.error(
+                        "function argument is not comptime-known",
+                        [
+                            primary(arg.span, ""),
+                            secondary(
+                                param.span,
+                                "comptime parameter declared here",
+                            ),
+                        ],
+                    );
+                }
+            }
+
+            return_ty
+        }
+        ExpressionKind::Lvalue(var) => {
+            tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
+        }
+        ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
+            check_generic_type_instantiation(
+                *generic,
+                arguments,
+                expression.span,
+                tcx,
+            );
+            Ok(Ty::Ty)
+        }
+        ExpressionKind::ListLiteral(list) => {
+            of_list_literal(list, expression.span, ascribed, tcx)
+        }
+        ExpressionKind::TypeAscription { inner, ty } => {
+            let Ok(ty_ty) = of_expression(ty, None, tcx) else {
+                return Err(());
+            };
+            if !matches!(ty_ty, Ty::Ty) {
+                tcx.diagnostics.error(
+                    "ascribed type must be a type",
+                    [primary(
+                        ty.span,
+                        format!("expected `Type`, got `{ty_ty}`"),
+                    )],
+                );
+            };
+
+            let ty = match &ty.kind {
+                ExpressionKind::Imm(comptime::Value::Ty(ty)) => ty,
+                ExpressionKind::Imm(_) => return Err(()),
+                _ => {
+                    tcx.diagnostics.error(
+                        "ascribed type must be comptime-known",
+                        [primary(ty.span, "")],
+                    );
+                    return Err(());
+                }
+            };
+
+            if let Ok(inner_ty) = of_expression(inner, Some(ty), tcx) {
+                if !(inner_ty == Ty::Never || inner_ty == *ty) {
+                    tcx.diagnostics.error(
+                        "type ascription mismatch",
+                        [primary(
+                            inner.span,
+                            format!("expected type `{ty}`, got `{inner_ty}`"),
+                        )],
+                    );
+                }
+            }
+
+            Ok(ty.clone())
+        }
+        ExpressionKind::Error => Err(()),
+    }
+}
+
 pub fn of_builtin_name(
     builtin: name::Builtin,
     span: Span,
@@ -478,9 +583,9 @@ pub fn of_list_literal(
         );
         return Err(());
     };
-    let first_ty = first.ty(ascribed_element_ty, tcx)?;
+    let first_ty = of_expression(first, ascribed_element_ty, tcx)?;
     for element in rest {
-        let ty = element.ty(ascribed_element_ty, tcx)?;
+        let ty = of_expression(element, ascribed_element_ty, tcx)?;
         if ty != first_ty {
             tcx.diagnostics.error(
                     "conflicting types in list literal",
@@ -540,7 +645,7 @@ pub fn check_generic_type_instantiation(
         );
         return;
     };
-    let Ok(arg_ty) = arg.ty(None, tcx) else {
+    let Ok(arg_ty) = of_expression(arg, None, tcx) else {
         return;
     };
     if !matches!(arg_ty, Ty::Ty) {

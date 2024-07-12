@@ -1,7 +1,7 @@
 use crate::{
     diagnostics::primary,
     hir::Argument,
-    ty::{Context, Ty},
+    ty::{self, Context, Ty},
 };
 use codemap::{Pos, Span};
 use std::collections::HashMap;
@@ -29,7 +29,7 @@ pub fn resolve(
 
     let typed_arguments = arguments
         .iter()
-        .map(|(name, arg)| (name.as_deref(), arg.ty(None, tcx)))
+        .map(|(name, arg)| (name.as_deref(), ty::of_expression(arg, None, tcx)))
         .collect::<Vec<_>>();
 
     let mut viable_overloads = all_overloads

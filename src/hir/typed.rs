@@ -4,7 +4,7 @@ use crate::{
     diagnostics::primary,
     generator::Generator,
     parser::SyntaxToken,
-    ty::{Context, Ty},
+    ty::{self, Context, Ty},
 };
 use codemap::{Span, Spanned};
 
@@ -124,28 +124,29 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
             .map(|field| {
                 let name = field.node.name.clone();
                 let ty_span = field.ty.span;
-                let ty = field.ty.ty(None, tcx).and_then(|ty_ty| {
-                    if !matches!(ty_ty, Ty::Ty) {
-                        tcx.diagnostics.error(
-                            "struct field type must be a type",
-                            [primary(
-                                field.node.ty.span,
-                                format!("expected `Type`, got `{ty_ty}`"),
-                            )],
-                        );
-                    };
-                    match field.node.ty.kind {
-                        ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-                        ExpressionKind::Imm(_) => Err(()),
-                        _ => {
+                let ty =
+                    ty::of_expression(&field.ty, None, tcx).and_then(|ty_ty| {
+                        if !matches!(ty_ty, Ty::Ty) {
                             tcx.diagnostics.error(
-                                "struct field type must be comptime-known",
-                                [primary(field.node.ty.span, "")],
+                                "struct field type must be a type",
+                                [primary(
+                                    field.node.ty.span,
+                                    format!("expected `Type`, got `{ty_ty}`"),
+                                )],
                             );
-                            Err(())
+                        };
+                        match field.node.ty.kind {
+                            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+                            ExpressionKind::Imm(_) => Err(()),
+                            _ => {
+                                tcx.diagnostics.error(
+                                    "struct field type must be comptime-known",
+                                    [primary(field.node.ty.span, "")],
+                                );
+                                Err(())
+                            }
                         }
-                    }
-                });
+                    });
                 Spanned {
                     node: Field {
                         name,
@@ -162,28 +163,29 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
 }
 
 pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
-    let return_ty = it.return_ty.ty(None, tcx).and_then(|ty_ty| {
-        if !matches!(ty_ty, Ty::Ty) {
-            tcx.diagnostics.error(
-                "function return type must be a type",
-                [primary(
-                    it.return_ty.span,
-                    format!("expected `Type`, got `{ty_ty}`"),
-                )],
-            );
-        };
-        match it.return_ty.kind {
-            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-            ExpressionKind::Imm(_) => Err(()),
-            _ => {
+    let return_ty =
+        ty::of_expression(&it.return_ty, None, tcx).and_then(|ty_ty| {
+            if !matches!(ty_ty, Ty::Ty) {
                 tcx.diagnostics.error(
-                    "function return type must be comptime-known",
-                    [primary(it.return_ty.span, "")],
+                    "function return type must be a type",
+                    [primary(
+                        it.return_ty.span,
+                        format!("expected `Type`, got `{ty_ty}`"),
+                    )],
                 );
-                Err(())
+            };
+            match it.return_ty.kind {
+                ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+                ExpressionKind::Imm(_) => Err(()),
+                _ => {
+                    tcx.diagnostics.error(
+                        "function return type must be comptime-known",
+                        [primary(it.return_ty.span, "")],
+                    );
+                    Err(())
+                }
             }
-        }
-    });
+        });
 
     Function {
         owning_sprite: it.owning_sprite,
@@ -208,7 +210,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
 }
 
 pub fn lower_parameter(it: super::Parameter, tcx: &mut Context) -> Parameter {
-    let ty = it.ty.ty(None, tcx).and_then(|ty_ty| {
+    let ty = ty::of_expression(&it.ty, None, tcx).and_then(|ty_ty| {
         if !matches!(ty_ty, Ty::Ty) {
             tcx.diagnostics.error(
                 "function parameter type must be a type",
