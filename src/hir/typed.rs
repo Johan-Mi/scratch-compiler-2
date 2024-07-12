@@ -116,8 +116,8 @@ fn constructor(name: String, struct_: &Struct) -> Function {
 
 pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
     Struct {
-        name_span: it.name_span,
-        name_token: it.name_token,
+        name_span: it.name.span,
+        name_token: it.name.node,
         fields: it
             .fields
             .into_iter()

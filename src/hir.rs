@@ -35,8 +35,8 @@ impl<Func> Document<Func> {
                 diagnostics.error(
                     format!("multiple definitions of struct `{name}`"),
                     [
-                        primary(struct_.name_span, ""),
-                        primary(old_struct.name_span, ""),
+                        primary(struct_.name.span, ""),
+                        primary(old_struct.name.span, ""),
                     ],
                 );
             } else {
@@ -65,8 +65,7 @@ pub struct GlobalVariable {
 
 #[derive(Debug)]
 pub struct Struct {
-    name_span: Span,
-    name_token: SyntaxToken,
+    name: Spanned<SyntaxToken>,
     pub fields: Vec<Spanned<Field>>,
 }
 

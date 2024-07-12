@@ -36,9 +36,9 @@ impl Document {
                 tcx.diagnostics.error(
                     format!("redefinition of struct `{name}`"),
                     [
-                        primary(struct_.name_span, "defined here"),
+                        primary(struct_.name.span, "defined here"),
                         primary(
-                            old_struct.name_span,
+                            old_struct.name.span,
                             "previously defined here",
                         ),
                     ],
@@ -139,8 +139,10 @@ impl Struct {
         Ok((
             name.to_string(),
             Self {
-                name_span,
-                name_token: name,
+                name: Spanned {
+                    node: name,
+                    span: name_span,
+                },
                 fields,
             },
         ))
