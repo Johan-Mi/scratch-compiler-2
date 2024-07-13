@@ -55,13 +55,13 @@ impl Visitor for SemanticVisitor<'_> {
     }
 
     fn visit_statement(&mut self, statement: &hir::Statement) {
-        if self.is_inline {
-            if let hir::StatementKind::Return(_) = statement.kind {
-                self.diagnostics.error(
-                    "`return` is not supported in inline functions yet",
-                    [primary(statement.span, "")],
-                );
-            }
+        if self.is_inline
+            && matches!(statement.kind, hir::StatementKind::Return(_))
+        {
+            self.diagnostics.error(
+                "`return` is not supported in inline functions yet",
+                [primary(statement.span, "")],
+            );
         }
     }
 
