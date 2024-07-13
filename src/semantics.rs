@@ -41,9 +41,9 @@ impl Visitor for SemanticVisitor<'_> {
             .iter()
             // A `forever` loop at the end of the block is fine.
             .take(block.statements.len().saturating_sub(1))
-            .find_map(|statement| match statement.kind {
-                hir::StatementKind::Forever { .. } => Some(statement.span),
-                _ => None,
+            .find_map(|statement| {
+                matches!(statement.kind, hir::StatementKind::Forever { .. })
+                    .then_some(statement.span)
             })
         else {
             return;
