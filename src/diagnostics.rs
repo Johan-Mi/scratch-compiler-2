@@ -8,10 +8,25 @@ use rowan::TextRange;
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
-    pub fn show(self, code_map: &codemap::CodeMap) {
-        if !self.0.is_empty() {
-            Emitter::stderr(ColorConfig::Auto, Some(code_map)).emit(&self.0);
+    pub fn show(mut self, code_map: &codemap::CodeMap) {
+        if self.0.is_empty() {
+            return;
         }
+
+        let total_errors =
+            self.0.iter().filter(|it| it.level == Level::Error).count();
+        match total_errors {
+            0 => {}
+            1 => self.note("1 error was generated during compilation", []),
+            _ => self.note(
+                format!(
+                    "{total_errors} errors were generated during compilation"
+                ),
+                [],
+            ),
+        }
+
+        Emitter::stderr(ColorConfig::Auto, Some(code_map)).emit(&self.0);
     }
 
     pub fn error(
