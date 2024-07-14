@@ -1,5 +1,8 @@
 use crate::{
-    hir::{Expression, ExpressionKind},
+    hir::{
+        Document, Expression, ExpressionKind, GlobalVariable, Statement,
+        StatementKind, VisitorPostorderMut,
+    },
     name::Name,
     parser::SyntaxKind,
     ty::{self, Ty},
@@ -101,4 +104,44 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
         ExpressionKind::TypeAscription { inner, .. }
             if is_known(inner, tcx)
     )
+}
+
+pub fn evaluate_all(document: &mut Document, tcx: &mut ty::Context) {
+    struct Visitor<'a, 'b> {
+        tcx: &'a mut ty::Context<'b>,
+    }
+
+    impl VisitorPostorderMut for Visitor<'_, '_> {
+        fn visit_global_variable(&mut self, variable: &mut GlobalVariable) {
+            self.tcx.maybe_define_comptime_known_variable(
+                variable.token.clone(),
+                &variable.initializer,
+            );
+        }
+
+        fn visit_statement(&mut self, statement: &mut Statement) {
+            if let StatementKind::Let { variable, value } = &statement.kind {
+                self.tcx.maybe_define_comptime_known_variable(
+                    variable.clone(),
+                    value,
+                );
+            }
+        }
+
+        fn visit_expression(&mut self, expr: &mut Expression) {
+            evaluate(expr, self.tcx);
+        }
+    }
+
+    for function in document.functions.values_mut() {
+        tcx.variable_types.extend(
+            function
+                .generics
+                .iter()
+                .cloned()
+                .zip(std::iter::repeat(Ok(Ty::Ty))),
+        );
+    }
+
+    Visitor { tcx }.traverse_document(document);
 }

@@ -111,6 +111,111 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
     }
 }
 
+pub trait VisitorPostorderMut {
+    fn visit_global_variable(&mut self, _variable: &mut GlobalVariable) {}
+
+    fn visit_statement(&mut self, _statement: &mut Statement) {}
+
+    fn visit_expression(&mut self, _expr: &mut Expression) {}
+
+    fn traverse_document<Struc>(
+        &mut self,
+        document: &mut Document<super::Function, Struc>,
+    ) {
+        for variable in &mut document.variables {
+            self.traverse_expression(&mut variable.initializer);
+            self.visit_global_variable(variable);
+        }
+        for function in document.functions.values_mut() {
+            self.traverse_function(function);
+        }
+    }
+
+    fn traverse_function(&mut self, function: &mut super::Function) {
+        for parameter in &mut function.parameters {
+            self.traverse_expression(&mut parameter.ty);
+        }
+        self.traverse_block(&mut function.body);
+    }
+
+    fn traverse_block(&mut self, block: &mut Block) {
+        for statement in &mut block.statements {
+            self.traverse_statement(statement);
+        }
+    }
+
+    fn traverse_statement(&mut self, statement: &mut Statement) {
+        match &mut statement.kind {
+            StatementKind::Let { value, .. }
+            | StatementKind::Return(value)
+            | StatementKind::Expr(value) => {
+                self.traverse_expression(value);
+            }
+            StatementKind::If {
+                condition,
+                then,
+                else_,
+            } => {
+                self.traverse_expression(condition);
+                if let Ok(then) = then {
+                    self.traverse_block(then);
+                }
+                if let Ok(else_) = else_ {
+                    self.traverse_block(else_);
+                }
+            }
+            StatementKind::Forever { body, .. } => {
+                if let Ok(body) = body {
+                    self.traverse_block(body);
+                }
+            }
+            StatementKind::Repeat { times: value, body }
+            | StatementKind::While {
+                condition: value,
+                body,
+            }
+            | StatementKind::Until {
+                condition: value,
+                body,
+            }
+            | StatementKind::For {
+                times: value, body, ..
+            } => {
+                self.traverse_expression(value);
+                if let Ok(body) = body {
+                    self.traverse_block(body);
+                }
+            }
+            StatementKind::Error => {}
+        }
+        self.visit_statement(statement);
+    }
+
+    fn traverse_expression(&mut self, expr: &mut Expression) {
+        match &mut expr.kind {
+            ExpressionKind::Variable(_)
+            | ExpressionKind::Imm(_)
+            | ExpressionKind::Lvalue(_)
+            | ExpressionKind::Error => {}
+            ExpressionKind::FunctionCall { arguments, .. } => {
+                for (_, arg) in arguments {
+                    self.traverse_expression(arg);
+                }
+            }
+            ExpressionKind::GenericTypeInstantiation { arguments, .. }
+            | ExpressionKind::ListLiteral(arguments) => {
+                for arg in arguments {
+                    self.traverse_expression(arg);
+                }
+            }
+            ExpressionKind::TypeAscription { inner, .. } => {
+                self.traverse_expression(inner);
+            }
+        }
+        self.visit_expression(expr);
+    }
+}
+
 pub trait HasBody {
     fn body(&self) -> &Block;
 }
