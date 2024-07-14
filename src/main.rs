@@ -102,12 +102,12 @@ fn compile_or_check(
 
     let mut generator = generator::Generator::default();
 
-    let mut document = builtins::hir(&mut generator, code_map, &mut tcx);
+    let mut document = builtins::hir(&mut generator, code_map, tcx.diagnostics);
     imports::import(
         &mut document,
         source_file,
         &mut generator,
-        &mut tcx,
+        tcx.diagnostics,
         code_map,
     )
     .map_err(|err| {
@@ -115,6 +115,7 @@ fn compile_or_check(
         tcx.diagnostics.note(err.to_string(), []);
     })?;
 
+    comptime::evaluate_all(&mut document, &mut tcx);
     let mut document = hir::typed::lower(document, &mut tcx, &mut generator);
     if std::env::var_os("DUMP_THIR").is_some() {
         eprintln!("{document:#?}");

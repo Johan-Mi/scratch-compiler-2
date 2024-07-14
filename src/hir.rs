@@ -1,7 +1,7 @@
 pub mod lowering;
 pub mod typed;
 mod visit;
-pub use visit::Visitor;
+pub use visit::{Visitor, VisitorPostorderMut};
 
 use crate::{
     comptime::Value,
@@ -71,7 +71,7 @@ pub struct Struct {
 #[derive(Debug)]
 pub struct Field {
     name: SyntaxToken,
-    ty: Expression,
+    pub ty: Expression,
 }
 
 #[derive(Debug)]
