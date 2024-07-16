@@ -2,6 +2,8 @@ use super::{
     Block, Document, Expression, ExpressionKind, GlobalVariable, Statement,
     StatementKind,
 };
+use crate::hir;
+use std::any::Any;
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
@@ -16,8 +18,19 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
 
     fn visit_expression(&mut self, _expr: &Expression) {}
 
-    fn traverse_document<Struc>(&mut self, document: &Document<Func, Struc>) {
-        // FIXME: traverse structs
+    fn traverse_document<Struc: Any>(
+        &mut self,
+        document: &Document<Func, Struc>,
+    ) {
+        for struct_ in document.structs.values() {
+            if let Some(struct_) =
+                <dyn Any>::downcast_ref::<hir::Struct>(struct_)
+            {
+                for field in &struct_.fields {
+                    self.traverse_expression(&field.ty);
+                }
+            }
+        }
         for variable in &document.variables {
             self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);
@@ -120,11 +133,15 @@ pub trait VisitorPostorderMut {
 
     fn visit_expression(&mut self, _expr: &mut Expression) {}
 
-    fn traverse_document<Struc>(
+    fn traverse_document(
         &mut self,
-        document: &mut Document<super::Function, Struc>,
+        document: &mut Document<super::Function, hir::Struct>,
     ) {
-        // FIXME: traverse structs
+        for struct_ in document.structs.values_mut() {
+            for field in &mut struct_.fields {
+                self.traverse_expression(&mut field.node.ty);
+            }
+        }
         for variable in &mut document.variables {
             self.traverse_expression(&mut variable.initializer);
             self.visit_global_variable(variable);
