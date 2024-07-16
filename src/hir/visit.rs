@@ -27,7 +27,7 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
     }
 
     fn traverse_function(&mut self, function: &Func) {
-        // FIXME: traverse parameters
+        // FIXME: traverse parameters and return type
         self.visit_function(function);
         self.traverse_block(function.body());
     }
@@ -135,6 +135,7 @@ pub trait VisitorPostorderMut {
         for parameter in &mut function.parameters {
             self.traverse_expression(&mut parameter.ty);
         }
+        self.traverse_expression(&mut function.return_ty);
         self.traverse_block(&mut function.body);
     }
 
