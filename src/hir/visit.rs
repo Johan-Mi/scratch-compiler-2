@@ -17,6 +17,7 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
     fn visit_expression(&mut self, _expr: &Expression) {}
 
     fn traverse_document<Struc>(&mut self, document: &Document<Func, Struc>) {
+        // FIXME: traverse structs
         for variable in &document.variables {
             self.visit_global_variable(variable);
             self.traverse_expression(&variable.initializer);
@@ -123,6 +124,7 @@ pub trait VisitorPostorderMut {
         &mut self,
         document: &mut Document<super::Function, Struc>,
     ) {
+        // FIXME: traverse structs
         for variable in &mut document.variables {
             self.traverse_expression(&mut variable.initializer);
             self.visit_global_variable(variable);
