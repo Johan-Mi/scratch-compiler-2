@@ -7,7 +7,7 @@ use std::any::Any;
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
 /// traverse the HIR.
-pub trait Visitor<Func: HasBody = super::typed::Function> {
+pub trait Visitor<Func: Any = super::typed::Function> {
     fn visit_global_variable(&mut self, _variable: &GlobalVariable) {}
 
     fn visit_function(&mut self, _function: &Func) {}
@@ -41,9 +41,20 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
     }
 
     fn traverse_function(&mut self, function: &Func) {
-        // FIXME: traverse parameters and return type
         self.visit_function(function);
-        self.traverse_block(function.body());
+        if let Some(function) =
+            <dyn Any>::downcast_ref::<hir::Function>(function)
+        {
+            for parameter in &function.parameters {
+                self.traverse_expression(&parameter.ty);
+            }
+            self.traverse_expression(&function.return_ty);
+            self.traverse_block(&function.body);
+        } else if let Some(function) =
+            <dyn Any>::downcast_ref::<super::typed::Function>(function)
+        {
+            self.traverse_block(&function.body);
+        }
     }
 
     fn traverse_block(&mut self, block: &Block) {
@@ -235,21 +246,5 @@ pub trait VisitorPostorderMut {
             }
         }
         self.visit_expression(expr);
-    }
-}
-
-pub trait HasBody {
-    fn body(&self) -> &Block;
-}
-
-impl HasBody for super::Function {
-    fn body(&self) -> &Block {
-        &self.body
-    }
-}
-
-impl HasBody for super::typed::Function {
-    fn body(&self) -> &Block {
-        &self.body
     }
 }
