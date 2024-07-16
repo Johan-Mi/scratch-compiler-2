@@ -104,8 +104,9 @@ pub trait Visitor<Func: HasBody = super::typed::Function> {
                     self.traverse_expression(arg);
                 }
             }
-            ExpressionKind::TypeAscription { inner, .. } => {
+            ExpressionKind::TypeAscription { inner, ty } => {
                 self.traverse_expression(inner);
+                self.traverse_expression(ty);
             }
         }
     }
@@ -209,8 +210,9 @@ pub trait VisitorPostorderMut {
                     self.traverse_expression(arg);
                 }
             }
-            ExpressionKind::TypeAscription { inner, .. } => {
+            ExpressionKind::TypeAscription { inner, ty } => {
                 self.traverse_expression(inner);
+                self.traverse_expression(ty);
             }
         }
         self.visit_expression(expr);
