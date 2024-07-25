@@ -197,8 +197,8 @@ fn check_global_variable(
 }
 
 fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
-    tcx.sprite = function.owning_sprite.clone();
-    tcx.function_return_ty = function.return_ty.node.clone();
+    tcx.sprite.clone_from(&function.owning_sprite);
+    tcx.function_return_ty.clone_from(&function.return_ty.node);
 
     tcx.variable_types
         .extend(function.parameters.iter().map(|parameter| {

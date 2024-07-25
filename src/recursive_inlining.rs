@@ -64,6 +64,6 @@ impl Visitor for CallGraphVisitor<'_> {
         let Some(index) = self.resolved_calls.get(&name_span.low()) else {
             return;
         };
-        self.graph.add_edge(self.caller, self.nodes[&index], ());
+        self.graph.add_edge(self.caller, self.nodes[index], ());
     }
 }

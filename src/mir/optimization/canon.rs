@@ -13,7 +13,7 @@ pub(super) fn icalize(op: &mut Op) -> bool {
             args.reverse();
             return true;
         } else if let ("sub", [Var(_), Imm(Num(n))]) = (&**name, &mut **args) {
-            *name = "add".to_owned();
+            "add".clone_into(name);
             *n *= -1.0;
             return true;
         }

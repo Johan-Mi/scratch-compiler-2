@@ -35,7 +35,7 @@ pub fn import(
             .filter_map(|it| crate::parser::parse_string_literal(&it).ok())
         {
             let absolute_path = std::fs::canonicalize(
-                &absolute_path.parent().unwrap().join(&import),
+                absolute_path.parent().unwrap().join(&import),
             )?;
             if !done.contains(&absolute_path) {
                 pending.push((absolute_path, import));

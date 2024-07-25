@@ -250,7 +250,7 @@ impl Parser<'_> {
         }
     }
 
-    fn peek(&mut self) -> SyntaxKind {
+    fn peek(&self) -> SyntaxKind {
         self.tokens
             .iter()
             .map(|token| token.kind)
@@ -258,7 +258,7 @@ impl Parser<'_> {
             .unwrap_or(EOF)
     }
 
-    fn peek_span(&mut self) -> Span {
+    fn peek_span(&self) -> Span {
         self.tokens
             .iter()
             .find(|token| token.kind != TRIVIA)
@@ -271,11 +271,11 @@ impl Parser<'_> {
             )
     }
 
-    fn at(&mut self, kind: SyntaxKind) -> bool {
+    fn at(&self, kind: SyntaxKind) -> bool {
         self.peek() == kind
     }
 
-    fn immediately_at(&mut self, kind: SyntaxKind) -> bool {
+    fn immediately_at(&self, kind: SyntaxKind) -> bool {
         self.tokens.first().is_some_and(|token| token.kind == kind)
     }
 
