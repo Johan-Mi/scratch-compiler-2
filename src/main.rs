@@ -1,6 +1,7 @@
 #![deny(unsafe_code)]
+#![deny(clippy::allow_attributes)]
 #![warn(clippy::nursery, clippy::pedantic)]
-#![allow(clippy::enum_glob_use, clippy::option_if_let_else)]
+#![expect(clippy::enum_glob_use)]
 
 mod ast;
 mod builtins;
@@ -16,7 +17,10 @@ mod imports;
 mod linter;
 mod mir;
 mod name;
-#[allow(unsafe_code)]
+#[expect(
+    unsafe_code,
+    reason = "`SyntaxKind` cast uses `transmute`, which is not truly required but is way less boilerplate-y than the safe way to do it"
+)]
 mod parser;
 mod recursive_inlining;
 mod semantics;

@@ -107,7 +107,7 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
     );
 }
 
-#[allow(clippy::enum_variant_names)]
+#[expect(clippy::enum_variant_names)]
 pub enum Special {
     WhenFlagClicked,
     WhenKeyPressed,

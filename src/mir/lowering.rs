@@ -77,7 +77,7 @@ pub struct FunctionSignature {
     is_intrinsic: bool,
 }
 
-#[allow(clippy::fallible_impl_from)]
+#[expect(clippy::fallible_impl_from)]
 impl From<&hir::typed::Function> for FunctionSignature {
     fn from(function: &hir::typed::Function) -> Self {
         Self {

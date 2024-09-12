@@ -20,7 +20,7 @@ pub enum Ty {
     String,
     Bool,
     Sprite,
-    #[allow(clippy::enum_variant_names)]
+    #[expect(clippy::enum_variant_names, reason = "`Type` is a type")]
     Ty,
     Var(Box<Self>),
     List(Box<Self>),

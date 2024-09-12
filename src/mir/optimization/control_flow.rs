@@ -55,7 +55,10 @@ pub(super) fn no_repeat(block: &mut Block) -> bool {
 }
 
 pub(super) fn repeat_once(block: &mut Block) -> bool {
-    #[allow(clippy::float_cmp)]
+    #[expect(
+        clippy::float_cmp,
+        reason = "`times` is rounded before being compared"
+    )]
     let Some((index, variable, mut body)) = block
         .ops
         .iter_mut()

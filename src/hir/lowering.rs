@@ -1,5 +1,3 @@
-#![allow(clippy::similar_names)]
-
 use super::{
     Block, Costume, Document, Expression, ExpressionKind, Field, Function,
     GlobalVariable, Parameter, Result, Sprite, Statement, StatementKind,
@@ -27,9 +25,9 @@ impl Document {
     ) -> Self {
         let mut structs = BTreeMap::<_, Struct>::new();
 
-        for struct_ in ast.structs() {
-            let Ok((name, struct_)) =
-                Struct::lower(&struct_, file, diagnostics)
+        for r#struct in ast.structs() {
+            let Ok((name, r#struct)) =
+                Struct::lower(&r#struct, file, diagnostics)
             else {
                 continue;
             };
@@ -38,7 +36,7 @@ impl Document {
                 diagnostics.error(
                     format!("redefinition of struct `{name}`"),
                     [
-                        primary(struct_.name.span, "defined here"),
+                        primary(r#struct.name.span, "defined here"),
                         primary(
                             old_struct.name.span,
                             "previously defined here",
@@ -46,7 +44,7 @@ impl Document {
                     ],
                 );
             } else {
-                structs.insert(name, struct_);
+                structs.insert(name, r#struct);
             }
         }
 
@@ -735,7 +733,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 [b'-', b'0', b'b' | b'B', ..] => (true, &text[3..]),
                 _ => (false, &text[2..]),
             };
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             ExpressionKind::Imm(Value::Num(
                 u64::from_str_radix(text, 2).unwrap() as f64
                     * if is_negative { -1.0 } else { 1.0 },
@@ -748,7 +746,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 [b'-', b'0', b'o' | b'O', ..] => (true, &text[3..]),
                 _ => (false, &text[2..]),
             };
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             ExpressionKind::Imm(Value::Num(
                 u64::from_str_radix(text, 8).unwrap() as f64
                     * if is_negative { -1.0 } else { 1.0 },
@@ -761,7 +759,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 [b'-', b'0', b'x' | b'X', ..] => (true, &text[3..]),
                 _ => (false, &text[2..]),
             };
-            #[allow(clippy::cast_precision_loss)]
+            #[expect(clippy::cast_precision_loss)]
             ExpressionKind::Imm(Value::Num(
                 u64::from_str_radix(text, 16).unwrap() as f64
                     * if is_negative { -1.0 } else { 1.0 },

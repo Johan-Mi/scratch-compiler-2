@@ -24,7 +24,6 @@ pub fn perform(document: &mut Document) {
         .retain(|index, _| visitor.required_functions.contains(index));
 }
 
-#[allow(clippy::struct_field_names)]
 struct DceVisitor {
     pending_functions: BTreeSet<usize>,
     required_functions: BTreeSet<usize>,

@@ -46,7 +46,7 @@ pub fn parse_string_literal(token: &SyntaxToken) -> Result<String, ()> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Logos)]
-#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
+#[expect(non_camel_case_types, clippy::upper_case_acronyms)]
 #[repr(u16)]
 pub enum SyntaxKind {
     EOF = 0,

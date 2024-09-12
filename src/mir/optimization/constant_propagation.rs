@@ -40,11 +40,11 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
             Some(Imm(String(ryu_js::Buffer::new().format(*num).to_owned())))
         }
         ("to-string", [Imm(Bool(b))]) => Some(Imm(String(b.to_string()))),
-        #[allow(clippy::cast_precision_loss)]
+        #[expect(clippy::cast_precision_loss)]
         ("length", [Imm(String(s))]) => {
             Some(Imm(Num(s.chars().count() as f64)))
         }
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         ("letter", [Imm(String(s)), Imm(Num(index))]) => Some(Imm(String(
             (*index as usize)
                 .checked_sub(1)
@@ -60,7 +60,10 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
             Some(Imm(Num(lhs.rem_euclid(*rhs))))
         }
         ("lt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs < rhs))),
-        #[allow(clippy::float_cmp)]
+        #[expect(
+            clippy::float_cmp,
+            reason = "comparing floats is the entire point of `eq`"
+        )]
         ("eq", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs == rhs))),
         ("gt", [Imm(Num(lhs)), Imm(Num(rhs))]) => Some(Imm(Bool(lhs > rhs))),
         ("lt", [Imm(String(lhs)), Imm(String(rhs))]) => {
@@ -78,11 +81,13 @@ fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
         }
         ("ceil", [Imm(Num(lhs))]) => Some(Imm(Num(lhs.ceil()))),
 
-        #[allow(clippy::float_cmp)]
         ("add", [n, Imm(Num(identity))]) if *identity == 0.0 => {
             Some(mem::take(n))
         }
-        #[allow(clippy::float_cmp)]
+        #[expect(
+            clippy::float_cmp,
+            reason = "this optimization is only sound for every lhs if rhs is exactly 1"
+        )]
         ("mul", [n, Imm(Num(identity))]) if *identity == 1.0 => {
             Some(mem::take(n))
         }
