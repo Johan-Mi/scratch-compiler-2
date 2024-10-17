@@ -1,6 +1,6 @@
 use super::{
     Block, Call, Document, Function, Generator, Op, Parameter, RealList,
-    RealVar, Sprite, Value,
+    RealVar, Value,
 };
 use crate::{
     function::ResolvedCalls,
@@ -50,18 +50,7 @@ pub fn lower(
         .collect();
 
     let document = Document {
-        sprites: document
-            .sprites
-            .into_iter()
-            .map(|(name, sprite)| {
-                (
-                    name,
-                    Sprite {
-                        costumes: sprite.costumes,
-                    },
-                )
-            })
-            .collect(),
+        sprites: document.sprites,
         functions,
     };
 
