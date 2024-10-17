@@ -128,7 +128,7 @@ impl Formatter {
     fn indent(&mut self) {
         if self.newlines != 0 {
             self.output
-                .extend(std::iter::repeat(' ').take(self.indentation));
+                .extend(std::iter::repeat_n(' ', self.indentation));
         }
     }
 
