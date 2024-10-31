@@ -30,7 +30,7 @@ pub fn perform(
     };
 
     while let Some(index) = visitor.pending_functions.pop_last() {
-        visitor.required_functions.insert(index);
+        let _: bool = visitor.required_functions.insert(index);
         visitor.traverse_function(&document.functions[&index]);
     }
     document.functions.retain(|index, function| {
@@ -67,7 +67,7 @@ impl Visitor for DceVisitor<'_> {
             return;
         };
         if !self.required_functions.contains(&function) {
-            self.pending_functions.insert(function);
+            let _: bool = self.pending_functions.insert(function);
         }
     }
 }

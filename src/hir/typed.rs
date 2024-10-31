@@ -69,9 +69,10 @@ pub fn lower(
 
     for (name, struct_) in &document.structs {
         let function = constructor(name.clone(), struct_);
-        document
+        assert!(document
             .functions
-            .insert(usize::from(generator.new_u16()), function);
+            .insert(usize::from(generator.new_u16()), function)
+            .is_none());
     }
 
     document

@@ -24,7 +24,7 @@ pub(super) fn const_if_condition(block: &mut Block) -> bool {
     else {
         return false;
     };
-    block.ops.splice(index..=index, branch.ops);
+    _ = block.ops.splice(index..=index, branch.ops);
     true
 }
 
@@ -50,7 +50,7 @@ pub(super) fn no_repeat(block: &mut Block) -> bool {
     }) else {
         return false;
     };
-    block.ops.remove(index);
+    let _: Op = block.ops.remove(index);
     true
 }
 
@@ -83,7 +83,7 @@ pub(super) fn repeat_once(block: &mut Block) -> bool {
         }
         .traverse_block(&mut body);
     }
-    block.ops.splice(index..=index, body.ops);
+    _ = block.ops.splice(index..=index, body.ops);
     true
 }
 

@@ -37,7 +37,7 @@ impl Visitor for SsaVarRefresher<'_> {
             return;
         };
         let new_var = self.generator.new_ssa_var();
-        self.renames.insert(*variable, new_var);
+        assert!(self.renames.insert(*variable, new_var).is_none());
         *variable = new_var;
     }
 
@@ -101,7 +101,7 @@ impl Visitor for Inliner<'_> {
                 .traverse_block(block);
             }
 
-            block.ops.splice(index..=index, cloned_body.ops);
+            _ = block.ops.splice(index..=index, cloned_body.ops);
         }
     }
 }

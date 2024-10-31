@@ -16,7 +16,7 @@ pub fn perform(document: &mut Document) {
     };
 
     while let Some(index) = visitor.pending_functions.pop_last() {
-        visitor.required_functions.insert(index);
+        let _: bool = visitor.required_functions.insert(index);
         visitor.traverse_function(document.functions.get_mut(&index).unwrap());
     }
     document
@@ -35,7 +35,7 @@ impl Visitor for DceVisitor {
             return;
         };
         if !self.required_functions.contains(&function) {
-            self.pending_functions.insert(function);
+            let _: bool = self.pending_functions.insert(function);
         }
     }
 }

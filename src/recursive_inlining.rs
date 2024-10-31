@@ -3,7 +3,10 @@ use crate::{
     function::ResolvedCalls,
     hir::{self, typed::Document, ExpressionKind, Visitor},
 };
-use petgraph::{prelude::NodeIndex, Direction, Graph};
+use petgraph::{
+    prelude::{EdgeIndex, NodeIndex},
+    Direction, Graph,
+};
 use std::collections::HashMap;
 
 pub fn check(
@@ -64,6 +67,7 @@ impl Visitor for CallGraphVisitor<'_> {
         let Some(index) = self.resolved_calls.get(&name_span.low()) else {
             return;
         };
-        self.graph.add_edge(self.caller, self.nodes[index], ());
+        let _: EdgeIndex =
+            self.graph.add_edge(self.caller, self.nodes[index], ());
     }
 }

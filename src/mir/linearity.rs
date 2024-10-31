@@ -26,7 +26,8 @@ struct Counter {
 impl Visitor for Counter {
     fn visit_value(&mut self, value: &mut Value) {
         if let Value::Var(var) = *value {
-            self.used_once
+            let _: &mut bool = self
+                .used_once
                 .entry(var)
                 .and_modify(|entry| *entry = false)
                 .or_insert(true);
@@ -45,7 +46,7 @@ impl Visitor for Finder {
         for op in block.ops.iter().rev() {
             let this_is_linear = match *op {
                 Op::Call(Some(variable), _) if candidates.remove(&variable) => {
-                    self.is_linear.insert(variable);
+                    let _: bool = self.is_linear.insert(variable);
                     true
                 }
                 _ => false,

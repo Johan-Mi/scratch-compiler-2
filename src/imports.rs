@@ -23,7 +23,7 @@ pub fn import(
         }
 
         let source_code = std::fs::read_to_string(&absolute_path)?;
-        done.insert(absolute_path.clone());
+        assert!(done.insert(absolute_path.clone()));
         let file = code_map.add_file(path_name, source_code);
         let document = crate::parser::parse(&file, diagnostics);
         crate::syntax_errors::check(&document, &file, diagnostics);

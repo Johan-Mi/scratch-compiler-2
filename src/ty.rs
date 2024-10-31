@@ -99,7 +99,7 @@ impl Ty {
         *self == other
             || match (self, other) {
                 (_, Self::Generic(name)) => {
-                    constraints.insert(name, self.clone());
+                    assert!(constraints.insert(name, self.clone()).is_none());
                     true
                 }
                 (Self::Var(this), Self::Var(other))
@@ -184,10 +184,15 @@ fn check_global_variable(
 ) {
     let ty = of_expression(&variable.initializer, None, tcx);
     if matches!(ty, Ok(Ty::List(_))) {
-        tcx.comptime_known_variables
-            .insert(variable.token.clone(), None);
+        assert!(tcx
+            .comptime_known_variables
+            .insert(variable.token.clone(), None)
+            .is_none());
     }
-    tcx.variable_types.insert(variable.token.clone(), ty);
+    assert!(tcx
+        .variable_types
+        .insert(variable.token.clone(), ty)
+        .is_none());
     if !comptime::is_known(&variable.initializer, tcx) {
         tcx.diagnostics.error(
             "global variable initializer is not comptime-known",
@@ -247,9 +252,12 @@ fn check_statement(
         hir::StatementKind::Let { variable, value } => {
             let ty = of_expression(value, None, tcx);
             if matches!(ty, Ok(Ty::List(_))) {
-                tcx.comptime_known_variables.insert(variable.clone(), None);
+                assert!(tcx
+                    .comptime_known_variables
+                    .insert(variable.clone(), None)
+                    .is_none());
             }
-            tcx.variable_types.insert(variable.clone(), ty);
+            assert!(tcx.variable_types.insert(variable.clone(), ty).is_none());
             Ok(Ty::Unit)
         }
         hir::StatementKind::If {
@@ -269,10 +277,10 @@ fn check_statement(
                 }
             }
             if let Ok(then) = then {
-                let _ = check_block(then, tcx);
+                let _: Result<Ty, ()> = check_block(then, tcx);
             }
             if let Ok(else_) = else_ {
-                let _ = check_block(else_, tcx);
+                let _: Result<Ty, ()> = check_block(else_, tcx);
             }
             Ok(Ty::Unit)
         }
@@ -289,13 +297,13 @@ fn check_statement(
                 }
             }
             if let Ok(body) = body {
-                let _ = check_block(body, tcx);
+                let _: Result<Ty, ()> = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
         hir::StatementKind::Forever { body, .. } => {
             if let Ok(body) = body {
-                let _ = check_block(body, tcx);
+                let _: Result<Ty, ()> = check_block(body, tcx);
             }
             Ok(Ty::Never)
         }
@@ -321,7 +329,7 @@ fn check_statement(
                 }
             }
             if let Ok(body) = body {
-                let _ = check_block(body, tcx);
+                let _: Result<Ty, ()> = check_block(body, tcx);
             }
             Ok(Ty::Unit)
         }
@@ -359,10 +367,13 @@ fn check_for(
         }
     }
     if let Ok(variable) = variable {
-        tcx.variable_types.insert(variable.clone(), Ok(Ty::Num));
+        assert!(tcx
+            .variable_types
+            .insert(variable.clone(), Ok(Ty::Num))
+            .is_none());
     }
     if let Ok(body) = body {
-        let _ = check_block(body, tcx);
+        let _: Result<Ty, ()> = check_block(body, tcx);
     }
     Ty::Unit
 }
@@ -449,7 +460,10 @@ pub fn of_expression(
             let name = hir::desugar_function_call_name(name_or_operator);
             let (resolved, return_ty) =
                 crate::function::resolve(name, arguments, *name_span, tcx)?;
-            tcx.resolved_calls.insert(name_span.low(), resolved);
+            assert!(tcx
+                .resolved_calls
+                .insert(name_span.low(), resolved)
+                .is_none());
 
             for (param, (_, arg)) in
                 std::iter::zip(&tcx.functions[&resolved].parameters, arguments)
@@ -623,8 +637,10 @@ impl Context<'_> {
             ..
         } = value
         {
-            self.comptime_known_variables
-                .insert(variable, Some(value.clone()));
+            assert!(self
+                .comptime_known_variables
+                .insert(variable, Some(value.clone()))
+                .is_none());
         }
     }
 }

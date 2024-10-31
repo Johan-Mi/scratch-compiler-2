@@ -15,7 +15,7 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
             let variable = *variable;
             if let Some(value) = evaluate_intrinsic(name, args) {
                 dirty = true;
-                block.ops.remove(index);
+                let _: Op = block.ops.remove(index);
                 SsaVarReplacer {
                     variable,
                     replacement: value,

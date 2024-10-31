@@ -220,12 +220,14 @@ impl CompiledFunctionRef {
         for (custom_block_param, function_param) in
             std::iter::zip(&parameters, &function.parameters)
         {
-            compiled_ssa_vars.insert(
-                function_param.ssa_var,
-                CompiledSsaVar::CustomBlockParameter(
-                    custom_block_param.clone(),
-                ),
-            );
+            assert!(compiled_ssa_vars
+                .insert(
+                    function_param.ssa_var,
+                    CompiledSsaVar::CustomBlockParameter(
+                        custom_block_param.clone(),
+                    ),
+                )
+                .is_none());
         }
 
         let (block, insertion_point) =
@@ -289,7 +291,8 @@ fn compile_function(
         }
         Err(()) => {
             let compiled_ref = cx.compiled_functions.get_mut(&index).unwrap();
-            cx.sprite
+            let _: InsertionPoint = cx
+                .sprite
                 .insert_at(compiled_ref.insertion_point.take().unwrap());
             compiled_ref.return_variable.clone()
         }
@@ -331,11 +334,11 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             } else {
                 let [after, else_clause] = cx.sprite.if_else(condition);
                 compile_block(then, cx);
-                cx.sprite.insert_at(else_clause);
+                let _: InsertionPoint = cx.sprite.insert_at(else_clause);
                 compile_block(else_, cx);
                 after
             };
-            cx.sprite.insert_at(after);
+            let _: InsertionPoint = cx.sprite.insert_at(after);
         }
         mir::Op::Forever { body } => {
             cx.sprite.forever();
@@ -346,7 +349,7 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
             let condition = condition.b(&mut cx.sprite);
             let after = cx.sprite.while_(condition);
             compile_block(body, cx);
-            cx.sprite.insert_at(after);
+            let _: InsertionPoint = cx.sprite.insert_at(after);
         }
         mir::Op::For {
             variable,
@@ -359,14 +362,16 @@ fn compile_op(op: mir::Op, cx: &mut Context) {
                     name: variable.to_string(),
                     value: Constant::Number(0.0),
                 });
-                cx.compiled_ssa_vars
-                    .insert(variable, CompiledSsaVar::Relevant(var.clone()));
+                assert!(cx
+                    .compiled_ssa_vars
+                    .insert(variable, CompiledSsaVar::Relevant(var.clone()))
+                    .is_none());
                 cx.sprite.for_(var, times.s())
             } else {
                 cx.sprite.repeat(times.s())
             };
             compile_block(body, cx);
-            cx.sprite.insert_at(after);
+            let _: InsertionPoint = cx.sprite.insert_at(after);
         }
         mir::Op::Call(variable, mir::Call::Custom { function, args }) => {
             compile_function_call(function, args, variable, cx);
@@ -541,16 +546,20 @@ fn store_result(
     cx: &mut Context,
 ) {
     if cx.is_linear.contains(&variable) {
-        cx.compiled_ssa_vars
-            .insert(variable, CompiledSsaVar::Linear(operand));
+        assert!(cx
+            .compiled_ssa_vars
+            .insert(variable, CompiledSsaVar::Linear(operand))
+            .is_none());
     } else {
         let var = cx.sprite.add_variable(Variable {
             name: variable.to_string(),
             value: Constant::Number(0.0),
         });
         cx.sprite.put(block::set_variable(var.clone(), operand.s()));
-        cx.compiled_ssa_vars
-            .insert(variable, CompiledSsaVar::Relevant(var));
+        assert!(cx
+            .compiled_ssa_vars
+            .insert(variable, CompiledSsaVar::Relevant(var))
+            .is_none());
     }
 }
 

@@ -21,7 +21,7 @@ struct Finder {
 impl Visitor for Finder {
     fn visit_value(&mut self, value: &mut Value) {
         if let Value::Var(var) = *value {
-            self.used.insert(var);
+            let _: bool = self.used.insert(var);
         }
     }
 }

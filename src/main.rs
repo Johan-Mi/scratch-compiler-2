@@ -1,5 +1,10 @@
 #![deny(unsafe_code)]
-#![deny(clippy::allow_attributes, clippy::undocumented_unsafe_blocks)]
+#![deny(
+    clippy::allow_attributes,
+    clippy::undocumented_unsafe_blocks,
+    clippy::let_underscore_untyped,
+    unused_results
+)]
 #![warn(clippy::nursery, clippy::pedantic)]
 #![expect(clippy::enum_glob_use)]
 

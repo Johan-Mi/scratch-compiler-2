@@ -98,7 +98,10 @@ fn lower_function(
         .into_iter()
         .map(|param| {
             let ssa_var = cx.generator.new_ssa_var();
-            cx.vars.insert(param.internal_name, Value::Var(ssa_var));
+            assert!(cx
+                .vars
+                .insert(param.internal_name, Value::Var(ssa_var))
+                .is_none());
             Parameter {
                 ssa_var,
                 ty: param.ty.node.unwrap(),
@@ -149,7 +152,7 @@ fn lower_variable_initialization(
             },
         ));
     } else {
-        cx.vars.insert(variable, value);
+        assert!(cx.vars.insert(variable, value).is_none());
     }
 }
 
@@ -226,7 +229,10 @@ fn lower_statement(
         } => {
             let times = lower_expression(times, cx).unwrap();
             let var = cx.generator.new_ssa_var();
-            cx.vars.insert(variable.unwrap(), Value::Var(var));
+            assert!(cx
+                .vars
+                .insert(variable.unwrap(), Value::Var(var))
+                .is_none());
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
                 variable: Some(var),

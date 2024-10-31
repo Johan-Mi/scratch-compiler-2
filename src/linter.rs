@@ -29,18 +29,18 @@ struct LintVisitor {
 
 impl Visitor<crate::hir::Function> for LintVisitor {
     fn visit_global_variable(&mut self, variable: &GlobalVariable) {
-        self.unused_variables.insert(variable.token.clone());
+        let _: bool = self.unused_variables.insert(variable.token.clone());
     }
 
     fn visit_statement(&mut self, statement: &Statement) {
         if let StatementKind::Let { variable, .. } = &statement.kind {
-            self.unused_variables.insert(variable.clone());
+            let _: bool = self.unused_variables.insert(variable.clone());
         }
     }
 
     fn visit_expression(&mut self, expr: &crate::hir::Expression) {
         if let ExpressionKind::Variable(Name::User(variable)) = &expr.kind {
-            self.unused_variables.remove(variable);
+            let _: bool = self.unused_variables.remove(variable);
         }
     }
 }

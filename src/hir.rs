@@ -30,16 +30,22 @@ pub struct Document<Func = Function, Struct = self::Struct> {
 impl<Func> Document<Func> {
     pub fn merge(&mut self, other: Self, diagnostics: &mut Diagnostics) {
         for (name, struct_) in other.structs {
-            if let Some(old_struct) = self.structs.get(&name) {
-                diagnostics.error(
-                    format!("multiple definitions of struct `{name}`"),
-                    [
-                        primary(struct_.name.span, ""),
-                        primary(old_struct.name.span, ""),
-                    ],
-                );
-            } else {
-                self.structs.insert(name, struct_);
+            match self.structs.entry(name) {
+                Entry::Vacant(vacant) => {
+                    let _: &mut Struct = vacant.insert(struct_);
+                }
+                Entry::Occupied(old_struct) => {
+                    diagnostics.error(
+                        format!(
+                            "multiple definitions of struct `{}`",
+                            old_struct.key()
+                        ),
+                        [
+                            primary(struct_.name.span, ""),
+                            primary(old_struct.get().name.span, ""),
+                        ],
+                    );
+                }
             }
         }
         for (name, sprite) in other.sprites {

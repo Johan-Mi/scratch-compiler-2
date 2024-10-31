@@ -101,7 +101,7 @@ impl Formatter {
             if matches!(token.kind(), RPAREN | RBRACKET)
                 && self.output.ends_with(',')
             {
-                self.output.pop();
+                let _: Option<char> = self.output.pop();
             }
 
             self.indent();

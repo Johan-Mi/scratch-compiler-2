@@ -32,19 +32,25 @@ impl Document {
                 continue;
             };
 
-            if let Some(old_struct) = structs.get(&name) {
-                diagnostics.error(
-                    format!("redefinition of struct `{name}`"),
-                    [
-                        primary(r#struct.name.span, "defined here"),
-                        primary(
-                            old_struct.name.span,
-                            "previously defined here",
+            match structs.entry(name) {
+                Entry::Vacant(vacant) => {
+                    let _: &mut Struct = vacant.insert(r#struct);
+                }
+                Entry::Occupied(old_struct) => {
+                    diagnostics.error(
+                        format!(
+                            "redefinition of struct `{}`",
+                            old_struct.key()
                         ),
-                    ],
-                );
-            } else {
-                structs.insert(name, r#struct);
+                        [
+                            primary(r#struct.name.span, "defined here"),
+                            primary(
+                                old_struct.get().name.span,
+                                "previously defined here",
+                            ),
+                        ],
+                    );
+                }
             }
         }
 
@@ -61,7 +67,7 @@ impl Document {
                     existing.get_mut().merge(sprite);
                 }
                 Entry::Vacant(new) => {
-                    new.insert(sprite);
+                    let _: &mut Sprite = new.insert(sprite);
                 }
             }
         }
@@ -535,7 +541,7 @@ impl Expression {
                         "expected expression",
                     )],
                 );
-                let _ = Self::lower_opt(
+                let _: Self = Self::lower_opt(
                     named_arg.value(),
                     file,
                     diagnostics,
