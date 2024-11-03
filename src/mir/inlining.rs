@@ -1,6 +1,5 @@
 use crate::mir::{
-    visit::SsaVarReplacer, Block, Document, Function, Generator, Op, SsaVar,
-    Value, Visitor,
+    visit::SsaVarReplacer, Block, Document, Function, Generator, Op, SsaVar, Value, Visitor,
 };
 use std::{collections::HashMap, mem};
 
@@ -57,23 +56,20 @@ struct Inliner<'a> {
 
 impl Visitor for Inliner<'_> {
     fn visit_block(&mut self, block: &mut Block) {
-        while let Some((index, variable, args)) = block
-            .ops
-            .iter_mut()
-            .enumerate()
-            .find_map(|(index, op)| match op {
-                Op::Call(variable, Call::Custom { function, args })
-                    if *function == self.id =>
-                {
-                    Some((index, variable, args))
-                }
-                _ => None,
-            })
+        while let Some((index, variable, args)) =
+            block
+                .ops
+                .iter_mut()
+                .enumerate()
+                .find_map(|(index, op)| match op {
+                    Op::Call(variable, Call::Custom { function, args }) if *function == self.id => {
+                        Some((index, variable, args))
+                    }
+                    _ => None,
+                })
         {
             let mut cloned_body = self.function.body.clone();
-            for (arg, param) in
-                std::iter::zip(mem::take(args), &self.function.parameters)
-            {
+            for (arg, param) in std::iter::zip(mem::take(args), &self.function.parameters) {
                 SsaVarReplacer {
                     variable: param.ssa_var,
                     replacement: arg,

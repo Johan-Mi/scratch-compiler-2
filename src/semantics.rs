@@ -55,9 +55,7 @@ impl Visitor for SemanticVisitor<'_> {
     }
 
     fn visit_statement(&mut self, statement: &hir::Statement) {
-        if self.is_inline
-            && matches!(statement.kind, hir::StatementKind::Return(_))
-        {
+        if self.is_inline && matches!(statement.kind, hir::StatementKind::Return(_)) {
             self.diagnostics.error(
                 "`return` is not supported in inline functions yet",
                 [primary(statement.span, "")],
@@ -71,7 +69,10 @@ impl Visitor for SemanticVisitor<'_> {
         } = &expr.kind
         {
             if function::Special::try_from(name_or_operator.text()).is_ok() {
-                self.diagnostics.error(format!("special function `{name_or_operator}` cannot be called"), [primary(expr.span, "")]);
+                self.diagnostics.error(
+                    format!("special function `{name_or_operator}` cannot be called"),
+                    [primary(expr.span, "")],
+                );
             }
         }
     }
@@ -95,32 +96,23 @@ impl SemanticVisitor<'_> {
 
         if function.is_inline {
             self.diagnostics.error(
-                format!(
-                    "special function `{}` cannot be inline",
-                    *function.name
-                ),
+                format!("special function `{}` cannot be inline", *function.name),
                 [primary(function.name.span, "")],
             );
         }
 
         if let Some(expected_signature) = match special {
-            function::Special::WhenFlagClicked => (!function
-                .parameters
-                .is_empty()
+            function::Special::WhenFlagClicked => (!function.parameters.is_empty()
                 || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit))
             .then_some("fn when-flag-clicked"),
-            function::Special::WhenKeyPressed => (!function
-                .parameters
-                .is_empty()
+            function::Special::WhenKeyPressed => (!function.parameters.is_empty()
                 || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
                 || function.tag.is_none())
             .then_some("fn when-key-pressed \"key-name\""),
             function::Special::WhenCloned => (!function.parameters.is_empty()
                 || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit))
             .then_some("fn when-cloned"),
-            function::Special::WhenReceived => (!function
-                .parameters
-                .is_empty()
+            function::Special::WhenReceived => (!function.parameters.is_empty()
                 || function.return_ty.as_ref().is_ok_and(|it| *it != Ty::Unit)
                 || function.tag.is_none())
             .then_some("fn when-received \"message\""),
@@ -132,10 +124,8 @@ impl SemanticVisitor<'_> {
                 ),
                 [primary(function.name.span, "")],
             );
-            self.diagnostics.note(
-                format!("expected signature: `{expected_signature}`"),
-                [],
-            );
+            self.diagnostics
+                .note(format!("expected signature: `{expected_signature}`"), []);
         }
     }
 

@@ -5,22 +5,18 @@ use crate::mir::{
 use std::mem;
 
 pub(super) fn const_if_condition(block: &mut Block) -> bool {
-    let Some((index, branch)) =
-        block
-            .ops
-            .iter_mut()
-            .enumerate()
-            .find_map(|(index, op)| match op {
-                Op::If {
-                    condition: Value::Imm(Imm::Bool(condition)),
-                    then,
-                    else_,
-                } => Some((
-                    index,
-                    mem::take(if *condition { then } else { else_ }),
-                )),
-                _ => None,
-            })
+    let Some((index, branch)) = block
+        .ops
+        .iter_mut()
+        .enumerate()
+        .find_map(|(index, op)| match op {
+            Op::If {
+                condition: Value::Imm(Imm::Bool(condition)),
+                then,
+                else_,
+            } => Some((index, mem::take(if *condition { then } else { else_ }))),
+            _ => None,
+        })
     else {
         return false;
     };
@@ -55,24 +51,20 @@ pub(super) fn no_repeat(block: &mut Block) -> bool {
 }
 
 pub(super) fn repeat_once(block: &mut Block) -> bool {
-    #[expect(
-        clippy::float_cmp,
-        reason = "`times` is rounded before being compared"
-    )]
-    let Some((index, variable, mut body)) = block
-        .ops
-        .iter_mut()
-        .enumerate()
-        .find_map(|(index, op)| match op {
-            Op::For {
-                variable,
-                times: Value::Imm(Imm::Num(times)),
-                body,
-            } if times.round() == 1.0 => {
-                Some((index, *variable, mem::take(body)))
-            }
-            _ => None,
-        })
+    #[expect(clippy::float_cmp, reason = "`times` is rounded before being compared")]
+    let Some((index, variable, mut body)) =
+        block
+            .ops
+            .iter_mut()
+            .enumerate()
+            .find_map(|(index, op)| match op {
+                Op::For {
+                    variable,
+                    times: Value::Imm(Imm::Num(times)),
+                    body,
+                } if times.round() == 1.0 => Some((index, *variable, mem::take(body))),
+                _ => None,
+            })
     else {
         return false;
     };
@@ -88,8 +80,7 @@ pub(super) fn repeat_once(block: &mut Block) -> bool {
 }
 
 pub(super) fn remove_unreachable_ops(block: &mut Block) -> bool {
-    let Some(index) = block.ops.iter().position(Op::is_guaranteed_to_diverge)
-    else {
+    let Some(index) = block.ops.iter().position(Op::is_guaranteed_to_diverge) else {
         return false;
     };
     if index == block.ops.len() - 1 {

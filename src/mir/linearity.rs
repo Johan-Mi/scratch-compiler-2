@@ -77,9 +77,6 @@ fn direct_args(op: &Op) -> &[Value] {
         }
         | Op::For { times: value, .. } => slice::from_ref(value),
         Op::Forever { .. } => &[],
-        Op::Call(
-            _,
-            Call::Custom { args, .. } | Call::Intrinsic { args, .. },
-        ) => args,
+        Op::Call(_, Call::Custom { args, .. } | Call::Intrinsic { args, .. }) => args,
     }
 }

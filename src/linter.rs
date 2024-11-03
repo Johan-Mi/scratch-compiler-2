@@ -1,9 +1,6 @@
 use crate::{
     diagnostics::{primary, span, Diagnostics},
-    hir::{
-        Document, ExpressionKind, GlobalVariable, Statement, StatementKind,
-        Visitor,
-    },
+    hir::{Document, ExpressionKind, GlobalVariable, Statement, StatementKind, Visitor},
     name::Name,
     parser::SyntaxToken,
 };

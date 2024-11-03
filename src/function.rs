@@ -20,8 +20,7 @@ pub fn resolve(
         .functions
         .iter()
         .filter_map(|(&index, function)| {
-            ((function.owning_sprite.is_none()
-                || function.owning_sprite == tcx.sprite)
+            ((function.owning_sprite.is_none() || function.owning_sprite == tcx.sprite)
                 && (*function.name == name))
                 .then_some(index)
         })
@@ -36,8 +35,7 @@ pub fn resolve(
         .iter()
         .copied()
         .filter_map(|overload| {
-            Some(overload)
-                .zip(tcx.functions[&overload].call_with(&typed_arguments))
+            Some(overload).zip(tcx.functions[&overload].call_with(&typed_arguments))
         })
         .collect::<Vec<_>>();
 
@@ -48,20 +46,14 @@ pub fn resolve(
                     .error("undefined function", [primary(span, "")]);
                 suggest_similar(name, tcx);
             } else {
-                tcx.diagnostics.error(
-                    "function call has no viable overload",
-                    [primary(span, "")],
-                );
+                tcx.diagnostics
+                    .error("function call has no viable overload", [primary(span, "")]);
                 let spans = all_overloads
                     .iter()
-                    .map(|&overload| {
-                        primary(tcx.functions[&overload].name.span, "")
-                    })
+                    .map(|&overload| primary(tcx.functions[&overload].name.span, ""))
                     .collect::<Vec<_>>();
-                tcx.diagnostics.note(
-                    "following are all of the non-viable overloads:",
-                    spans,
-                );
+                tcx.diagnostics
+                    .note("following are all of the non-viable overloads:", spans);
             }
             Err(())
         }
@@ -73,9 +65,7 @@ pub fn resolve(
             );
             let spans = viable_overloads
                 .iter()
-                .map(|&(overload, _)| {
-                    primary(tcx.functions[&overload].name.span, "")
-                })
+                .map(|&(overload, _)| primary(tcx.functions[&overload].name.span, ""))
                 .collect::<Vec<_>>();
             tcx.diagnostics
                 .note("following are all of the viable overloads:", spans);
@@ -88,9 +78,7 @@ fn suggest_similar(name: &str, tcx: &mut Context) {
     let mut all_names = tcx
         .functions
         .values()
-        .filter(|it| {
-            it.owning_sprite.is_none() || it.owning_sprite == tcx.sprite
-        })
+        .filter(|it| it.owning_sprite.is_none() || it.owning_sprite == tcx.sprite)
         .map(|function| &function.name)
         .collect::<Vec<_>>();
     // PERFORMANCE: there's really no need to sort the entire vector but it's

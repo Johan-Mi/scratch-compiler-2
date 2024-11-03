@@ -34,20 +34,14 @@ pub fn import(
             .filter_map(|it| it.path())
             .filter_map(|it| crate::parser::parse_string_literal(&it).ok())
         {
-            let absolute_path = std::fs::canonicalize(
-                absolute_path.parent().unwrap().join(&import),
-            )?;
+            let absolute_path =
+                std::fs::canonicalize(absolute_path.parent().unwrap().join(&import))?;
             if !done.contains(&absolute_path) {
                 pending.push((absolute_path, import));
             }
         }
 
-        let document = crate::hir::Document::lower(
-            &document,
-            generator,
-            &file,
-            diagnostics,
-        );
+        let document = crate::hir::Document::lower(&document, generator, &file, diagnostics);
         crate::linter::lint(&document, &file, diagnostics);
 
         root.merge(document, diagnostics);

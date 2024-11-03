@@ -1,7 +1,5 @@
 use codemap::Span;
-use codemap_diagnostic::{
-    ColorConfig, Diagnostic, Emitter, Level, SpanLabel, SpanStyle,
-};
+use codemap_diagnostic::{ColorConfig, Diagnostic, Emitter, Level, SpanLabel, SpanStyle};
 use rowan::TextRange;
 
 #[derive(Default)]
@@ -13,15 +11,12 @@ impl Diagnostics {
             return;
         }
 
-        let total_errors =
-            self.0.iter().filter(|it| it.level == Level::Error).count();
+        let total_errors = self.0.iter().filter(|it| it.level == Level::Error).count();
         match total_errors {
             0 => {}
             1 => self.note("1 error was generated during compilation", []),
             _ => self.note(
-                format!(
-                    "{total_errors} errors were generated during compilation"
-                ),
+                format!("{total_errors} errors were generated during compilation"),
                 [],
             ),
         }
@@ -29,11 +24,7 @@ impl Diagnostics {
         Emitter::stderr(ColorConfig::Auto, Some(code_map)).emit(&self.0);
     }
 
-    pub fn error(
-        &mut self,
-        message: impl Into<String>,
-        labels: impl Into<Vec<SpanLabel>>,
-    ) {
+    pub fn error(&mut self, message: impl Into<String>, labels: impl Into<Vec<SpanLabel>>) {
         self.0.push(Diagnostic {
             level: Level::Error,
             message: message.into(),
@@ -42,11 +33,7 @@ impl Diagnostics {
         });
     }
 
-    pub fn note(
-        &mut self,
-        message: impl Into<String>,
-        labels: impl Into<Vec<SpanLabel>>,
-    ) {
+    pub fn note(&mut self, message: impl Into<String>, labels: impl Into<Vec<SpanLabel>>) {
         self.0.push(Diagnostic {
             level: Level::Note,
             message: message.into(),
@@ -55,11 +42,7 @@ impl Diagnostics {
         });
     }
 
-    pub fn warning(
-        &mut self,
-        message: impl Into<String>,
-        labels: impl Into<Vec<SpanLabel>>,
-    ) {
+    pub fn warning(&mut self, message: impl Into<String>, labels: impl Into<Vec<SpanLabel>>) {
         self.0.push(Diagnostic {
             level: Level::Warning,
             message: message.into(),
@@ -68,11 +51,7 @@ impl Diagnostics {
         });
     }
 
-    pub fn help(
-        &mut self,
-        message: impl Into<String>,
-        labels: impl Into<Vec<SpanLabel>>,
-    ) {
+    pub fn help(&mut self, message: impl Into<String>, labels: impl Into<Vec<SpanLabel>>) {
         self.0.push(Diagnostic {
             level: Level::Help,
             message: message.into(),

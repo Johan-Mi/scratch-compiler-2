@@ -47,11 +47,7 @@ pub struct Parameter {
     pub span: Span,
 }
 
-pub fn lower(
-    it: super::Document,
-    tcx: &mut Context,
-    generator: &mut Generator,
-) -> Document {
+pub fn lower(it: super::Document, tcx: &mut Context, generator: &mut Generator) -> Document {
     let mut document = Document {
         structs: it
             .structs
@@ -125,29 +121,28 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
             .map(|field| {
                 let name = field.node.name.clone();
                 let ty_span = field.ty.span;
-                let ty =
-                    ty::of_expression(&field.ty, None, tcx).and_then(|ty_ty| {
-                        if !matches!(ty_ty, Ty::Ty) {
+                let ty = ty::of_expression(&field.ty, None, tcx).and_then(|ty_ty| {
+                    if !matches!(ty_ty, Ty::Ty) {
+                        tcx.diagnostics.error(
+                            "struct field type must be a type",
+                            [primary(
+                                field.node.ty.span,
+                                format!("expected `Type`, got `{ty_ty}`"),
+                            )],
+                        );
+                    };
+                    match field.node.ty.kind {
+                        ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+                        ExpressionKind::Imm(_) => Err(()),
+                        _ => {
                             tcx.diagnostics.error(
-                                "struct field type must be a type",
-                                [primary(
-                                    field.node.ty.span,
-                                    format!("expected `Type`, got `{ty_ty}`"),
-                                )],
+                                "struct field type must be comptime-known",
+                                [primary(field.node.ty.span, "")],
                             );
-                        };
-                        match field.node.ty.kind {
-                            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-                            ExpressionKind::Imm(_) => Err(()),
-                            _ => {
-                                tcx.diagnostics.error(
-                                    "struct field type must be comptime-known",
-                                    [primary(field.node.ty.span, "")],
-                                );
-                                Err(())
-                            }
+                            Err(())
                         }
-                    });
+                    }
+                });
                 Spanned {
                     node: Field {
                         name,
@@ -164,29 +159,28 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
 }
 
 pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
-    let return_ty =
-        ty::of_expression(&it.return_ty, None, tcx).and_then(|ty_ty| {
-            if !matches!(ty_ty, Ty::Ty) {
+    let return_ty = ty::of_expression(&it.return_ty, None, tcx).and_then(|ty_ty| {
+        if !matches!(ty_ty, Ty::Ty) {
+            tcx.diagnostics.error(
+                "function return type must be a type",
+                [primary(
+                    it.return_ty.span,
+                    format!("expected `Type`, got `{ty_ty}`"),
+                )],
+            );
+        };
+        match it.return_ty.kind {
+            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
+            ExpressionKind::Imm(_) => Err(()),
+            _ => {
                 tcx.diagnostics.error(
-                    "function return type must be a type",
-                    [primary(
-                        it.return_ty.span,
-                        format!("expected `Type`, got `{ty_ty}`"),
-                    )],
+                    "function return type must be comptime-known",
+                    [primary(it.return_ty.span, "")],
                 );
-            };
-            match it.return_ty.kind {
-                ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-                ExpressionKind::Imm(_) => Err(()),
-                _ => {
-                    tcx.diagnostics.error(
-                        "function return type must be comptime-known",
-                        [primary(it.return_ty.span, "")],
-                    );
-                    Err(())
-                }
+                Err(())
             }
-        });
+        }
+    });
 
     Function {
         owning_sprite: it.owning_sprite,

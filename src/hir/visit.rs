@@ -1,6 +1,5 @@
 use super::{
-    Block, Document, Expression, ExpressionKind, GlobalVariable, Statement,
-    StatementKind,
+    Block, Document, Expression, ExpressionKind, GlobalVariable, Statement, StatementKind,
 };
 use crate::hir;
 use std::any::Any;
@@ -18,14 +17,9 @@ pub trait Visitor<Func: Any = super::typed::Function> {
 
     fn visit_expression(&mut self, _expr: &Expression) {}
 
-    fn traverse_document<Struc: Any>(
-        &mut self,
-        document: &Document<Func, Struc>,
-    ) {
+    fn traverse_document<Struc: Any>(&mut self, document: &Document<Func, Struc>) {
         for struct_ in document.structs.values() {
-            if let Some(struct_) =
-                <dyn Any>::downcast_ref::<hir::Struct>(struct_)
-            {
+            if let Some(struct_) = <dyn Any>::downcast_ref::<hir::Struct>(struct_) {
                 for field in &struct_.fields {
                     self.traverse_expression(&field.ty);
                 }
@@ -42,17 +36,13 @@ pub trait Visitor<Func: Any = super::typed::Function> {
 
     fn traverse_function(&mut self, function: &Func) {
         self.visit_function(function);
-        if let Some(function) =
-            <dyn Any>::downcast_ref::<hir::Function>(function)
-        {
+        if let Some(function) = <dyn Any>::downcast_ref::<hir::Function>(function) {
             for parameter in &function.parameters {
                 self.traverse_expression(&parameter.ty);
             }
             self.traverse_expression(&function.return_ty);
             self.traverse_block(&function.body);
-        } else if let Some(function) =
-            <dyn Any>::downcast_ref::<super::typed::Function>(function)
-        {
+        } else if let Some(function) = <dyn Any>::downcast_ref::<super::typed::Function>(function) {
             self.traverse_block(&function.body);
         }
     }
@@ -144,10 +134,7 @@ pub trait VisitorPostorderMut {
 
     fn visit_expression(&mut self, _expr: &mut Expression) {}
 
-    fn traverse_document(
-        &mut self,
-        document: &mut Document<super::Function, hir::Struct>,
-    ) {
+    fn traverse_document(&mut self, document: &mut Document<super::Function, hir::Struct>) {
         for struct_ in document.structs.values_mut() {
             for field in &mut struct_.fields {
                 self.traverse_expression(&mut field.node.ty);

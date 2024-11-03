@@ -11,11 +11,10 @@ use rowan::NodeOrToken;
 const INDENTATION_SIZE: usize = 4;
 
 pub fn format_stdin_to_stdout(diagnostics: &mut Diagnostics) -> Result<(), ()> {
-    let source_code =
-        std::io::read_to_string(std::io::stdin()).map_err(|err| {
-            diagnostics.error("failed to read source code", []);
-            diagnostics.note(err.to_string(), []);
-        })?;
+    let source_code = std::io::read_to_string(std::io::stdin()).map_err(|err| {
+        diagnostics.error("failed to read source code", []);
+        diagnostics.note(err.to_string(), []);
+    })?;
     print!("{}", format(source_code));
     Ok(())
 }
@@ -57,14 +56,10 @@ impl Formatter {
             match child {
                 NodeOrToken::Node(node) => self.node(&node),
                 NodeOrToken::Token(token) => {
-                    if indented
-                        && matches!(token.kind(), RPAREN | RBRACE | RBRACKET)
-                    {
-                        self.indentation =
-                            self.indentation.saturating_sub(INDENTATION_SIZE);
+                    if indented && matches!(token.kind(), RPAREN | RBRACE | RBRACKET) {
+                        self.indentation = self.indentation.saturating_sub(INDENTATION_SIZE);
                         indented = false;
-                    } else if node.kind() == METHOD_CALL && token.kind() == DOT
-                    {
+                    } else if node.kind() == METHOD_CALL && token.kind() == DOT {
                         self.indentation += INDENTATION_SIZE;
                         indented = true;
                     }
@@ -72,10 +67,8 @@ impl Formatter {
                         &token,
                         matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
                             && token.kind() == LPAREN
-                            || matches!(
-                                node.kind(),
-                                GENERICS | TYPE_PARAMETERS
-                            ) && token.kind() == LBRACKET,
+                            || matches!(node.kind(), GENERICS | TYPE_PARAMETERS)
+                                && token.kind() == LBRACKET,
                     );
                     if matches!(token.kind(), LPAREN | LBRACE | LBRACKET) {
                         self.indentation += INDENTATION_SIZE;
@@ -85,8 +78,7 @@ impl Formatter {
             };
         }
         if indented {
-            self.indentation =
-                self.indentation.saturating_sub(INDENTATION_SIZE);
+            self.indentation = self.indentation.saturating_sub(INDENTATION_SIZE);
         }
     }
 
@@ -98,9 +90,7 @@ impl Formatter {
                 self.remove_newlines();
             }
 
-            if matches!(token.kind(), RPAREN | RBRACKET)
-                && self.output.ends_with(',')
-            {
+            if matches!(token.kind(), RPAREN | RBRACKET) && self.output.ends_with(',') {
                 let _: Option<char> = self.output.pop();
             }
 
@@ -108,10 +98,7 @@ impl Formatter {
             self.newlines = 0;
             self.comment = false;
             if !immediately
-                && token_wants_leading_space(
-                    token.kind(),
-                    self.output.as_bytes().last().copied(),
-                )
+                && token_wants_leading_space(token.kind(), self.output.as_bytes().last().copied())
             {
                 self.leading_space();
             }
@@ -152,9 +139,7 @@ impl Formatter {
                 self.newlines = 0;
                 self.comment = true;
             } else {
-                text = text.trim_start_matches(|c: char| {
-                    c.is_whitespace() && c != '\n'
-                });
+                text = text.trim_start_matches(|c: char| c.is_whitespace() && c != '\n');
             }
         }
     }
@@ -167,9 +152,10 @@ impl Formatter {
     }
 
     fn leading_space(&mut self) {
-        if self.output.ends_with(|c: char| {
-            !c.is_whitespace() && !matches!(c, '(' | '[' | '&')
-        }) {
+        if self
+            .output
+            .ends_with(|c: char| !c.is_whitespace() && !matches!(c, '(' | '[' | '&'))
+        {
             self.output.push(' ');
         }
     }

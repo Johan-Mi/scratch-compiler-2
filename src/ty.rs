@@ -91,19 +91,14 @@ impl Ty {
         }
     }
 
-    fn pattern_match(
-        &self,
-        other: Self,
-        constraints: &mut Constraints,
-    ) -> bool {
+    fn pattern_match(&self, other: Self, constraints: &mut Constraints) -> bool {
         *self == other
             || match (self, other) {
                 (_, Self::Generic(name)) => {
                     assert!(constraints.insert(name, self.clone()).is_none());
                     true
                 }
-                (Self::Var(this), Self::Var(other))
-                | (Self::List(this), Self::List(other)) => {
+                (Self::Var(this), Self::Var(other)) | (Self::List(this), Self::List(other)) => {
                     this.pattern_match(*other, constraints)
                 }
                 _ => false,
@@ -131,21 +126,14 @@ impl TryFrom<hir::Expression> for Generic {
 
     fn try_from(expr: hir::Expression) -> Result<Self, ()> {
         match expr.kind {
-            hir::ExpressionKind::Variable(Name::Builtin(
-                name::Builtin::Var,
-            )) => Ok(Self::Var),
-            hir::ExpressionKind::Variable(Name::Builtin(
-                name::Builtin::List,
-            )) => Ok(Self::List),
+            hir::ExpressionKind::Variable(Name::Builtin(name::Builtin::Var)) => Ok(Self::Var),
+            hir::ExpressionKind::Variable(Name::Builtin(name::Builtin::List)) => Ok(Self::List),
             _ => Err(()),
         }
     }
 }
 
-pub fn check<'tcx>(
-    document: &'tcx hir::typed::Document,
-    tcx: &mut Context<'tcx>,
-) {
+pub fn check<'tcx>(document: &'tcx hir::typed::Document, tcx: &mut Context<'tcx>) {
     tcx.functions = &document.functions;
 
     tcx.variable_types.extend(
@@ -178,10 +166,7 @@ pub fn check<'tcx>(
     }
 }
 
-fn check_global_variable(
-    variable: &hir::GlobalVariable,
-    tcx: &mut Context<'_>,
-) {
+fn check_global_variable(variable: &hir::GlobalVariable, tcx: &mut Context<'_>) {
     let ty = of_expression(&variable.initializer, None, tcx);
     if matches!(ty, Ok(Ty::List(_))) {
         assert!(tcx
@@ -205,10 +190,12 @@ fn check_function(function: &hir::typed::Function, tcx: &mut Context) {
     tcx.sprite.clone_from(&function.owning_sprite);
     tcx.function_return_ty.clone_from(&function.return_ty.node);
 
-    tcx.variable_types
-        .extend(function.parameters.iter().map(|parameter| {
-            (parameter.internal_name.clone(), parameter.ty.node.clone())
-        }));
+    tcx.variable_types.extend(
+        function
+            .parameters
+            .iter()
+            .map(|parameter| (parameter.internal_name.clone(), parameter.ty.node.clone())),
+    );
 
     tcx.comptime_known_variables.extend(
         function
@@ -244,10 +231,7 @@ fn check_return(ty: &Result<Ty, ()>, span: Span, tcx: &mut Context) {
     }
 }
 
-fn check_statement(
-    statement: &hir::Statement,
-    tcx: &mut Context<'_>,
-) -> Result<Ty, ()> {
+fn check_statement(statement: &hir::Statement, tcx: &mut Context<'_>) -> Result<Ty, ()> {
     match &statement.kind {
         hir::StatementKind::Let { variable, value } => {
             let ty = of_expression(value, None, tcx);
@@ -311,10 +295,7 @@ fn check_statement(
         | hir::StatementKind::Until { condition, body } => {
             if let Ok(condition_ty) = of_expression(condition, None, tcx) {
                 if condition_ty != Ty::Bool {
-                    let message = if matches!(
-                        statement.kind,
-                        hir::StatementKind::While { .. }
-                    ) {
+                    let message = if matches!(statement.kind, hir::StatementKind::While { .. }) {
                         "`while` condition must be a `Bool`"
                     } else {
                         "`until` condition must be a `Bool`"
@@ -395,15 +376,9 @@ impl hir::typed::Function {
             return None;
         }
         let mut constraints = Constraints::new();
-        if !std::iter::zip(&self.parameters, typed_arguments).all(
-            |(parameter, argument)| {
-                parameter.is_compatible_with(
-                    argument.0,
-                    &argument.1,
-                    &mut constraints,
-                )
-            },
-        ) {
+        if !std::iter::zip(&self.parameters, typed_arguments).all(|(parameter, argument)| {
+            parameter.is_compatible_with(argument.0, &argument.1, &mut constraints)
+        }) {
             return None;
         }
 
@@ -458,25 +433,20 @@ pub fn of_expression(
             arguments,
         } => {
             let name = hir::desugar_function_call_name(name_or_operator);
-            let (resolved, return_ty) =
-                crate::function::resolve(name, arguments, *name_span, tcx)?;
+            let (resolved, return_ty) = crate::function::resolve(name, arguments, *name_span, tcx)?;
             assert!(tcx
                 .resolved_calls
                 .insert(name_span.low(), resolved)
                 .is_none());
 
-            for (param, (_, arg)) in
-                std::iter::zip(&tcx.functions[&resolved].parameters, arguments)
+            for (param, (_, arg)) in std::iter::zip(&tcx.functions[&resolved].parameters, arguments)
             {
                 if param.is_comptime && !comptime::is_known(arg, tcx) {
                     tcx.diagnostics.error(
                         "function argument is not comptime-known",
                         [
                             primary(arg.span, ""),
-                            secondary(
-                                param.span,
-                                "comptime parameter declared here",
-                            ),
+                            secondary(param.span, "comptime parameter declared here"),
                         ],
                     );
                 }
@@ -484,21 +454,12 @@ pub fn of_expression(
 
             return_ty
         }
-        ExpressionKind::Lvalue(var) => {
-            tcx.variable_types[var].clone().map(Box::new).map(Ty::Var)
-        }
+        ExpressionKind::Lvalue(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
-            check_generic_type_instantiation(
-                *generic,
-                arguments,
-                expression.span,
-                tcx,
-            );
+            check_generic_type_instantiation(*generic, arguments, expression.span, tcx);
             Ok(Ty::Ty)
         }
-        ExpressionKind::ListLiteral(list) => {
-            of_list_literal(list, expression.span, ascribed, tcx)
-        }
+        ExpressionKind::ListLiteral(list) => of_list_literal(list, expression.span, ascribed, tcx),
         ExpressionKind::TypeAscription { inner, ty } => {
             let Ok(ty_ty) = of_expression(ty, None, tcx) else {
                 return Err(());
@@ -506,10 +467,7 @@ pub fn of_expression(
             if !matches!(ty_ty, Ty::Ty) {
                 tcx.diagnostics.error(
                     "ascribed type must be a type",
-                    [primary(
-                        ty.span,
-                        format!("expected `Type`, got `{ty_ty}`"),
-                    )],
+                    [primary(ty.span, format!("expected `Type`, got `{ty_ty}`"))],
                 );
             };
 

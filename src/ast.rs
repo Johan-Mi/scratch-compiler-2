@@ -132,10 +132,7 @@ impl Costume {
         self.syntax
             .children_with_tokens()
             .filter_map(NodeOrToken::into_token)
-            .find(|it| {
-                it.text_range().start() >= colon.text_range().end()
-                    && it.kind() == STRING
-            })
+            .find(|it| it.text_range().start() >= colon.text_range().end() && it.kind() == STRING)
     }
 }
 
@@ -423,18 +420,14 @@ impl AstNode for Expression {
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
-            PARENTHESIZED_EXPRESSION => {
-                AstNode::cast(node).map(Self::Parenthesized)
-            }
+            PARENTHESIZED_EXPRESSION => AstNode::cast(node).map(Self::Parenthesized),
             VARIABLE => AstNode::cast(node).map(Self::Variable),
             FUNCTION_CALL => AstNode::cast(node).map(Self::FunctionCall),
             BINARY_EXPRESSION => AstNode::cast(node).map(Self::BinaryOperation),
             NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
             LITERAL => AstNode::cast(node).map(Self::Literal),
             LVALUE => AstNode::cast(node).map(Self::Lvalue),
-            GENERIC_TYPE_INSTANTIATION => {
-                AstNode::cast(node).map(Self::GenericTypeInstantiation)
-            }
+            GENERIC_TYPE_INSTANTIATION => AstNode::cast(node).map(Self::GenericTypeInstantiation),
             LIST_LITERAL => AstNode::cast(node).map(Self::ListLiteral),
             TYPE_ASCRIPTION => AstNode::cast(node).map(Self::TypeAscription),
             METHOD_CALL => AstNode::cast(node).map(Self::MethodCall),

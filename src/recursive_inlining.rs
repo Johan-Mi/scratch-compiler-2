@@ -9,11 +9,7 @@ use petgraph::{
 };
 use std::collections::HashMap;
 
-pub fn check(
-    document: &Document,
-    resolved_calls: &ResolvedCalls,
-    diagnostics: &mut Diagnostics,
-) {
+pub fn check(document: &Document, resolved_calls: &ResolvedCalls, diagnostics: &mut Diagnostics) {
     let mut graph = Graph::new();
 
     let nodes = document
@@ -46,8 +42,7 @@ pub fn check(
     petgraph::algo::TarjanScc::new().run(&graph, |scc| {
         for &node in scc {
             let span = document.functions[&graph[node]].name.span;
-            diagnostics
-                .error("inline function is recursive", [primary(span, "")]);
+            diagnostics.error("inline function is recursive", [primary(span, "")]);
         }
     });
 }
@@ -67,7 +62,6 @@ impl Visitor for CallGraphVisitor<'_> {
         let Some(index) = self.resolved_calls.get(&name_span.low()) else {
             return;
         };
-        let _: EdgeIndex =
-            self.graph.add_edge(self.caller, self.nodes[index], ());
+        let _: EdgeIndex = self.graph.add_edge(self.caller, self.nodes[index], ());
     }
 }

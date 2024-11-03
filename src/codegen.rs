@@ -1,7 +1,7 @@
 use crate::{comptime, function, mir, ty::Ty};
 use sb3_builder::{
-    block, Constant, Costume, CustomBlock, InsertionPoint, List, ListRef,
-    Operand, Parameter, ParameterKind, Project, Target, Variable, VariableRef,
+    block, Constant, Costume, CustomBlock, InsertionPoint, List, ListRef, Operand, Parameter,
+    ParameterKind, Project, Target, Variable, VariableRef,
 };
 use std::{
     collections::{hash_map::Entry, BTreeMap, HashMap, HashSet},
@@ -24,9 +24,7 @@ impl CompiledOperand {
 
     fn b(self, sprite: &mut Target) -> Operand {
         match self {
-            Self::String(operand) => {
-                sprite.eq(operand, "true".to_owned().into())
-            }
+            Self::String(operand) => sprite.eq(operand, "true".to_owned().into()),
             Self::Bool(operand) => operand,
         }
     }
@@ -106,10 +104,7 @@ fn compile_sprite(
     }
 
     for costume in hir.costumes {
-        sprite.add_costume(Costume::from_file(
-            costume.name,
-            costume.path.as_ref(),
-        )?);
+        sprite.add_costume(Costume::from_file(costume.name, costume.path.as_ref())?);
     }
 
     let mut compiled_ssa_vars = HashMap::new();
@@ -223,9 +218,7 @@ impl CompiledFunctionRef {
             assert!(compiled_ssa_vars
                 .insert(
                     function_param.ssa_var,
-                    CompiledSsaVar::CustomBlockParameter(
-                        custom_block_param.clone(),
-                    ),
+                    CompiledSsaVar::CustomBlockParameter(custom_block_param.clone()),
                 )
                 .is_none());
         }
@@ -263,20 +256,15 @@ fn parameter_kind_for_ty(ty: &Ty) -> Option<ParameterKind> {
     }
 }
 
-fn compile_function(
-    mut function: mir::Function,
-    index: usize,
-    cx: &mut Context,
-) {
+fn compile_function(mut function: mir::Function, index: usize, cx: &mut Context) {
     cx.return_variable = match function::Special::try_from(&*function.name) {
         Ok(function::Special::WhenFlagClicked) => {
             cx.sprite.start_script(block::when_flag_clicked());
             None
         }
         Ok(function::Special::WhenKeyPressed) => {
-            cx.sprite.start_script(block::when_key_pressed(
-                function.tag.take().unwrap(),
-            ));
+            cx.sprite
+                .start_script(block::when_key_pressed(function.tag.take().unwrap()));
             None
         }
         Ok(function::Special::WhenCloned) => {
@@ -284,9 +272,8 @@ fn compile_function(
             None
         }
         Ok(function::Special::WhenReceived) => {
-            cx.sprite.start_script(block::when_received(
-                function.tag.take().unwrap(),
-            ));
+            cx.sprite
+                .start_script(block::when_received(function.tag.take().unwrap()));
             None
         }
         Err(()) => {
@@ -468,11 +455,8 @@ fn compile_intrinsic(
             };
             let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            cx.sprite.put(block::replace(
-                list,
-                "last".to_owned().into(),
-                item.s(),
-            ));
+            cx.sprite
+                .put(block::replace(list, "last".to_owned().into(), item.s()));
             None
         }
         "at" => {
@@ -514,8 +498,7 @@ fn compile_intrinsic(
             Some(B(cx.sprite.list_contains_item(list, item.s())))
         }
         _ => {
-            let args =
-                args.into_iter().map(|arg| compile_value(arg, cx)).collect();
+            let args = args.into_iter().map(|arg| compile_value(arg, cx)).collect();
             compile_regular_intrinsic(name, args, cx)
         }
     }
@@ -534,17 +517,12 @@ fn compile_function_call(
     let compiled_ref = &cx.compiled_functions[&function];
     cx.sprite.use_custom_block(&compiled_ref.block, args);
     if let Some(variable) = variable {
-        let return_variable =
-            S(compiled_ref.return_variable.clone().unwrap().into());
+        let return_variable = S(compiled_ref.return_variable.clone().unwrap().into());
         store_result(variable, return_variable, cx);
     }
 }
 
-fn store_result(
-    variable: mir::SsaVar,
-    operand: CompiledOperand,
-    cx: &mut Context,
-) {
+fn store_result(variable: mir::SsaVar, operand: CompiledOperand, cx: &mut Context) {
     if cx.is_linear.contains(&variable) {
         assert!(cx
             .compiled_ssa_vars
@@ -566,8 +544,7 @@ fn store_result(
 fn compile_value(value: mir::Value, cx: &mut Context) -> CompiledOperand {
     match value {
         mir::Value::Var(var) => {
-            let Entry::Occupied(mut entry) = cx.compiled_ssa_vars.entry(var)
-            else {
+            let Entry::Occupied(mut entry) = cx.compiled_ssa_vars.entry(var) else {
                 panic!("undefined SSA variable: {var:?}");
             };
             match entry.get_mut() {
@@ -584,9 +561,7 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> CompiledOperand {
                 }
             }
         }
-        mir::Value::Imm(
-            comptime::Value::Sprite { .. } | comptime::Value::Ty(_),
-        )
+        mir::Value::Imm(comptime::Value::Sprite { .. } | comptime::Value::Ty(_))
         | mir::Value::Lvalue(_)
         | mir::Value::List(_) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => S(n.into()),
@@ -710,10 +685,7 @@ fn compile_regular_intrinsic(
     }
 }
 
-fn not(
-    arguments: Vec<CompiledOperand>,
-    cx: &mut Context<'_>,
-) -> CompiledOperand {
+fn not(arguments: Vec<CompiledOperand>, cx: &mut Context<'_>) -> CompiledOperand {
     let [operand] = arguments.try_into().ok().unwrap();
     let operand = operand.b(&mut cx.sprite);
     B(cx.sprite.not(operand))

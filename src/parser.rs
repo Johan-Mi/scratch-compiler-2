@@ -3,10 +3,7 @@ use codemap::Span;
 use logos::Logos;
 use rowan::{Checkpoint, GreenNodeBuilder};
 
-pub fn parse(
-    file: &codemap::File,
-    diagnostics: &mut Diagnostics,
-) -> SyntaxNode {
+pub fn parse(file: &codemap::File, diagnostics: &mut Diagnostics) -> SyntaxNode {
     let source_code = file.source();
     let tokens = &SyntaxKind::lexer(source_code)
         .spanned()
@@ -422,8 +419,7 @@ impl Parser<'_> {
                 let checkpoint = self.checkpoint();
                 self.bump();
                 if self.immediately_at(LPAREN) {
-                    self.builder
-                        .start_node_at(checkpoint, FUNCTION_CALL.into());
+                    self.builder.start_node_at(checkpoint, FUNCTION_CALL.into());
                     self.parse_arguments();
                 } else if self.immediately_at(COLON) {
                     self.builder
@@ -442,8 +438,8 @@ impl Parser<'_> {
                 let _: Option<Span> = self.expect(RPAREN);
                 self.builder.finish_node();
             }
-            DECIMAL_NUMBER | BINARY_NUMBER | OCTAL_NUMBER
-            | HEXADECIMAL_NUMBER | STRING | KW_FALSE | KW_TRUE => {
+            DECIMAL_NUMBER | BINARY_NUMBER | OCTAL_NUMBER | HEXADECIMAL_NUMBER | STRING
+            | KW_FALSE | KW_TRUE => {
                 self.start_node(LITERAL);
                 self.bump();
                 self.builder.finish_node();
@@ -506,10 +502,8 @@ impl Parser<'_> {
         while !self.at(EOF) && !self.eat(RPAREN) {
             if self.at(COMMA) {
                 let span = self.peek_span();
-                self.diagnostics.error(
-                    "unexpected `,`",
-                    [primary(span, "expected parameter")],
-                );
+                self.diagnostics
+                    .error("unexpected `,`", [primary(span, "expected parameter")]);
                 self.bump();
                 continue;
             }
@@ -537,10 +531,8 @@ impl Parser<'_> {
             let _: Option<Span> = self.expect(COLON);
             if self.at(COMMA) {
                 let span = self.peek_span();
-                self.diagnostics.error(
-                    "unexpected `,`",
-                    [primary(span, "expected expression")],
-                );
+                self.diagnostics
+                    .error("unexpected `,`", [primary(span, "expected expression")]);
             } else if self.at(RPAREN) {
                 let span = self.peek_span();
                 self.diagnostics.error(
@@ -650,10 +642,8 @@ impl Parser<'_> {
             let _: Option<Span> = self.expect(IDENTIFIER);
             if self.at(LBRACE) {
                 let label = primary(self.peek_span(), "");
-                self.diagnostics.error(
-                    "expected expression after variable in `for` loop",
-                    [label],
-                );
+                self.diagnostics
+                    .error("expected expression after variable in `for` loop", [label]);
             } else {
                 self.parse_expression();
             }

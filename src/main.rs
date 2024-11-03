@@ -52,15 +52,11 @@ fn main() -> ExitCode {
     }
 }
 
-fn real_main(
-    code_map: &mut CodeMap,
-    diagnostics: &mut Diagnostics,
-) -> Result<(), ()> {
+fn real_main(code_map: &mut CodeMap, diagnostics: &mut Diagnostics) -> Result<(), ()> {
     let mut args = std::env::args().skip(1);
     let command = args.next().ok_or_else(|| {
         diagnostics.error("no command provided", []);
-        diagnostics
-            .help("valid commands are `compile`, `check` or `format`", []);
+        diagnostics.help("valid commands are `compile`, `check` or `format`", []);
     })?;
 
     match &*command {
@@ -84,8 +80,7 @@ fn real_main(
         }
         _ => {
             diagnostics.error(format!("invalid command: `{command}`"), []);
-            diagnostics
-                .help("valid commands are `compile`, `check` or `format`", []);
+            diagnostics.help("valid commands are `compile`, `check` or `format`", []);
             Err(())
         }
     }

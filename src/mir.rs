@@ -12,9 +12,7 @@ mod visit;
 pub use lowering::lower;
 use visit::*;
 
-use crate::{
-    comptime::Value as Imm, generator::Generator, hir::Sprite, ty::Ty,
-};
+use crate::{comptime::Value as Imm, generator::Generator, hir::Sprite, ty::Ty};
 use std::{collections::BTreeMap, fmt};
 
 pub fn optimize(document: &mut Document, generator: &mut Generator) {

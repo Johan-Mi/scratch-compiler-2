@@ -1,7 +1,4 @@
-use super::{
-    Block, Call, Document, Function, Generator, Op, Parameter, RealList,
-    RealVar, Value,
-};
+use super::{Block, Call, Document, Function, Generator, Op, Parameter, RealList, RealVar, Value};
 use crate::{
     function::ResolvedCalls,
     hir::{self, desugar_function_call_name},
@@ -32,11 +29,7 @@ pub fn lower(
 
     let mut stage_variables = HashSet::new();
     for variable in document.variables {
-        lower_variable_initialization(
-            variable.token.clone(),
-            variable.initializer,
-            &mut cx,
-        );
+        lower_variable_initialization(variable.token.clone(), variable.initializer, &mut cx);
 
         if variable.belongs_to_stage {
             stage_variables.extend(cx.real_vars.get(&variable.token));
@@ -70,11 +63,7 @@ pub struct FunctionSignature {
 impl From<&hir::typed::Function> for FunctionSignature {
     fn from(function: &hir::typed::Function) -> Self {
         Self {
-            returns_something: !function
-                .return_ty
-                .as_ref()
-                .unwrap()
-                .is_zero_sized(),
+            returns_something: !function.return_ty.as_ref().unwrap().is_zero_sized(),
             is_intrinsic: function.is_intrinsic,
         }
     }
@@ -89,10 +78,7 @@ struct Context<'a> {
     block: Block,
 }
 
-fn lower_function(
-    function: hir::typed::Function,
-    cx: &mut Context,
-) -> Function {
+fn lower_function(function: hir::typed::Function, cx: &mut Context) -> Function {
     let parameters = function
         .parameters
         .into_iter()
@@ -156,10 +142,7 @@ fn lower_variable_initialization(
     }
 }
 
-fn lower_statement(
-    statement: hir::Statement,
-    cx: &mut Context,
-) -> Option<Value> {
+fn lower_statement(statement: hir::Statement, cx: &mut Context) -> Option<Value> {
     match statement.kind {
         hir::StatementKind::Let { variable, value } => {
             lower_variable_initialization(variable, value, cx);
@@ -229,10 +212,7 @@ fn lower_statement(
         } => {
             let times = lower_expression(times, cx).unwrap();
             let var = cx.generator.new_ssa_var();
-            assert!(cx
-                .vars
-                .insert(variable.unwrap(), Value::Var(var))
-                .is_none());
+            assert!(cx.vars.insert(variable.unwrap(), Value::Var(var)).is_none());
             let body = lower_block(body.unwrap(), cx);
             cx.block.ops.push(Op::For {
                 variable: Some(var),
@@ -271,18 +251,16 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                 Some(cx.vars[&variable].clone())
             }
         }
-        hir::ExpressionKind::Variable(Name::Builtin(builtin)) => {
-            match builtin {
-                name::Builtin::Never
-                | name::Builtin::Unit
-                | name::Builtin::Num
-                | name::Builtin::String
-                | name::Builtin::Bool
-                | name::Builtin::Var
-                | name::Builtin::List
-                | name::Builtin::Type => unreachable!(),
-            }
-        }
+        hir::ExpressionKind::Variable(Name::Builtin(builtin)) => match builtin {
+            name::Builtin::Never
+            | name::Builtin::Unit
+            | name::Builtin::Num
+            | name::Builtin::String
+            | name::Builtin::Bool
+            | name::Builtin::Var
+            | name::Builtin::List
+            | name::Builtin::Type => unreachable!(),
+        },
         hir::ExpressionKind::Imm(imm) => Some(Value::Imm(imm)),
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
@@ -316,9 +294,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
 
             variable.map(Value::Var)
         }
-        hir::ExpressionKind::Lvalue(var) => {
-            Some(Value::Lvalue(cx.real_vars[&var]))
-        }
+        hir::ExpressionKind::Lvalue(var) => Some(Value::Lvalue(cx.real_vars[&var])),
         hir::ExpressionKind::ListLiteral(elements) => {
             let list = cx.generator.new_real_list();
             cx.block.ops.push(Op::Call(
@@ -340,10 +316,9 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             }
             Some(Value::List(list))
         }
-        hir::ExpressionKind::TypeAscription { inner, .. } => {
-            lower_expression(*inner, cx)
+        hir::ExpressionKind::TypeAscription { inner, .. } => lower_expression(*inner, cx),
+        hir::ExpressionKind::GenericTypeInstantiation { .. } | hir::ExpressionKind::Error => {
+            unreachable!()
         }
-        hir::ExpressionKind::GenericTypeInstantiation { .. }
-        | hir::ExpressionKind::Error => unreachable!(),
     }
 }

@@ -1,7 +1,6 @@
 use super::{
-    Block, Costume, Document, Expression, ExpressionKind, Field, Function,
-    GlobalVariable, Parameter, Result, Sprite, Statement, StatementKind,
-    Struct,
+    Block, Costume, Document, Expression, ExpressionKind, Field, Function, GlobalVariable,
+    Parameter, Result, Sprite, Statement, StatementKind, Struct,
 };
 use crate::{
     ast,
@@ -26,9 +25,7 @@ impl Document {
         let mut structs = BTreeMap::<_, Struct>::new();
 
         for r#struct in ast.structs() {
-            let Ok((name, r#struct)) =
-                Struct::lower(&r#struct, file, diagnostics)
-            else {
+            let Ok((name, r#struct)) = Struct::lower(&r#struct, file, diagnostics) else {
                 continue;
             };
 
@@ -38,16 +35,10 @@ impl Document {
                 }
                 Entry::Occupied(old_struct) => {
                     diagnostics.error(
-                        format!(
-                            "redefinition of struct `{}`",
-                            old_struct.key()
-                        ),
+                        format!("redefinition of struct `{}`", old_struct.key()),
                         [
                             primary(r#struct.name.span, "defined here"),
-                            primary(
-                                old_struct.get().name.span,
-                                "previously defined here",
-                            ),
+                            primary(old_struct.get().name.span, "previously defined here"),
                         ],
                     );
                 }
@@ -57,8 +48,7 @@ impl Document {
         let mut sprites = BTreeMap::<_, Sprite>::new();
 
         for sprite in ast.sprites() {
-            let Ok((name, sprite)) = Sprite::lower(&sprite, file, diagnostics)
-            else {
+            let Ok((name, sprite)) = Sprite::lower(&sprite, file, diagnostics) else {
                 continue;
             };
 
@@ -76,15 +66,12 @@ impl Document {
             ast.sprites()
                 .filter_map(|it| it.name().zip(Some(it.functions())))
                 .flat_map(|(name, functions)| {
-                    functions.zip(std::iter::repeat_with(move || {
-                        Some(name.to_string())
-                    }))
+                    functions.zip(std::iter::repeat_with(move || Some(name.to_string())))
                 }),
         );
         let functions = std::iter::repeat_with(|| generator.new_u16().into())
             .zip(functions.filter_map(|(function, owning_sprite)| {
-                Function::lower(&function, owning_sprite, file, diagnostics)
-                    .ok()
+                Function::lower(&function, owning_sprite, file, diagnostics).ok()
             }))
             .collect();
 
@@ -98,12 +85,7 @@ impl Document {
                     .parent()
                     .and_then(|it| ast::Sprite::cast(it.parent()?)?.name())
                     .is_none();
-                let initializer = Expression::lower_opt(
-                    it.value(),
-                    file,
-                    diagnostics,
-                    text_range,
-                );
+                let initializer = Expression::lower_opt(it.value(), file, diagnostics, text_range);
                 Some(GlobalVariable {
                     token,
                     initializer,
@@ -156,20 +138,11 @@ impl Struct {
         ))
     }
 
-    fn lower_field(
-        ast: &ast::Field,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Spanned<Field> {
+    fn lower_field(ast: &ast::Field, file: &File, diagnostics: &mut Diagnostics) -> Spanned<Field> {
         Spanned {
             node: Field {
                 name: ast.name(),
-                ty: Expression::lower_opt(
-                    ast.ty(),
-                    file,
-                    diagnostics,
-                    ast.syntax().text_range(),
-                ),
+                ty: Expression::lower_opt(ast.ty(), file, diagnostics, ast.syntax().text_range()),
             },
             span: span(file, ast.syntax().text_range()),
         }
@@ -289,11 +262,7 @@ impl Function {
 }
 
 impl Parameter {
-    fn lower(
-        ast: &ast::Parameter,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Result<Self> {
+    fn lower(ast: &ast::Parameter, file: &File, diagnostics: &mut Diagnostics) -> Result<Self> {
         let external_name = ast.external_name().unwrap().identifier();
         let internal_name = ast.internal_name().ok_or_else(|| {
             diagnostics.error(
@@ -324,17 +293,11 @@ impl Parameter {
 }
 
 impl Block {
-    fn lower(
-        ast: &ast::Block,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Block, file: &File, diagnostics: &mut Diagnostics) -> Self {
         Self {
             statements: ast
                 .statements()
-                .map(|statement| {
-                    Statement::lower(&statement, file, diagnostics)
-                })
+                .map(|statement| Statement::lower(&statement, file, diagnostics))
                 .collect(),
         }
     }
@@ -350,11 +313,7 @@ impl Block {
 }
 
 impl Statement {
-    fn lower(
-        ast: &ast::Statement,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Statement, file: &File, diagnostics: &mut Diagnostics) -> Self {
         let kind = match ast {
             ast::Statement::Let(let_) => lower_let(let_, file, diagnostics),
             ast::Statement::If(if_) => StatementKind::If {
@@ -370,9 +329,7 @@ impl Statement {
                     .and_then(|clause| {
                         clause
                             .block()
-                            .map(|block| {
-                                Block::lower(&block, file, diagnostics)
-                            })
+                            .map(|block| Block::lower(&block, file, diagnostics))
                             .or_else(|| {
                                 clause.if_().map(|if_| Block {
                                     statements: vec![Self::lower(
@@ -425,14 +382,12 @@ impl Statement {
                 ),
                 body: Block::lower_opt(for_.body(), file, diagnostics),
             },
-            ast::Statement::Return(return_) => {
-                StatementKind::Return(Expression::lower_opt(
-                    return_.expression(),
-                    file,
-                    diagnostics,
-                    return_.syntax().text_range(),
-                ))
-            }
+            ast::Statement::Return(return_) => StatementKind::Return(Expression::lower_opt(
+                return_.expression(),
+                file,
+                diagnostics,
+                return_.syntax().text_range(),
+            )),
             ast::Statement::Expr(expr) => {
                 StatementKind::Expr(Expression::lower(expr, file, diagnostics))
             }
@@ -445,11 +400,7 @@ impl Statement {
     }
 }
 
-fn lower_let(
-    let_: &ast::Let,
-    file: &File,
-    diagnostics: &mut Diagnostics,
-) -> StatementKind {
+fn lower_let(let_: &ast::Let, file: &File, diagnostics: &mut Diagnostics) -> StatementKind {
     let Some(variable) = let_.variable() else {
         diagnostics.error(
             "expected variable name after `let`",
@@ -475,11 +426,7 @@ fn lower_let(
 }
 
 impl Expression {
-    fn lower(
-        ast: &ast::Expression,
-        file: &File,
-        diagnostics: &mut Diagnostics,
-    ) -> Self {
+    fn lower(ast: &ast::Expression, file: &File, diagnostics: &mut Diagnostics) -> Self {
         let kind = match ast {
             ast::Expression::Variable(var) => {
                 let identifier = var.identifier();
@@ -494,9 +441,7 @@ impl Expression {
                     ExpressionKind::Variable,
                 )
             }
-            ast::Expression::FunctionCall(call) => {
-                lower_function_call(call, file, diagnostics)
-            }
+            ast::Expression::FunctionCall(call) => lower_function_call(call, file, diagnostics),
             ast::Expression::BinaryOperation(op) => {
                 let operator = op.operator();
                 let operator_range = operator.text_range();
@@ -506,21 +451,11 @@ impl Expression {
                     arguments: vec![
                         (
                             None,
-                            Self::lower_opt(
-                                op.lhs(),
-                                file,
-                                diagnostics,
-                                operator_range,
-                            ),
+                            Self::lower_opt(op.lhs(), file, diagnostics, operator_range),
                         ),
                         (
                             None,
-                            Self::lower_opt(
-                                op.rhs(),
-                                file,
-                                diagnostics,
-                                operator_range,
-                            ),
+                            Self::lower_opt(op.rhs(), file, diagnostics, operator_range),
                         ),
                     ],
                 }
@@ -550,18 +485,11 @@ impl Expression {
                 ExpressionKind::Error
             }
             ast::Expression::Literal(lit) => lower_literal(lit),
-            ast::Expression::Lvalue(lvalue) => lower_lvalue(
-                lvalue,
-                ast.syntax().text_range(),
-                file,
-                diagnostics,
-            ),
+            ast::Expression::Lvalue(lvalue) => {
+                lower_lvalue(lvalue, ast.syntax().text_range(), file, diagnostics)
+            }
             ast::Expression::GenericTypeInstantiation(instantiation) => {
-                lower_generic_type_instantiation(
-                    instantiation,
-                    file,
-                    diagnostics,
-                )
+                lower_generic_type_instantiation(instantiation, file, diagnostics)
             }
             ast::Expression::ListLiteral(list) => ExpressionKind::ListLiteral(
                 list.iter()
@@ -571,9 +499,7 @@ impl Expression {
             ast::Expression::TypeAscription(ascription) => {
                 lower_type_ascription(ascription, diagnostics, file)
             }
-            ast::Expression::MethodCall(call) => {
-                lower_method_call(call, file, diagnostics)
-            }
+            ast::Expression::MethodCall(call) => lower_method_call(call, file, diagnostics),
         };
 
         Self {
@@ -614,8 +540,7 @@ fn lower_method_call(
         mut arguments,
     } = rhs.kind
     else {
-        diagnostics
-            .error("expected function call after `.`", [primary(rhs.span, "")]);
+        diagnostics.error("expected function call after `.`", [primary(rhs.span, "")]);
         return ExpressionKind::Error;
     };
     arguments.insert(0, (None, caller));
@@ -685,8 +610,7 @@ fn lower_generic_type_instantiation(
     file: &File,
     diagnostics: &mut Diagnostics,
 ) -> ExpressionKind {
-    let generic =
-        Expression::lower(&instantiation.generic(), file, diagnostics);
+    let generic = Expression::lower(&instantiation.generic(), file, diagnostics);
     let span = generic.span;
     let Ok(generic) = ty::Generic::try_from(generic) else {
         diagnostics.error(
@@ -741,8 +665,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
             };
             #[expect(clippy::cast_precision_loss)]
             ExpressionKind::Imm(Value::Num(
-                u64::from_str_radix(text, 2).unwrap() as f64
-                    * if is_negative { -1.0 } else { 1.0 },
+                u64::from_str_radix(text, 2).unwrap() as f64 * if is_negative { -1.0 } else { 1.0 },
             ))
         }
         crate::parser::SyntaxKind::OCTAL_NUMBER => {
@@ -754,8 +677,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
             };
             #[expect(clippy::cast_precision_loss)]
             ExpressionKind::Imm(Value::Num(
-                u64::from_str_radix(text, 8).unwrap() as f64
-                    * if is_negative { -1.0 } else { 1.0 },
+                u64::from_str_radix(text, 8).unwrap() as f64 * if is_negative { -1.0 } else { 1.0 },
             ))
         }
         crate::parser::SyntaxKind::HEXADECIMAL_NUMBER => {
@@ -775,12 +697,8 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
             .map_or(ExpressionKind::Error, |s| {
                 ExpressionKind::Imm(Value::String(s))
             }),
-        crate::parser::SyntaxKind::KW_FALSE => {
-            ExpressionKind::Imm(Value::Bool(false))
-        }
-        crate::parser::SyntaxKind::KW_TRUE => {
-            ExpressionKind::Imm(Value::Bool(true))
-        }
+        crate::parser::SyntaxKind::KW_FALSE => ExpressionKind::Imm(Value::Bool(false)),
+        crate::parser::SyntaxKind::KW_TRUE => ExpressionKind::Imm(Value::Bool(true)),
         _ => unreachable!(),
     }
 }

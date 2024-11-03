@@ -1,7 +1,7 @@
 use crate::{
     hir::{
-        Document, Expression, ExpressionKind, GlobalVariable, Statement,
-        StatementKind, VisitorPostorderMut,
+        Document, Expression, ExpressionKind, GlobalVariable, Statement, StatementKind,
+        VisitorPostorderMut,
     },
     name::Name,
     parser::SyntaxKind,
@@ -25,9 +25,7 @@ impl fmt::Debug for Value {
             Self::Num(n) => fmt::Debug::fmt(n, f),
             Self::String(s) => fmt::Debug::fmt(s, f),
             Self::Bool(b) => fmt::Debug::fmt(b, f),
-            Self::Sprite { name } => {
-                f.debug_struct("Sprite").field("name", name).finish()
-            }
+            Self::Sprite { name } => f.debug_struct("Sprite").field("name", name).finish(),
         }
     }
 }
@@ -48,18 +46,14 @@ pub fn evaluate(expr: &mut Expression, tcx: &ty::Context) {
     match &mut expr.kind {
         ExpressionKind::Variable(Name::User(token)) => {
             expr.kind = ExpressionKind::Imm(
-                if let Some(Some(value)) =
-                    tcx.comptime_known_variables.get(token)
-                {
+                if let Some(Some(value)) = tcx.comptime_known_variables.get(token) {
                     value.clone()
                 } else {
                     match token.parent().map(|it| it.kind()) {
                         Some(SyntaxKind::SPRITE) => Value::Sprite {
                             name: token.to_string(),
                         },
-                        Some(SyntaxKind::GENERICS) => {
-                            Value::Ty(Ty::Generic(token.clone()))
-                        }
+                        Some(SyntaxKind::GENERICS) => Value::Ty(Ty::Generic(token.clone())),
                         _ => return,
                     }
                 },
@@ -121,10 +115,8 @@ pub fn evaluate_all(document: &mut Document, tcx: &mut ty::Context) {
 
         fn visit_statement(&mut self, statement: &mut Statement) {
             if let StatementKind::Let { variable, value } = &statement.kind {
-                self.tcx.maybe_define_comptime_known_variable(
-                    variable.clone(),
-                    value,
-                );
+                self.tcx
+                    .maybe_define_comptime_known_variable(variable.clone(), value);
             }
         }
 

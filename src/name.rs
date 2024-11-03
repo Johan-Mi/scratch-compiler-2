@@ -70,8 +70,7 @@ fn all_in_exact_scope_at(
         ),
         FN => {
             let function = ast::Function::cast(scope).unwrap();
-            let generics =
-                function.generics().into_iter().flat_map(|it| it.iter());
+            let generics = function.generics().into_iter().flat_map(|it| it.iter());
             let parameters = function
                 .parameters()
                 .into_iter()
@@ -101,9 +100,8 @@ fn all_in_exact_scope_at(
                 for_.variable()
                     // The counter can only be used inside the loop body.
                     .filter(|_| {
-                        for_.body().is_some_and(|body| {
-                            body.syntax().text_range().contains(position)
-                        })
+                        for_.body()
+                            .is_some_and(|body| body.syntax().text_range().contains(position))
                     })
                     .into_iter(),
             )

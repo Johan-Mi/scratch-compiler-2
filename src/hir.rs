@@ -36,10 +36,7 @@ impl<Func> Document<Func> {
                 }
                 Entry::Occupied(old_struct) => {
                     diagnostics.error(
-                        format!(
-                            "multiple definitions of struct `{}`",
-                            old_struct.key()
-                        ),
+                        format!("multiple definitions of struct `{}`", old_struct.key()),
                         [
                             primary(struct_.name.span, ""),
                             primary(old_struct.get().name.span, ""),

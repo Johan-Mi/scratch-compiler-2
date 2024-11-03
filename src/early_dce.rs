@@ -21,9 +21,7 @@ pub fn perform(
         pending_functions: document
             .functions
             .iter()
-            .filter(|(_, function)| {
-                function::Special::try_from(&**function.name).is_ok()
-            })
+            .filter(|(_, function)| function::Special::try_from(&**function.name).is_ok())
             .map(|(&index, _)| index)
             .collect(),
         required_functions: BTreeSet::new(),
