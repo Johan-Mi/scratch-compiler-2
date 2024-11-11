@@ -115,11 +115,7 @@ pub enum FunctionKind {
 
 impl FunctionKind {
     pub const fn is_inline(self) -> bool {
-        if let Self::Regular { is_inline } = self {
-            is_inline
-        } else {
-            false
-        }
+        matches!(self, Self::Regular { is_inline: true })
     }
 }
 
