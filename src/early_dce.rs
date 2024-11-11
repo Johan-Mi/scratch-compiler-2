@@ -6,7 +6,7 @@ use crate::{
     function::{self, ResolvedCalls},
     hir::{
         typed::{Document, Function},
-        ExpressionKind, Visitor,
+        ExpressionKind, FunctionKind, Visitor,
     },
 };
 use std::collections::BTreeSet;
@@ -40,14 +40,12 @@ pub fn perform(
 }
 
 fn warn(diagnostics: &mut Diagnostics, function: &Function) {
-    if !function.is_from_builtins {
-        let message = if function.is_constructor {
-            "struct is never constructed"
-        } else {
-            "unused function"
-        };
-        diagnostics.warning(message, [primary(function.name.span, "")]);
-    }
+    let message = match function.kind {
+        FunctionKind::Regular { .. } => "unused function",
+        FunctionKind::Intrinsic => return,
+        FunctionKind::Constructor => "struct is never constructed",
+    };
+    diagnostics.warning(message, [primary(function.name.span, "")]);
 }
 
 struct DceVisitor<'a> {

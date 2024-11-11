@@ -29,7 +29,7 @@ struct SemanticVisitor<'a> {
 
 impl Visitor for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &Function) {
-        self.is_inline = function.is_inline;
+        self.is_inline = function.kind.is_inline();
         self.check_generics(function);
         self.check_special_function(function);
         self.check_function_staging(function);
@@ -94,7 +94,7 @@ impl SemanticVisitor<'_> {
             );
         }
 
-        if function.is_inline {
+        if function.kind.is_inline() {
             self.diagnostics.error(
                 format!("special function `{}` cannot be inline", *function.name),
                 [primary(function.name.span, "")],
@@ -147,7 +147,10 @@ impl SemanticVisitor<'_> {
             }
         }
 
-        if !function.is_intrinsic && !function.is_inline {
+        if matches!(
+            function.kind,
+            hir::FunctionKind::Regular { is_inline: false }
+        ) {
             for param in &function.parameters {
                 if param.is_comptime {
                     self.diagnostics.error(
@@ -161,7 +164,9 @@ impl SemanticVisitor<'_> {
     }
 
     fn check_generics(&mut self, function: &Function) {
-        if !function.is_intrinsic && !function.generics.is_empty() {
+        if matches!(function.kind, hir::FunctionKind::Regular { .. })
+            && !function.generics.is_empty()
+        {
             self.diagnostics.error(
                 "user-defined functions with generics are not supported yet",
                 [primary(function.name.span, "")],

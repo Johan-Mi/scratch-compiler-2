@@ -19,7 +19,7 @@ pub fn check(document: &Document, resolved_calls: &ResolvedCalls, diagnostics: &
         .collect::<HashMap<_, _>>();
 
     for (&id, function) in &document.functions {
-        if function.is_inline {
+        if function.kind.is_inline() {
             CallGraphVisitor {
                 caller: nodes[&id],
                 nodes: &nodes,
@@ -31,7 +31,7 @@ pub fn check(document: &Document, resolved_calls: &ResolvedCalls, diagnostics: &
     }
 
     graph.retain_nodes(|graph, node| {
-        document.functions[&graph[node]].is_inline
+        document.functions[&graph[node]].kind.is_inline()
             // The singleton graph is trivially a strongly connected component.
             && graph
                 .neighbors_directed(node, Direction::Incoming)

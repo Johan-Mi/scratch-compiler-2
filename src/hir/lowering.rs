@@ -1,6 +1,6 @@
 use super::{
-    Block, Costume, Document, Expression, ExpressionKind, Field, Function, GlobalVariable,
-    Parameter, Result, Sprite, Statement, StatementKind, Struct,
+    Block, Costume, Document, Expression, ExpressionKind, Field, Function, FunctionKind,
+    GlobalVariable, Parameter, Result, Sprite, Statement, StatementKind, Struct,
 };
 use crate::{
     ast,
@@ -254,9 +254,9 @@ impl Function {
             parameters,
             return_ty,
             body: Block::lower(&body, file, diagnostics),
-            is_from_builtins: false,
-            is_intrinsic: false,
-            is_inline: ast.kw_inline().is_some(),
+            kind: FunctionKind::Regular {
+                is_inline: ast.kw_inline().is_some(),
+            },
         })
     }
 }

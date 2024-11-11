@@ -15,10 +15,7 @@ pub fn hir(
         diagnostics,
     );
     for function in hir.functions.values_mut() {
-        function.is_from_builtins = true;
-        if function.body.statements.is_empty() {
-            function.is_intrinsic = true;
-        }
+        function.kind = crate::hir::FunctionKind::Intrinsic;
     }
     hir
 }

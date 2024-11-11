@@ -160,7 +160,7 @@ pub fn check<'tcx>(document: &'tcx hir::typed::Document, tcx: &mut Context<'tcx>
         check_global_variable(variable, tcx);
     }
     for function in document.functions.values() {
-        if !function.is_intrinsic {
+        if matches!(function.kind, hir::FunctionKind::Regular { .. }) {
             check_function(function, tcx);
         }
     }

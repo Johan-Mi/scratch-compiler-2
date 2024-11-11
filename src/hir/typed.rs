@@ -1,4 +1,4 @@
-use super::{Block, ExpressionKind, Result};
+use super::{Block, ExpressionKind, FunctionKind, Result};
 use crate::{
     comptime::Value,
     diagnostics::primary,
@@ -32,10 +32,7 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub return_ty: Spanned<Result<Ty>>,
     pub body: Block,
-    pub is_from_builtins: bool,
-    pub is_intrinsic: bool,
-    pub is_inline: bool,
-    pub is_constructor: bool,
+    pub kind: FunctionKind,
 }
 
 #[derive(Debug)]
@@ -104,10 +101,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
             span: struct_.name_span,
         },
         body: Block::default(),
-        is_from_builtins: false,
-        is_intrinsic: true,
-        is_inline: false,
-        is_constructor: true,
+        kind: FunctionKind::Constructor,
     }
 }
 
@@ -197,10 +191,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
             span: it.return_ty.span,
         },
         body: it.body,
-        is_from_builtins: it.is_from_builtins,
-        is_intrinsic: it.is_intrinsic,
-        is_inline: it.is_inline,
-        is_constructor: false,
+        kind: it.kind,
     }
 }
 

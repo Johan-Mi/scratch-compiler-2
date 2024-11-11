@@ -64,7 +64,10 @@ impl From<&hir::typed::Function> for FunctionSignature {
     fn from(function: &hir::typed::Function) -> Self {
         Self {
             returns_something: !function.return_ty.as_ref().unwrap().is_zero_sized(),
-            is_intrinsic: function.is_intrinsic,
+            is_intrinsic: matches!(
+                function.kind,
+                hir::FunctionKind::Intrinsic | hir::FunctionKind::Constructor
+            ),
         }
     }
 }
@@ -101,7 +104,7 @@ fn lower_function(function: hir::typed::Function, cx: &mut Context) -> Function 
         parameters,
         body: lower_block(function.body, cx),
         returns_something: !function.return_ty.node.unwrap().is_zero_sized(),
-        is_inline: function.is_inline,
+        is_inline: function.kind.is_inline(),
         owning_sprite: function.owning_sprite,
     }
 }

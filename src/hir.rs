@@ -103,9 +103,24 @@ pub struct Function {
     pub parameters: Vec<Parameter>,
     pub return_ty: Expression,
     pub body: Block,
-    pub is_from_builtins: bool,
-    pub is_intrinsic: bool,
-    pub is_inline: bool,
+    pub kind: FunctionKind,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum FunctionKind {
+    Regular { is_inline: bool },
+    Intrinsic,
+    Constructor,
+}
+
+impl FunctionKind {
+    pub const fn is_inline(self) -> bool {
+        if let Self::Regular { is_inline } = self {
+            is_inline
+        } else {
+            false
+        }
+    }
 }
 
 #[derive(Debug)]
