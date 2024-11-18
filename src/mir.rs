@@ -12,8 +12,10 @@ mod visit;
 pub use lowering::lower;
 use visit::*;
 
-use crate::{comptime::Value as Imm, generator::Generator, hir::Sprite, ty::Ty};
+use crate::{generator::Generator, hir::Sprite, ty::Ty};
 use std::{collections::BTreeMap, fmt};
+
+type Imm = crate::comptime::Value<RealVar>;
 
 pub fn optimize(document: &mut Document, generator: &mut Generator) {
     struct OptimizationVistior;
@@ -126,7 +128,6 @@ impl Generator {
 pub enum Value {
     Var(SsaVar),
     Imm(Imm),
-    Lvalue(RealVar),
     List(RealList),
 }
 
@@ -135,7 +136,6 @@ impl fmt::Debug for Value {
         match self {
             Self::Var(var) => fmt::Debug::fmt(var, f),
             Self::Imm(imm) => fmt::Debug::fmt(imm, f),
-            Self::Lvalue(var) => write!(f, "&{var:?}"),
             Self::List(list) => fmt::Debug::fmt(list, f),
         }
     }

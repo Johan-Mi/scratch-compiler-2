@@ -190,7 +190,6 @@ pub enum ExpressionKind {
         name_span: Span,
         arguments: Vec<Argument>,
     },
-    Lvalue(SyntaxToken),
     GenericTypeInstantiation {
         generic: ty::Generic,
         arguments: Vec<Expression>,

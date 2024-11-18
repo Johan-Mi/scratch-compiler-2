@@ -104,10 +104,7 @@ pub trait Visitor<Func: Any = super::typed::Function> {
     fn traverse_expression(&mut self, expr: &Expression) {
         self.visit_expression(expr);
         match &expr.kind {
-            ExpressionKind::Variable(_)
-            | ExpressionKind::Imm(_)
-            | ExpressionKind::Lvalue(_)
-            | ExpressionKind::Error => {}
+            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
             ExpressionKind::FunctionCall { arguments, .. } => {
                 for (_, arg) in arguments {
                     self.traverse_expression(arg);
@@ -212,10 +209,7 @@ pub trait VisitorPostorderMut {
 
     fn traverse_expression(&mut self, expr: &mut Expression) {
         match &mut expr.kind {
-            ExpressionKind::Variable(_)
-            | ExpressionKind::Imm(_)
-            | ExpressionKind::Lvalue(_)
-            | ExpressionKind::Error => {}
+            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
             ExpressionKind::FunctionCall { arguments, .. } => {
                 for (_, arg) in arguments {
                     self.traverse_expression(arg);

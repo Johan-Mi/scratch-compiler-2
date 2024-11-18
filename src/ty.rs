@@ -426,7 +426,7 @@ pub fn of_expression(
         ExpressionKind::Variable(Name::Builtin(builtin)) => {
             of_builtin_name(*builtin, expression.span, tcx.diagnostics)
         }
-        ExpressionKind::Imm(value) => Ok(value.ty()),
+        ExpressionKind::Imm(value) => value.ty(tcx),
         ExpressionKind::FunctionCall {
             name_or_operator,
             name_span,
@@ -454,7 +454,6 @@ pub fn of_expression(
 
             return_ty
         }
-        ExpressionKind::Lvalue(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
         ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
             check_generic_type_instantiation(*generic, arguments, expression.span, tcx);
             Ok(Ty::Ty)

@@ -1,8 +1,9 @@
-use crate::mir::{
-    Call,
-    Imm::Num,
-    Op,
-    Value::{Imm, Var},
+use crate::{
+    comptime::Value::Num,
+    mir::{
+        Call, Op,
+        Value::{Imm, Var},
+    },
 };
 
 pub(super) fn icalize(op: &mut Op) -> bool {

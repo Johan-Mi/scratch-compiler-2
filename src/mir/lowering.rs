@@ -1,5 +1,8 @@
-use super::{Block, Call, Document, Function, Generator, Op, Parameter, RealList, RealVar, Value};
+use super::{
+    Block, Call, Document, Function, Generator, Imm, Op, Parameter, RealList, RealVar, Value,
+};
 use crate::{
+    comptime,
     function::ResolvedCalls,
     hir::{self, desugar_function_call_name},
     name::{self, Name},
@@ -137,7 +140,7 @@ fn lower_variable_initialization(
             None,
             Call::Intrinsic {
                 name: "set".to_owned(),
-                args: vec![Value::Lvalue(real_var), value],
+                args: vec![Value::Imm(Imm::Lvalue(real_var)), value],
             },
         ));
     } else {
@@ -246,7 +249,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                     Some(ssa_var),
                     Call::Intrinsic {
                         name: "get".to_owned(),
-                        args: vec![Value::Lvalue(real_var)],
+                        args: vec![Value::Imm(Imm::Lvalue(real_var))],
                     },
                 ));
                 Some(Value::Var(ssa_var))
@@ -264,7 +267,14 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             | name::Builtin::List
             | name::Builtin::Type => unreachable!(),
         },
-        hir::ExpressionKind::Imm(imm) => Some(Value::Imm(imm)),
+        hir::ExpressionKind::Imm(imm) => Some(Value::Imm(match imm {
+            comptime::Value::Ty(it) => Imm::Ty(it),
+            comptime::Value::Num(it) => Imm::Num(it),
+            comptime::Value::String(it) => Imm::String(it),
+            comptime::Value::Bool(it) => Imm::Bool(it),
+            comptime::Value::Sprite { name } => Imm::Sprite { name },
+            comptime::Value::Lvalue(var) => Imm::Lvalue(cx.real_vars[&var]),
+        })),
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
             name_span,
@@ -297,7 +307,6 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
 
             variable.map(Value::Var)
         }
-        hir::ExpressionKind::Lvalue(var) => Some(Value::Lvalue(cx.real_vars[&var])),
         hir::ExpressionKind::ListLiteral(elements) => {
             let list = cx.generator.new_real_list();
             cx.block.ops.push(Op::Call(

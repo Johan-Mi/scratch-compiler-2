@@ -1,5 +1,6 @@
 use super::{Generator, RealVar};
 use crate::{
+    comptime,
     hir::{self, Visitor},
     parser::SyntaxToken,
 };
@@ -24,7 +25,7 @@ struct RealVarVisitor<'a> {
 
 impl Visitor for RealVarVisitor<'_> {
     fn visit_expression(&mut self, expr: &hir::Expression) {
-        if let hir::ExpressionKind::Lvalue(var) = &expr.kind {
+        if let hir::ExpressionKind::Imm(comptime::Value::Lvalue(var)) = &expr.kind {
             let _: &mut RealVar = self
                 .real_vars
                 .entry(var.clone())

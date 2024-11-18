@@ -4,21 +4,22 @@ use crate::{
         VisitorPostorderMut,
     },
     name::Name,
-    parser::SyntaxKind,
+    parser::{SyntaxKind, SyntaxToken},
     ty::{self, Ty},
 };
 use std::fmt;
 
 #[derive(Clone)]
-pub enum Value {
+pub enum Value<L = SyntaxToken> {
     Ty(Ty),
     Num(f64),
     String(String),
     Bool(bool),
     Sprite { name: String },
+    Lvalue(L),
 }
 
-impl fmt::Debug for Value {
+impl<L: fmt::Debug> fmt::Debug for Value<L> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Ty(ty) => fmt::Debug::fmt(ty, f),
@@ -26,18 +27,20 @@ impl fmt::Debug for Value {
             Self::String(s) => fmt::Debug::fmt(s, f),
             Self::Bool(b) => fmt::Debug::fmt(b, f),
             Self::Sprite { name } => f.debug_struct("Sprite").field("name", name).finish(),
+            Self::Lvalue(var) => write!(f, "&{var:?}"),
         }
     }
 }
 
 impl Value {
-    pub const fn ty(&self) -> Ty {
+    pub fn ty(&self, tcx: &ty::Context) -> Result<Ty, ()> {
         match self {
-            Self::Ty(_) => Ty::Ty,
-            Self::Num(_) => Ty::Num,
-            Self::String(_) => Ty::String,
-            Self::Bool(_) => Ty::Bool,
-            Self::Sprite { .. } => Ty::Sprite,
+            Self::Ty(_) => Ok(Ty::Ty),
+            Self::Num(_) => Ok(Ty::Num),
+            Self::String(_) => Ok(Ty::String),
+            Self::Bool(_) => Ok(Ty::Bool),
+            Self::Sprite { .. } => Ok(Ty::Sprite),
+            Self::Lvalue(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
         }
     }
 }
@@ -82,22 +85,22 @@ pub fn evaluate(expr: &mut Expression, tcx: &ty::Context) {
 
 // FIXME: get rid of this and use actual compile-time evaluation instead
 pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
-    matches!(
-        expr.kind,
-        ExpressionKind::Imm(_) | ExpressionKind::Lvalue(_)
-    ) || matches!(
-        &expr.kind,
-        ExpressionKind::Variable(Name::User(var))
-            if tcx.comptime_known_variables.contains_key(var)
-    ) || matches!(
-        &expr.kind,
-        ExpressionKind::ListLiteral(items)
-            if items.iter().all(|item| is_known(item, tcx))
-    ) || matches!(
-        &expr.kind,
-        ExpressionKind::TypeAscription { inner, .. }
-            if is_known(inner, tcx)
-    )
+    matches!(expr.kind, ExpressionKind::Imm(_))
+        || matches!(
+            &expr.kind,
+            ExpressionKind::Variable(Name::User(var))
+                if tcx.comptime_known_variables.contains_key(var)
+        )
+        || matches!(
+            &expr.kind,
+            ExpressionKind::ListLiteral(items)
+                if items.iter().all(|item| is_known(item, tcx))
+        )
+        || matches!(
+            &expr.kind,
+            ExpressionKind::TypeAscription { inner, .. }
+                if is_known(inner, tcx)
+        )
 }
 
 pub fn evaluate_all(document: &mut Document, tcx: &mut ty::Context) {

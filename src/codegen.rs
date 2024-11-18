@@ -379,13 +379,13 @@ fn compile_intrinsic(
 ) -> Option<CompiledOperand> {
     match name {
         "get" => {
-            let [mir::Value::Lvalue(var)] = *args else {
+            let [mir::Value::Imm(comptime::Value::Lvalue(var))] = *args else {
                 unreachable!()
             };
             Some(S(cx.compile_real_var(var).into()))
         }
         "set" => {
-            let mir::Value::Lvalue(var) = args[0] else {
+            let mir::Value::Imm(comptime::Value::Lvalue(var)) = args[0] else {
                 unreachable!()
             };
             let var = cx.compile_real_var(var);
@@ -561,8 +561,9 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> CompiledOperand {
                 }
             }
         }
-        mir::Value::Imm(comptime::Value::Sprite { .. } | comptime::Value::Ty(_))
-        | mir::Value::Lvalue(_)
+        mir::Value::Imm(
+            comptime::Value::Sprite { .. } | comptime::Value::Ty(_) | comptime::Value::Lvalue(_),
+        )
         | mir::Value::List(_) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => S(n.into()),
         mir::Value::Imm(comptime::Value::String(s)) => S(s.into()),

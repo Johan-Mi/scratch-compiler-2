@@ -30,7 +30,7 @@ pub(super) fn propagate_constants(block: &mut Block) -> bool {
 }
 
 fn evaluate_intrinsic(name: &str, args: &mut [Value]) -> Option<Value> {
-    use crate::mir::Imm::{Bool, Num, String};
+    use crate::comptime::Value::{Bool, Num, String};
     use Value::Imm;
 
     match (name, args) {

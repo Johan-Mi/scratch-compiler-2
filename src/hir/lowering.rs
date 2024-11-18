@@ -595,7 +595,7 @@ fn lower_lvalue(
     let inner = Expression::lower(&inner, file, diagnostics);
     if let ExpressionKind::Variable(Name::User(var)) = inner.kind {
         if var.parent().is_some_and(|it| it.kind() == SyntaxKind::LET) {
-            return ExpressionKind::Lvalue(var);
+            return ExpressionKind::Imm(Value::Lvalue(var));
         }
     }
     diagnostics.error(
