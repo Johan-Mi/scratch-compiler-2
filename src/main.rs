@@ -119,6 +119,10 @@ fn compile_or_check(
         tcx.diagnostics.note(err.to_string(), []);
     })?;
 
+    if std::env::var_os("DUMP_HIR").is_some() {
+        eprintln!("{document:#?}");
+    }
+
     comptime::evaluate_all(&mut document, &mut tcx);
     let mut document = hir::typed::lower(document, &mut tcx, &mut generator);
     if std::env::var_os("DUMP_THIR").is_some() {
