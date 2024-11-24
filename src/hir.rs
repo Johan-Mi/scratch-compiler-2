@@ -11,7 +11,10 @@ use crate::{
     ty,
 };
 use codemap::{Span, Spanned};
-use std::collections::{btree_map::Entry, BTreeMap};
+use std::{
+    collections::{btree_map::Entry, BTreeMap},
+    fmt,
+};
 
 /// All error reporting uses the `Diagnostics` struct. This typedef is only
 /// used to make short-circuiting more convenient. A result of `Ok(())` does not
@@ -133,10 +136,15 @@ pub struct Block {
     pub statements: Vec<Statement>,
 }
 
-#[derive(Debug)]
 pub struct Statement {
     pub kind: StatementKind,
     pub span: Span,
+}
+
+impl fmt::Debug for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.kind.fmt(f)
+    }
 }
 
 #[derive(Debug)]
@@ -175,10 +183,15 @@ pub enum StatementKind {
     Error,
 }
 
-#[derive(Debug)]
 pub struct Expression {
     pub kind: ExpressionKind,
     pub span: Span,
+}
+
+impl fmt::Debug for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.kind.fmt(f)
+    }
 }
 
 #[derive(Debug)]
