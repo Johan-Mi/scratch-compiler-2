@@ -123,7 +123,6 @@ fn compile_or_check(
         eprintln!("{document:#?}");
     }
 
-    comptime::evaluate_all(&mut document, &mut tcx);
     let mut document = hir::typed::lower(document, &mut tcx, &mut generator);
     if std::env::var_os("DUMP_THIR").is_some() {
         eprintln!("{document:#?}");

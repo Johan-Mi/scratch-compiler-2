@@ -1,6 +1,6 @@
 use super::{Block, ExpressionKind, FunctionKind, Result};
 use crate::{
-    comptime::Value,
+    comptime::{self, Value},
     diagnostics::primary,
     generator::Generator,
     parser::SyntaxToken,
@@ -44,7 +44,9 @@ pub struct Parameter {
     pub span: Span,
 }
 
-pub fn lower(it: super::Document, tcx: &mut Context, generator: &mut Generator) -> Document {
+pub fn lower(mut it: super::Document, tcx: &mut Context, generator: &mut Generator) -> Document {
+    comptime::evaluate_all(&mut it, tcx);
+
     let mut document = Document {
         structs: it
             .structs
