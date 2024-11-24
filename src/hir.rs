@@ -131,9 +131,15 @@ pub struct Parameter {
     pub span: Span,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Block {
     pub statements: Vec<Statement>,
+}
+
+impl fmt::Debug for Block {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.statements.fmt(f)
+    }
 }
 
 pub struct Statement {
