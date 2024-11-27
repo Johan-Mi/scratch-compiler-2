@@ -140,17 +140,17 @@ pub fn check<'tcx>(document: &'tcx hir::typed::Document, tcx: &mut Context<'tcx>
         document
             .structs
             .values()
-            .map(|struct_| (struct_.name_token.clone(), Ok(Ty::Ty))),
+            .map(|struct_| (struct_.name.node.clone(), Ok(Ty::Ty))),
     );
 
     tcx.comptime_known_variables
         .extend(document.structs.iter().map(|(name, struct_)| {
             (
-                struct_.name_token.clone(),
+                struct_.name.node.clone(),
                 Some(comptime::Value::Ty(Ty::Struct {
                     name: Spanned {
                         node: name.clone(),
-                        span: struct_.name_span,
+                        span: struct_.name.span,
                     },
                 })),
             )

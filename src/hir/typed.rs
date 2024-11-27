@@ -3,46 +3,15 @@ use crate::{
     comptime::{self, Value},
     diagnostics::primary,
     generator::Generator,
-    parser::SyntaxToken,
     ty::{self, Context, Ty},
 };
-use codemap::{Span, Spanned};
+use codemap::Spanned;
 
-pub type Document = super::Document<Function, Struct>;
-
-#[derive(Debug)]
-pub struct Struct {
-    pub name_span: Span,
-    pub name_token: SyntaxToken,
-    pub fields: Vec<Spanned<Field>>,
-}
-
-#[derive(Debug)]
-pub struct Field {
-    name: SyntaxToken,
-    ty: Spanned<Result<Ty>>,
-}
-
-#[derive(Debug)]
-pub struct Function {
-    pub owning_sprite: Option<String>,
-    pub name: Spanned<String>,
-    pub tag: Option<String>,
-    pub generics: Vec<SyntaxToken>,
-    pub parameters: Vec<Parameter>,
-    pub return_ty: Spanned<Result<Ty>>,
-    pub body: Block,
-    pub kind: FunctionKind,
-}
-
-#[derive(Debug)]
-pub struct Parameter {
-    pub external_name: Option<String>,
-    pub internal_name: SyntaxToken,
-    pub ty: Spanned<Result<Ty>>,
-    pub is_comptime: bool,
-    pub span: Span,
-}
+pub type Document = super::Document<Spanned<Result<Ty>>>;
+pub type Struct = super::Struct<Spanned<Result<Ty>>>;
+pub type Field = super::Field<Spanned<Result<Ty>>>;
+pub type Function = super::Function<Spanned<Result<Ty>>>;
+pub type Parameter = super::Parameter<Spanned<Result<Ty>>>;
 
 pub fn lower(mut it: super::Document, tcx: &mut Context, generator: &mut Generator) -> Document {
     comptime::evaluate_all(&mut it, tcx);
@@ -78,7 +47,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
         owning_sprite: None,
         name: Spanned {
             node: name.clone(),
-            span: struct_.name_span,
+            span: struct_.name.span,
         },
         tag: None,
         generics: Vec::new(),
@@ -97,10 +66,10 @@ fn constructor(name: String, struct_: &Struct) -> Function {
             node: Ok(Ty::Struct {
                 name: Spanned {
                     node: name,
-                    span: struct_.name_span,
+                    span: struct_.name.span,
                 },
             }),
-            span: struct_.name_span,
+            span: struct_.name.span,
         },
         body: Block::default(),
         kind: FunctionKind::Constructor,
@@ -109,8 +78,7 @@ fn constructor(name: String, struct_: &Struct) -> Function {
 
 pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
     Struct {
-        name_span: it.name.span,
-        name_token: it.name.node,
+        name: it.name,
         fields: it
             .fields
             .into_iter()

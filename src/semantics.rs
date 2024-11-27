@@ -1,3 +1,5 @@
+use codemap::Spanned;
+
 use crate::{
     diagnostics::{primary, Diagnostics},
     function,
@@ -27,7 +29,7 @@ struct SemanticVisitor<'a> {
     is_inline: bool,
 }
 
-impl Visitor for SemanticVisitor<'_> {
+impl Visitor<Spanned<Result<Ty, ()>>> for SemanticVisitor<'_> {
     fn visit_function(&mut self, function: &Function) {
         self.is_inline = function.kind.is_inline();
         self.check_generics(function);

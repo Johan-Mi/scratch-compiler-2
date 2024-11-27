@@ -23,19 +23,19 @@ use std::{
 type Result<T> = std::result::Result<T, ()>;
 
 #[derive(Debug)]
-pub struct Document<Func = Function, Struct = self::Struct> {
-    pub structs: BTreeMap<String, Struct>,
+pub struct Document<T = Expression> {
+    pub structs: BTreeMap<String, Struct<T>>,
     pub sprites: BTreeMap<String, Sprite>,
-    pub functions: BTreeMap<usize, Func>,
+    pub functions: BTreeMap<usize, Function<T>>,
     pub variables: Vec<GlobalVariable>,
 }
 
-impl<Func> Document<Func> {
+impl<T> Document<T> {
     pub fn merge(&mut self, other: Self, diagnostics: &mut Diagnostics) {
         for (name, struct_) in other.structs {
             match self.structs.entry(name) {
                 Entry::Vacant(vacant) => {
-                    let _: &mut Struct = vacant.insert(struct_);
+                    let _: &mut Struct<_> = vacant.insert(struct_);
                 }
                 Entry::Occupied(old_struct) => {
                     diagnostics.error(
@@ -69,15 +69,15 @@ pub struct GlobalVariable {
 }
 
 #[derive(Debug)]
-pub struct Struct {
-    name: Spanned<SyntaxToken>,
-    pub fields: Vec<Spanned<Field>>,
+pub struct Struct<T = Expression> {
+    pub name: Spanned<SyntaxToken>,
+    pub fields: Vec<Spanned<Field<T>>>,
 }
 
 #[derive(Debug)]
-pub struct Field {
+pub struct Field<T = Expression> {
     name: SyntaxToken,
-    pub ty: Expression,
+    pub ty: T,
 }
 
 #[derive(Debug)]
@@ -98,13 +98,13 @@ pub struct Costume {
 }
 
 #[derive(Debug)]
-pub struct Function {
+pub struct Function<T = Expression> {
     pub owning_sprite: Option<String>,
     pub name: Spanned<String>,
     pub tag: Option<String>,
     pub generics: Vec<SyntaxToken>,
-    pub parameters: Vec<Parameter>,
-    pub return_ty: Expression,
+    pub parameters: Vec<Parameter<T>>,
+    pub return_ty: T,
     pub body: Block,
     pub kind: FunctionKind,
 }
@@ -123,10 +123,10 @@ impl FunctionKind {
 }
 
 #[derive(Debug)]
-pub struct Parameter {
+pub struct Parameter<T = Expression> {
     pub external_name: Option<String>,
     pub internal_name: SyntaxToken,
-    pub ty: Expression,
+    pub ty: T,
     pub is_comptime: bool,
     pub span: Span,
 }

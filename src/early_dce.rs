@@ -8,7 +8,9 @@ use crate::{
         typed::{Document, Function},
         ExpressionKind, FunctionKind, Visitor,
     },
+    ty::Ty,
 };
+use codemap::Spanned;
 use std::collections::BTreeSet;
 
 pub fn perform(
@@ -54,7 +56,7 @@ struct DceVisitor<'a> {
     required_functions: BTreeSet<usize>,
 }
 
-impl Visitor for DceVisitor<'_> {
+impl Visitor<Spanned<Result<Ty, ()>>> for DceVisitor<'_> {
     fn visit_expression(&mut self, expr: &crate::hir::Expression) {
         let ExpressionKind::FunctionCall { name_span, .. } = expr.kind else {
             return;

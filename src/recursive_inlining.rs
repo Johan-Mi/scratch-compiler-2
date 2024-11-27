@@ -2,7 +2,9 @@ use crate::{
     diagnostics::{primary, Diagnostics},
     function::ResolvedCalls,
     hir::{self, typed::Document, ExpressionKind, Visitor},
+    ty::Ty,
 };
+use codemap::Spanned;
 use petgraph::{
     prelude::{EdgeIndex, NodeIndex},
     Direction, Graph,
@@ -54,7 +56,7 @@ struct CallGraphVisitor<'a> {
     resolved_calls: &'a ResolvedCalls,
 }
 
-impl Visitor for CallGraphVisitor<'_> {
+impl Visitor<Spanned<Result<Ty, ()>>> for CallGraphVisitor<'_> {
     fn visit_expression(&mut self, expr: &hir::Expression) {
         let ExpressionKind::FunctionCall { name_span, .. } = expr.kind else {
             return;
