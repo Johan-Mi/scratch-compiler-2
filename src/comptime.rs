@@ -16,7 +16,7 @@ pub enum Value<L = SyntaxToken> {
     String(String),
     Bool(bool),
     Sprite { name: String },
-    Lvalue(L),
+    VariableRef(L),
 }
 
 impl<L: fmt::Debug> fmt::Debug for Value<L> {
@@ -27,7 +27,7 @@ impl<L: fmt::Debug> fmt::Debug for Value<L> {
             Self::String(s) => fmt::Debug::fmt(s, f),
             Self::Bool(b) => fmt::Debug::fmt(b, f),
             Self::Sprite { name } => f.debug_struct("Sprite").field("name", name).finish(),
-            Self::Lvalue(var) => write!(f, "&{var:?}"),
+            Self::VariableRef(var) => write!(f, "&{var:?}"),
         }
     }
 }
@@ -40,7 +40,7 @@ impl Value {
             Self::String(_) => Ok(Ty::String),
             Self::Bool(_) => Ok(Ty::Bool),
             Self::Sprite { .. } => Ok(Ty::Sprite),
-            Self::Lvalue(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
+            Self::VariableRef(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
         }
     }
 }

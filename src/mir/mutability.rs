@@ -27,7 +27,7 @@ struct RealVarVisitor<'a> {
 
 impl Visitor<Spanned<Result<Ty, ()>>> for RealVarVisitor<'_> {
     fn visit_expression(&mut self, expr: &hir::Expression) {
-        if let hir::ExpressionKind::Imm(comptime::Value::Lvalue(var)) = &expr.kind {
+        if let hir::ExpressionKind::Imm(comptime::Value::VariableRef(var)) = &expr.kind {
             let _: &mut RealVar = self
                 .real_vars
                 .entry(var.clone())

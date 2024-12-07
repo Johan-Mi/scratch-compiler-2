@@ -140,7 +140,7 @@ fn lower_variable_initialization(
             None,
             Call::Intrinsic {
                 name: "set".to_owned(),
-                args: vec![Value::Imm(Imm::Lvalue(real_var)), value],
+                args: vec![Value::Imm(Imm::VariableRef(real_var)), value],
             },
         ));
     } else {
@@ -249,7 +249,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
                     Some(ssa_var),
                     Call::Intrinsic {
                         name: "get".to_owned(),
-                        args: vec![Value::Imm(Imm::Lvalue(real_var))],
+                        args: vec![Value::Imm(Imm::VariableRef(real_var))],
                     },
                 ));
                 Some(Value::Var(ssa_var))
@@ -273,7 +273,7 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             comptime::Value::String(it) => Imm::String(it),
             comptime::Value::Bool(it) => Imm::Bool(it),
             comptime::Value::Sprite { name } => Imm::Sprite { name },
-            comptime::Value::Lvalue(var) => Imm::Lvalue(cx.real_vars[&var]),
+            comptime::Value::VariableRef(var) => Imm::VariableRef(cx.real_vars[&var]),
         })),
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
