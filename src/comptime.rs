@@ -15,7 +15,9 @@ pub enum Value<L = SyntaxToken> {
     Num(f64),
     String(String),
     Bool(bool),
-    Sprite { name: String },
+    Sprite {
+        name: String,
+    },
     VariableRef(L),
 }
 
