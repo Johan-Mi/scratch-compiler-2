@@ -426,6 +426,17 @@ pub fn of_expression(
         ExpressionKind::Variable(Name::Builtin(builtin)) => {
             of_builtin_name(*builtin, expression.span, tcx.diagnostics)
         }
+        ExpressionKind::Imm(comptime::Value::ListRef {
+            token,
+            initializer: Some(initializer),
+        }) => {
+            let ty = of_list_literal(initializer, expression.span, ascribed, tcx);
+            assert!(tcx
+                .variable_types
+                .insert(token.clone(), ty.clone())
+                .is_none());
+            ty
+        }
         ExpressionKind::Imm(value) => value.ty(tcx),
         ExpressionKind::FunctionCall {
             name_or_operator,
@@ -458,7 +469,6 @@ pub fn of_expression(
             check_generic_type_instantiation(*generic, arguments, expression.span, tcx);
             Ok(Ty::Ty)
         }
-        ExpressionKind::ListLiteral(list) => of_list_literal(list, expression.span, ascribed, tcx),
         ExpressionKind::TypeAscription { inner, ty } => {
             let Ok(ty_ty) = of_expression(ty, None, tcx) else {
                 return Err(());

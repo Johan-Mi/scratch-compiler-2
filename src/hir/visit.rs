@@ -1,7 +1,7 @@
 use super::{
     Block, Document, Expression, ExpressionKind, Function, GlobalVariable, Statement, StatementKind,
 };
-use crate::hir;
+use crate::{comptime::Value, hir};
 use std::any::Any;
 
 /// Define a struct, implement this trait, override some `visit_*` methods and
@@ -104,15 +104,18 @@ pub trait Visitor<T: 'static = Expression> {
     fn traverse_expression(&mut self, expr: &Expression) {
         self.visit_expression(expr);
         match &expr.kind {
-            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
-            ExpressionKind::FunctionCall { arguments, .. } => {
-                for (_, arg) in arguments {
+            ExpressionKind::Imm(Value::ListRef {
+                initializer: Some(arguments),
+                ..
+            })
+            | ExpressionKind::GenericTypeInstantiation { arguments, .. } => {
+                for arg in arguments {
                     self.traverse_expression(arg);
                 }
             }
-            ExpressionKind::GenericTypeInstantiation { arguments, .. }
-            | ExpressionKind::ListLiteral(arguments) => {
-                for arg in arguments {
+            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
+            ExpressionKind::FunctionCall { arguments, .. } => {
+                for (_, arg) in arguments {
                     self.traverse_expression(arg);
                 }
             }
@@ -209,15 +212,18 @@ pub trait VisitorPostorderMut {
 
     fn traverse_expression(&mut self, expr: &mut Expression) {
         match &mut expr.kind {
-            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
-            ExpressionKind::FunctionCall { arguments, .. } => {
-                for (_, arg) in arguments {
+            ExpressionKind::GenericTypeInstantiation { arguments, .. }
+            | ExpressionKind::Imm(Value::ListRef {
+                initializer: Some(arguments),
+                ..
+            }) => {
+                for arg in arguments {
                     self.traverse_expression(arg);
                 }
             }
-            ExpressionKind::GenericTypeInstantiation { arguments, .. }
-            | ExpressionKind::ListLiteral(arguments) => {
-                for arg in arguments {
+            ExpressionKind::Variable(_) | ExpressionKind::Imm(_) | ExpressionKind::Error => {}
+            ExpressionKind::FunctionCall { arguments, .. } => {
+                for (_, arg) in arguments {
                     self.traverse_expression(arg);
                 }
             }

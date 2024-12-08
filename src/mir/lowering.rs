@@ -267,14 +267,44 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             | name::Builtin::List
             | name::Builtin::Type => unreachable!(),
         },
-        hir::ExpressionKind::Imm(imm) => Some(Value::Imm(match imm {
-            comptime::Value::Ty(it) => Imm::Ty(it),
-            comptime::Value::Num(it) => Imm::Num(it),
-            comptime::Value::String(it) => Imm::String(it),
-            comptime::Value::Bool(it) => Imm::Bool(it),
-            comptime::Value::Sprite { name } => Imm::Sprite { name },
-            comptime::Value::VariableRef(var) => Imm::VariableRef(cx.real_vars[&var]),
-        })),
+        hir::ExpressionKind::Imm(imm) => Some(match imm {
+            comptime::Value::Ty(it) => Value::Imm(Imm::Ty(it)),
+            comptime::Value::Num(it) => Value::Imm(Imm::Num(it)),
+            comptime::Value::String(it) => Value::Imm(Imm::String(it)),
+            comptime::Value::Bool(it) => Value::Imm(Imm::Bool(it)),
+            comptime::Value::Sprite { name } => Value::Imm(Imm::Sprite { name }),
+            comptime::Value::VariableRef(var) => Value::Imm(Imm::VariableRef(cx.real_vars[&var])),
+            comptime::Value::ListRef {
+                token: identity,
+                initializer,
+            } => {
+                let list = cx
+                    .vars
+                    .entry(identity)
+                    .or_insert_with(|| Value::List(cx.generator.new_real_list()))
+                    .clone();
+                if let Some(initializer) = initializer {
+                    cx.block.ops.push(Op::Call(
+                        None,
+                        Call::Intrinsic {
+                            name: "delete-all".to_owned(),
+                            args: vec![list.clone()],
+                        },
+                    ));
+                    for element in initializer {
+                        let element = lower_expression(element, cx).unwrap();
+                        cx.block.ops.push(Op::Call(
+                            None,
+                            Call::Intrinsic {
+                                name: "push".to_owned(),
+                                args: vec![list.clone(), element],
+                            },
+                        ));
+                    }
+                }
+                list
+            }
+        }),
         hir::ExpressionKind::FunctionCall {
             name_or_operator,
             name_span,
@@ -306,27 +336,6 @@ fn lower_expression(expr: hir::Expression, cx: &mut Context) -> Option<Value> {
             ));
 
             variable.map(Value::Var)
-        }
-        hir::ExpressionKind::ListLiteral(elements) => {
-            let list = cx.generator.new_real_list();
-            cx.block.ops.push(Op::Call(
-                None,
-                Call::Intrinsic {
-                    name: "delete-all".to_owned(),
-                    args: vec![Value::List(list)],
-                },
-            ));
-            for element in elements {
-                let element = lower_expression(element, cx).unwrap();
-                cx.block.ops.push(Op::Call(
-                    None,
-                    Call::Intrinsic {
-                        name: "push".to_owned(),
-                        args: vec![Value::List(list), element],
-                    },
-                ));
-            }
-            Some(Value::List(list))
         }
         hir::ExpressionKind::TypeAscription { inner, .. } => lower_expression(*inner, cx),
         hir::ExpressionKind::GenericTypeInstantiation { .. } | hir::ExpressionKind::Error => {

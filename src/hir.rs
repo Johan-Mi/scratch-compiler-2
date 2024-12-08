@@ -189,6 +189,7 @@ pub enum StatementKind {
     Error,
 }
 
+#[derive(Clone)]
 pub struct Expression {
     pub kind: ExpressionKind,
     pub span: Span,
@@ -200,7 +201,7 @@ impl fmt::Debug for Expression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ExpressionKind {
     Variable(Name),
     Imm(Value),
@@ -213,7 +214,6 @@ pub enum ExpressionKind {
         generic: ty::Generic,
         arguments: Vec<Expression>,
     },
-    ListLiteral(Vec<Expression>),
     TypeAscription {
         inner: Box<Expression>,
         ty: Box<Expression>,

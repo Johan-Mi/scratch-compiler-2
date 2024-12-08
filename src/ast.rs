@@ -564,6 +564,10 @@ impl ListLiteral {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
         rowan::ast::support::children(&self.syntax)
     }
+
+    pub fn lbracket(&self) -> SyntaxToken {
+        rowan::ast::support::token(&self.syntax, LBRACKET).unwrap()
+    }
 }
 
 ast_node!(TypeAscription: TYPE_ASCRIPTION);

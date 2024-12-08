@@ -564,7 +564,8 @@ fn compile_value(value: mir::Value, cx: &mut Context) -> CompiledOperand {
         mir::Value::Imm(
             comptime::Value::Sprite { .. }
             | comptime::Value::Ty(_)
-            | comptime::Value::VariableRef(_),
+            | comptime::Value::VariableRef(_)
+            | comptime::Value::ListRef { .. },
         )
         | mir::Value::List(_) => unreachable!(),
         mir::Value::Imm(comptime::Value::Num(n)) => S(n.into()),

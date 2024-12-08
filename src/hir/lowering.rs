@@ -491,11 +491,14 @@ impl Expression {
             ast::Expression::GenericTypeInstantiation(instantiation) => {
                 lower_generic_type_instantiation(instantiation, file, diagnostics)
             }
-            ast::Expression::ListLiteral(list) => ExpressionKind::ListLiteral(
-                list.iter()
-                    .map(|it| Self::lower(&it, file, diagnostics))
-                    .collect(),
-            ),
+            ast::Expression::ListLiteral(list) => ExpressionKind::Imm(Value::ListRef {
+                token: list.lbracket(),
+                initializer: Some(
+                    list.iter()
+                        .map(|it| Self::lower(&it, file, diagnostics))
+                        .collect(),
+                ),
+            }),
             ast::Expression::TypeAscription(ascription) => {
                 lower_type_ascription(ascription, diagnostics, file)
             }

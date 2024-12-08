@@ -4,7 +4,7 @@ use crate::{
 };
 use rowan::{ast::AstNode, TextSize};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Name {
     User(SyntaxToken),
     Builtin(Builtin),

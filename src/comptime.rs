@@ -19,6 +19,10 @@ pub enum Value<L = SyntaxToken> {
         name: String,
     },
     VariableRef(L),
+    ListRef {
+        token: SyntaxToken,
+        initializer: Option<Vec<Expression>>,
+    },
 }
 
 impl<L: fmt::Debug> fmt::Debug for Value<L> {
@@ -30,6 +34,11 @@ impl<L: fmt::Debug> fmt::Debug for Value<L> {
             Self::Bool(b) => fmt::Debug::fmt(b, f),
             Self::Sprite { name } => f.debug_struct("Sprite").field("name", name).finish(),
             Self::VariableRef(var) => write!(f, "&{var:?}"),
+            Self::ListRef { token, initializer } => f
+                .debug_struct("ListRef")
+                .field("token", token)
+                .field("initializer", initializer)
+                .finish(),
         }
     }
 }
@@ -43,6 +52,12 @@ impl Value {
             Self::Bool(_) => Ok(Ty::Bool),
             Self::Sprite { .. } => Ok(Ty::Sprite),
             Self::VariableRef(var) => tcx.variable_types[var].clone().map(Box::new).map(Ty::Var),
+            Self::ListRef {
+                token: identity, ..
+            } => tcx.variable_types[identity]
+                .clone()
+                .map(Box::new)
+                .map(Ty::List),
         }
     }
 }
@@ -92,11 +107,6 @@ pub fn is_known(expr: &Expression, tcx: &ty::Context) -> bool {
             &expr.kind,
             ExpressionKind::Variable(Name::User(var))
                 if tcx.comptime_known_variables.contains_key(var)
-        )
-        || matches!(
-            &expr.kind,
-            ExpressionKind::ListLiteral(items)
-                if items.iter().all(|item| is_known(item, tcx))
         )
         || matches!(
             &expr.kind,
