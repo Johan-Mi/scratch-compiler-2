@@ -559,12 +559,15 @@ pub fn of_list_literal(
         let ty = of_expression(element, ascribed_element_ty, tcx)?;
         if ty != first_ty {
             tcx.diagnostics.error(
-                    "conflicting types in list literal",
-                    [
-                        primary(first.span, format!("expected element type `{first_ty}` because of because of the first item...")),
-                        primary(element.span, format!("...but this has type `{ty}`")),
-                    ]
-                );
+                "conflicting types in list literal",
+                [
+                    primary(
+                        first.span,
+                        format!("expected element type `{first_ty}` because of the first item..."),
+                    ),
+                    primary(element.span, format!("...but this has type `{ty}`")),
+                ],
+            );
             return Err(());
         }
     }
