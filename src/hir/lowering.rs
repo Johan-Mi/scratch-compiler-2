@@ -88,6 +88,7 @@ impl Document {
                 let initializer = Expression::lower_opt(it.value(), file, diagnostics, text_range);
                 Some(GlobalVariable {
                     token,
+                    name_span: span(file, text_range),
                     initializer,
                     belongs_to_stage,
                 })

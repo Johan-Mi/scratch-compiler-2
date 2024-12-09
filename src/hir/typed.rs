@@ -1,203 +1,222 @@
-use super::{Block, ExpressionKind, FunctionKind, Result};
+use super::{Result, Visitor};
 use crate::{
-    comptime::{self, Value},
-    diagnostics::primary,
-    generator::Generator,
-    ty::{self, Context, Ty},
+    comptime::Value,
+    diagnostics::{primary, Diagnostics},
+    name::{self, Name},
+    parser::SyntaxKind,
+    ty::{self, Ty},
 };
-use codemap::Spanned;
+use codemap::{Pos, Spanned};
+use std::collections::{BTreeMap, HashMap};
 
 pub type Document = super::Document<Spanned<Result<Ty>>>;
-pub type Struct = super::Struct<Spanned<Result<Ty>>>;
-pub type Field = super::Field<Spanned<Result<Ty>>>;
+type Struct = super::Struct<Spanned<Result<Ty>>>;
+type Field = super::Field<Spanned<Result<Ty>>>;
 pub type Function = super::Function<Spanned<Result<Ty>>>;
-pub type Parameter = super::Parameter<Spanned<Result<Ty>>>;
+type Parameter = super::Parameter<Spanned<Result<Ty>>>;
 
-pub fn lower(mut it: super::Document, tcx: &mut Context, generator: &mut Generator) -> Document {
-    comptime::evaluate_all(&mut it, tcx);
-
-    let mut document = Document {
-        structs: it
-            .structs
-            .into_iter()
-            .map(|(name, it)| (name, lower_struct(it, tcx)))
-            .collect(),
-        sprites: it.sprites,
-        functions: it
-            .functions
-            .into_iter()
-            .map(|(id, function)| (id, lower_function(function, tcx)))
-            .collect(),
-        variables: it.variables,
+pub fn lower(
+    mut u: super::Document,
+    diagnostics: &mut Diagnostics,
+) -> (Document, HashMap<Pos, usize>) {
+    let mut t = Document {
+        structs: BTreeMap::new(),
+        sprites: std::mem::take(&mut u.sprites),
+        functions: BTreeMap::new(),
+        variables: Vec::new(),
     };
 
-    for (name, struct_) in &document.structs {
-        let function = constructor(name.clone(), struct_);
-        assert!(document
-            .functions
-            .insert(usize::from(generator.new_u16()), function)
-            .is_none());
-    }
-
-    document
-}
-
-fn constructor(name: String, struct_: &Struct) -> Function {
-    Function {
-        owning_sprite: None,
-        name: Spanned {
-            node: name.clone(),
-            span: struct_.name.span,
-        },
-        tag: None,
-        generics: Vec::new(),
-        parameters: struct_
-            .fields
-            .iter()
-            .map(|field| Parameter {
-                external_name: Some(field.name.to_string()),
-                internal_name: field.name.clone(),
-                ty: field.ty.clone(),
-                is_comptime: false,
-                span: field.span,
-            })
-            .collect(),
-        return_ty: Spanned {
-            node: Ok(Ty::Struct {
-                name: Spanned {
-                    node: name,
-                    span: struct_.name.span,
+    // Repeatedly find something that doesn't depend on things that haven't been lowered yet.
+    loop {
+        if let Some((name, _)) = u.structs.iter().find(|(_, it)| it.can_be_lowered(&u)) {
+            let name = name.clone();
+            let r#struct = lower_struct(u.structs.remove(&name).unwrap());
+            assert!(t.structs.insert(name, r#struct).is_none());
+        } else if let Some((&id, _)) = u.functions.iter().find(|(_, it)| it.can_be_lowered(&u)) {
+            let function = lower_function(u.functions.remove(&id).unwrap());
+            assert!(t.functions.insert(id, r#function).is_none());
+        } else if let Some(id) = u.variables.iter().position(|it| it.can_be_lowered(&u)) {
+            let variable = u.variables.swap_remove(id);
+            let span = variable.initializer.span;
+            let initializer = evaluate(variable.initializer);
+            t.variables.push(super::GlobalVariable {
+                token: variable.token,
+                name_span: variable.name_span,
+                initializer: super::Expression {
+                    kind: initializer
+                        .map_or(super::ExpressionKind::Error, super::ExpressionKind::Imm),
+                    span,
                 },
-            }),
-            span: struct_.name.span,
-        },
-        body: Block::default(),
-        kind: FunctionKind::Constructor,
+                belongs_to_stage: variable.belongs_to_stage,
+            });
+        } else {
+            break;
+        }
+    }
+
+    for r#struct in u.structs.into_values() {
+        diagnostics.error(
+            "FIXME lower struct to THIR",
+            [primary(r#struct.name.span, "")],
+        );
+    }
+    for function in u.functions.into_values() {
+        diagnostics.error(
+            "FIXME lower function to THIR",
+            [primary(r#function.name.span, "")],
+        );
+    }
+    for variable in u.variables {
+        diagnostics.error(
+            "FIXME lower variable to THIR",
+            [primary(r#variable.name_span, "")],
+        );
+    }
+
+    (t, HashMap::new())
+}
+
+impl super::Struct {
+    fn can_be_lowered(&self, u: &super::Document) -> bool {
+        let mut visitor = CanBeLoweredVisitor { it_can: true, u };
+        visitor.traverse_struct(self);
+        visitor.it_can
     }
 }
 
-pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
+impl super::Function {
+    fn can_be_lowered(&self, u: &super::Document) -> bool {
+        let mut visitor = CanBeLoweredVisitor { it_can: true, u };
+        for parameter in &self.parameters {
+            visitor.traverse_expression(&parameter.ty);
+        }
+        visitor.traverse_expression(&self.return_ty);
+        visitor.it_can
+    }
+}
+
+impl super::GlobalVariable {
+    fn can_be_lowered(&self, u: &super::Document) -> bool {
+        let mut visitor = CanBeLoweredVisitor { it_can: true, u };
+        visitor.traverse_expression(&self.initializer);
+        visitor.it_can
+    }
+}
+
+fn lower_struct(r#struct: super::Struct) -> Struct {
     Struct {
-        name: it.name,
-        fields: it
+        name: r#struct.name,
+        fields: r#struct
             .fields
             .into_iter()
-            .map(|field| {
-                let name = field.node.name.clone();
-                let ty_span = field.ty.span;
-                let ty = ty::of_expression(&field.ty, None, tcx).and_then(|ty_ty| {
-                    if !matches!(ty_ty, Ty::Ty) {
-                        tcx.diagnostics.error(
-                            "struct field type must be a type",
-                            [primary(
-                                field.node.ty.span,
-                                format!("expected `Type`, got `{ty_ty}`"),
-                            )],
-                        );
-                    };
-                    match field.node.ty.kind {
-                        ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-                        ExpressionKind::Imm(_) => Err(()),
-                        _ => {
-                            tcx.diagnostics.error(
-                                "struct field type must be comptime-known",
-                                [primary(field.node.ty.span, "")],
-                            );
-                            Err(())
-                        }
-                    }
-                });
-                Spanned {
-                    node: Field {
-                        name,
-                        ty: Spanned {
-                            node: ty,
-                            span: ty_span,
-                        },
-                    },
-                    span: field.span,
-                }
-            })
+            .map(|it| it.map_node(lower_field))
             .collect(),
     }
 }
 
-pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
-    let return_ty = ty::of_expression(&it.return_ty, None, tcx).and_then(|ty_ty| {
-        if !matches!(ty_ty, Ty::Ty) {
-            tcx.diagnostics.error(
-                "function return type must be a type",
-                [primary(
-                    it.return_ty.span,
-                    format!("expected `Type`, got `{ty_ty}`"),
-                )],
-            );
-        };
-        match it.return_ty.kind {
-            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-            ExpressionKind::Imm(_) => Err(()),
-            _ => {
-                tcx.diagnostics.error(
-                    "function return type must be comptime-known",
-                    [primary(it.return_ty.span, "")],
-                );
-                Err(())
-            }
-        }
-    });
+fn lower_field(field: super::Field) -> Field {
+    Field {
+        name: field.name,
+        ty: require_type(field.ty),
+    }
+}
 
+fn lower_function(function: super::Function) -> Function {
     Function {
-        owning_sprite: it.owning_sprite,
-        name: it.name,
-        tag: it.tag,
-        generics: it.generics,
-        parameters: it
+        owning_sprite: function.owning_sprite,
+        name: function.name,
+        tag: function.tag,
+        generics: function.generics,
+        parameters: function
             .parameters
             .into_iter()
-            .map(|parameter| lower_parameter(parameter, tcx))
+            .map(lower_parameter)
             .collect(),
-        return_ty: Spanned {
-            node: return_ty,
-            span: it.return_ty.span,
-        },
-        body: it.body,
-        kind: it.kind,
+        return_ty: require_type(function.return_ty),
+        body: function.body,
+        kind: function.kind,
     }
 }
 
-pub fn lower_parameter(it: super::Parameter, tcx: &mut Context) -> Parameter {
-    let ty = ty::of_expression(&it.ty, None, tcx).and_then(|ty_ty| {
-        if !matches!(ty_ty, Ty::Ty) {
-            tcx.diagnostics.error(
-                "function parameter type must be a type",
-                [primary(
-                    it.ty.span,
-                    format!("expected `Type`, got `{ty_ty}`"),
-                )],
-            );
-        };
+fn lower_parameter(parameter: super::Parameter) -> Parameter {
+    Parameter {
+        external_name: parameter.external_name,
+        internal_name: parameter.internal_name,
+        ty: require_type(parameter.ty),
+        is_comptime: parameter.is_comptime,
+        span: parameter.span,
+    }
+}
 
-        match it.ty.kind {
-            ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
-            ExpressionKind::Imm(_) => Err(()),
-            _ => {
-                tcx.diagnostics.error(
-                    "function parameter type must be comptime-known",
-                    [primary(it.ty.span, "")],
-                );
-                Err(())
+fn require_type(expr: super::Expression) -> Spanned<Result<Ty>> {
+    let span = expr.span;
+    Spanned {
+        node: if let Ok(Value::Ty(ty)) = evaluate(expr) {
+            Ok(ty)
+        } else {
+            Err(())
+        },
+        span,
+    }
+}
+
+struct CanBeLoweredVisitor<'a> {
+    it_can: bool,
+    u: &'a super::Document,
+}
+
+impl Visitor for CanBeLoweredVisitor<'_> {
+    fn visit_expression(&mut self, expr: &super::Expression) {
+        match &expr.kind {
+            super::ExpressionKind::Variable(Name::User(token))
+                if self.u.variables.iter().any(|it| it.token == *token) =>
+            {
+                self.it_can = false;
+            }
+            super::ExpressionKind::FunctionCall { .. } => self.it_can = false, // TODO
+            _ => {}
+        }
+    }
+}
+
+fn evaluate(expr: super::Expression) -> Result<Value> {
+    Ok(match expr.kind {
+        super::ExpressionKind::Variable(Name::User(token)) => {
+            match token.parent().map(|it| it.kind()) {
+                Some(SyntaxKind::GENERICS) => Value::Ty(Ty::Generic(token)),
+                Some(SyntaxKind::SPRITE) => Value::Sprite {
+                    name: token.text().to_owned(),
+                },
+                _ => todo!(),
             }
         }
-    });
-
-    Parameter {
-        external_name: it.external_name,
-        internal_name: it.internal_name,
-        ty: Spanned {
-            node: ty,
-            span: it.ty.span,
+        super::ExpressionKind::Variable(Name::Builtin(builtin)) => Value::Ty(match builtin {
+            name::Builtin::Never => Ty::Never,
+            name::Builtin::Unit => Ty::Unit,
+            name::Builtin::Num => Ty::Num,
+            name::Builtin::String => Ty::String,
+            name::Builtin::Bool => Ty::Bool,
+            name::Builtin::Var => todo!(),
+            name::Builtin::List => todo!(),
+            name::Builtin::Type => Ty::Ty,
+        }),
+        // Only initialize a list the first time it's referred to.
+        super::ExpressionKind::Imm(Value::ListRef { token, .. }) => Value::ListRef {
+            token,
+            initializer: None,
         },
-        is_comptime: it.is_comptime,
-        span: it.span,
-    }
+        super::ExpressionKind::Imm(value) => value,
+        super::ExpressionKind::FunctionCall { .. } => todo!(),
+        super::ExpressionKind::GenericTypeInstantiation { generic, arguments } => {
+            let [ty] = arguments.try_into().unwrap_or_else(|_| todo!());
+            let ty = require_type(ty).node?;
+            Value::Ty(match generic {
+                ty::Generic::Var => Ty::Var(Box::new(ty)),
+                ty::Generic::List => Ty::List(Box::new(ty)),
+            })
+        }
+        // TODO: check type
+        super::ExpressionKind::TypeAscription { inner, .. } => evaluate(*inner)?,
+        super::ExpressionKind::Error => todo!(),
+    })
 }

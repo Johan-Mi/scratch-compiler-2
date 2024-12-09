@@ -1,7 +1,7 @@
 pub mod lowering;
 pub mod typed;
 mod visit;
-pub use visit::{Visitor, VisitorPostorderMut};
+pub use visit::Visitor;
 
 use crate::{
     comptime::Value,
@@ -64,6 +64,7 @@ impl<T> Document<T> {
 #[derive(Debug)]
 pub struct GlobalVariable {
     pub token: SyntaxToken,
+    pub name_span: Span,
     pub initializer: Expression,
     pub belongs_to_stage: bool,
 }

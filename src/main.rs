@@ -35,11 +35,7 @@ mod ty;
 
 use codemap::CodeMap;
 use diagnostics::Diagnostics;
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::Path,
-    process::ExitCode,
-};
+use std::{path::Path, process::ExitCode};
 
 fn main() -> ExitCode {
     let mut code_map = CodeMap::default();
@@ -92,42 +88,29 @@ fn compile_or_check(
     code_map: &mut CodeMap,
     only_check: bool,
 ) -> Result<(), ()> {
-    let mut resolved_calls = HashMap::new();
-
-    let mut tcx = ty::Context {
-        sprite: None,
-        functions: &BTreeMap::new(),
-        diagnostics,
-        variable_types: HashMap::new(),
-        comptime_known_variables: HashMap::new(),
-        resolved_calls: &mut resolved_calls,
-        function_return_ty: Err(()),
-    };
-
     let mut generator = generator::Generator::default();
 
-    let mut document = builtins::hir(&mut generator, code_map, tcx.diagnostics);
+    let mut document = builtins::hir(&mut generator, code_map, diagnostics);
     imports::import(
         &mut document,
         source_file,
         &mut generator,
-        tcx.diagnostics,
+        diagnostics,
         code_map,
     )
     .map_err(|err| {
-        tcx.diagnostics.error("failed to read source code", []);
-        tcx.diagnostics.note(err.to_string(), []);
+        diagnostics.error("failed to read source code", []);
+        diagnostics.note(err.to_string(), []);
     })?;
 
     if std::env::var_os("DUMP_HIR").is_some() {
         eprintln!("{document:#?}");
     }
 
-    let mut document = hir::typed::lower(document, &mut tcx, &mut generator);
+    let (mut document, resolved_calls) = hir::typed::lower(document, diagnostics);
     if std::env::var_os("DUMP_THIR").is_some() {
         eprintln!("{document:#?}");
     }
-    ty::check(&document, &mut tcx);
     semantics::check(&document, diagnostics);
     recursive_inlining::check(&document, &resolved_calls, diagnostics);
 
