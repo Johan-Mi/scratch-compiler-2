@@ -111,15 +111,15 @@ impl fmt::Display for RealList {
 }
 
 impl Generator {
-    fn new_ssa_var(&mut self) -> SsaVar {
+    const fn new_ssa_var(&mut self) -> SsaVar {
         SsaVar(self.new_u16())
     }
 
-    fn new_real_var(&mut self) -> RealVar {
+    const fn new_real_var(&mut self) -> RealVar {
         RealVar(self.new_u16())
     }
 
-    fn new_real_list(&mut self) -> RealList {
+    const fn new_real_list(&mut self) -> RealList {
         RealList(self.new_u16())
     }
 }

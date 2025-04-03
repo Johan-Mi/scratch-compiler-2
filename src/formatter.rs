@@ -75,7 +75,7 @@ impl Formatter {
                         indented = true;
                     }
                 }
-            };
+            }
         }
         if indented {
             self.indentation = self.indentation.saturating_sub(INDENTATION_SIZE);

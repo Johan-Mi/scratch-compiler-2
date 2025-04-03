@@ -478,7 +478,7 @@ pub fn of_expression(
                     "ascribed type must be a type",
                     [primary(ty.span, format!("expected `Type`, got `{ty_ty}`"))],
                 );
-            };
+            }
 
             let ty = match &ty.kind {
                 ExpressionKind::Imm(comptime::Value::Ty(ty)) => ty,
@@ -642,5 +642,5 @@ pub fn check_generic_type_instantiation(
                 format!("expected `Type`, got `{arg_ty}`"),
             )],
         );
-    };
+    }
 }

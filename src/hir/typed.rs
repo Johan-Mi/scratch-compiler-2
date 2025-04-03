@@ -94,7 +94,7 @@ pub fn lower_struct(it: super::Struct, tcx: &mut Context) -> Struct {
                                 format!("expected `Type`, got `{ty_ty}`"),
                             )],
                         );
-                    };
+                    }
                     match field.node.ty.kind {
                         ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
                         ExpressionKind::Imm(_) => Err(()),
@@ -132,7 +132,7 @@ pub fn lower_function(it: super::Function, tcx: &mut Context) -> Function {
                     format!("expected `Type`, got `{ty_ty}`"),
                 )],
             );
-        };
+        }
         match it.return_ty.kind {
             ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),
             ExpressionKind::Imm(_) => Err(()),
@@ -175,7 +175,7 @@ pub fn lower_parameter(it: super::Parameter, tcx: &mut Context) -> Parameter {
                     format!("expected `Type`, got `{ty_ty}`"),
                 )],
             );
-        };
+        }
 
         match it.ty.kind {
             ExpressionKind::Imm(Value::Ty(ty)) => Ok(ty),

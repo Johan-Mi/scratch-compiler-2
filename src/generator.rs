@@ -4,7 +4,7 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub fn new_u16(&mut self) -> u16 {
+    pub const fn new_u16(&mut self) -> u16 {
         let n = self.counter;
         self.counter += 1;
         n
