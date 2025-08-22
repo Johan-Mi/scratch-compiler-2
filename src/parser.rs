@@ -56,7 +56,7 @@ pub enum K {
     Sprite,
     CostumeList,
     Costume,
-    Fn,
+    Function,
     Generics,
     FunctionParameters,
     Parameter,
@@ -75,7 +75,7 @@ pub enum K {
     Until,
     For,
     ParenthesizedExpression,
-    BinaryExpression,
+    BinaryOperation,
     Literal,
     Lvalue,
     GenericTypeInstantiation,
@@ -488,7 +488,7 @@ impl Parser<'_> {
             let node_kind = match right {
                 K::KwAs => K::TypeAscription,
                 K::Dot => K::MethodCall,
-                _ => K::BinaryExpression,
+                _ => K::BinaryOperation,
             };
             self.builder.start_node_at(checkpoint, node_kind.into());
             self.bump(); // operator
@@ -710,7 +710,7 @@ impl Parser<'_> {
                 .error("expected `fn` after `inline`", [primary(span, "")]);
             return;
         }
-        self.builder.start_node_at(checkpoint, K::Fn.into());
+        self.builder.start_node_at(checkpoint, K::Function.into());
         let _: Option<Span> = self.expect(K::Identifier);
         let _: bool = self.eat(K::String);
         if self.at(K::Lbracket) {

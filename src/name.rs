@@ -68,7 +68,7 @@ fn all_in_exact_scope_at(
                 .lets()
                 .filter_map(|it| it.variable()),
         ),
-        K::Fn => {
+        K::Function => {
             let function = ast::Function::cast(scope).unwrap();
             let generics = function.generics().into_iter().flat_map(|it| it.iter());
             let parameters = function

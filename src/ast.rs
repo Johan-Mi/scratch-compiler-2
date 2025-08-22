@@ -68,14 +68,14 @@ impl Struct {
         rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
-    pub fn fields(&self) -> impl Iterator<Item = Field> {
+    pub fn fields(&self) -> impl Iterator<Item = FieldDefinition> {
         rowan::ast::support::children(&self.syntax)
     }
 }
 
-ast_node!(Field: K::FieldDefinition);
+ast_node!(FieldDefinition: K::FieldDefinition);
 
-impl Field {
+impl FieldDefinition {
     pub fn name(&self) -> SyntaxToken {
         rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
@@ -135,7 +135,7 @@ impl Costume {
     }
 }
 
-ast_node!(Function: K::Fn);
+ast_node!(Function: K::Function);
 
 impl Function {
     pub fn kw_inline(&self) -> Option<SyntaxToken> {
@@ -422,7 +422,7 @@ impl AstNode for Expression {
             K::ParenthesizedExpression => AstNode::cast(node).map(Self::Parenthesized),
             K::Variable => AstNode::cast(node).map(Self::Variable),
             K::FunctionCall => AstNode::cast(node).map(Self::FunctionCall),
-            K::BinaryExpression => AstNode::cast(node).map(Self::BinaryOperation),
+            K::BinaryOperation => AstNode::cast(node).map(Self::BinaryOperation),
             K::NamedArgument => AstNode::cast(node).map(Self::NamedArgument),
             K::Literal => AstNode::cast(node).map(Self::Literal),
             K::Lvalue => AstNode::cast(node).map(Self::Lvalue),
@@ -487,7 +487,7 @@ impl Arguments {
     }
 }
 
-ast_node!(BinaryOperation: K::BinaryExpression);
+ast_node!(BinaryOperation: K::BinaryOperation);
 
 impl BinaryOperation {
     pub fn operator(&self) -> SyntaxToken {

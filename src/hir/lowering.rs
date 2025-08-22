@@ -138,7 +138,11 @@ impl Struct {
         ))
     }
 
-    fn lower_field(ast: &ast::Field, file: &File, diagnostics: &mut Diagnostics) -> Spanned<Field> {
+    fn lower_field(
+        ast: &ast::FieldDefinition,
+        file: &File,
+        diagnostics: &mut Diagnostics,
+    ) -> Spanned<Field> {
         Spanned {
             node: Field {
                 name: ast.name(),
