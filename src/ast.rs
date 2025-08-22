@@ -1,8 +1,8 @@
 use crate::parser::{SyntaxNode, SyntaxToken, K};
 use rowan::{ast::AstNode, NodeOrToken};
 
-macro_rules! ast_node {
-    ($Name:ident: $kind:expr) => {
+macro_rules! node {
+    ($Name:ident) => {
         pub struct $Name {
             syntax: SyntaxNode,
         }
@@ -11,7 +11,7 @@ macro_rules! ast_node {
             type Language = crate::parser::Lang;
 
             fn can_cast(kind: K) -> bool {
-                kind == $kind
+                kind == K::$Name
             }
 
             fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -29,7 +29,7 @@ macro_rules! ast_node {
     };
 }
 
-ast_node!(Document: K::Document);
+node!(Document);
 
 impl Document {
     pub fn imports(&self) -> impl Iterator<Item = Import> {
@@ -53,7 +53,7 @@ impl Document {
     }
 }
 
-ast_node!(Import: K::Import);
+node!(Import);
 
 impl Import {
     pub fn path(&self) -> Option<SyntaxToken> {
@@ -61,7 +61,7 @@ impl Import {
     }
 }
 
-ast_node!(Struct: K::Struct);
+node!(Struct);
 
 impl Struct {
     pub fn name(&self) -> Option<SyntaxToken> {
@@ -73,7 +73,7 @@ impl Struct {
     }
 }
 
-ast_node!(FieldDefinition: K::FieldDefinition);
+node!(FieldDefinition);
 
 impl FieldDefinition {
     pub fn name(&self) -> SyntaxToken {
@@ -85,7 +85,7 @@ impl FieldDefinition {
     }
 }
 
-ast_node!(Sprite: K::Sprite);
+node!(Sprite);
 
 impl Sprite {
     pub fn name(&self) -> Option<SyntaxToken> {
@@ -105,7 +105,7 @@ impl Sprite {
     }
 }
 
-ast_node!(CostumeList: K::CostumeList);
+node!(CostumeList);
 
 impl CostumeList {
     pub fn iter(&self) -> impl Iterator<Item = Costume> {
@@ -113,7 +113,7 @@ impl CostumeList {
     }
 }
 
-ast_node!(Costume: K::Costume);
+node!(Costume);
 
 impl Costume {
     pub fn name(&self) -> Option<SyntaxToken> {
@@ -135,7 +135,7 @@ impl Costume {
     }
 }
 
-ast_node!(Function: K::Function);
+node!(Function);
 
 impl Function {
     pub fn kw_inline(&self) -> Option<SyntaxToken> {
@@ -167,7 +167,7 @@ impl Function {
     }
 }
 
-ast_node!(Generics: K::Generics);
+node!(Generics);
 
 impl Generics {
     pub fn iter(&self) -> impl Iterator<Item = SyntaxToken> {
@@ -178,7 +178,7 @@ impl Generics {
     }
 }
 
-ast_node!(FunctionParameters: K::FunctionParameters);
+node!(FunctionParameters);
 
 impl FunctionParameters {
     pub fn parameters(&self) -> impl Iterator<Item = Parameter> {
@@ -186,7 +186,7 @@ impl FunctionParameters {
     }
 }
 
-ast_node!(Parameter: K::Parameter);
+node!(Parameter);
 
 impl Parameter {
     pub fn external_name(&self) -> Option<ExternalParameterName> {
@@ -206,7 +206,7 @@ impl Parameter {
     }
 }
 
-ast_node!(ExternalParameterName: K::ExternalParameterName);
+node!(ExternalParameterName);
 
 impl ExternalParameterName {
     pub fn identifier(&self) -> SyntaxToken {
@@ -214,7 +214,7 @@ impl ExternalParameterName {
     }
 }
 
-ast_node!(Block: K::Block);
+node!(Block);
 
 impl Block {
     pub fn statements(&self) -> impl Iterator<Item = Statement> {
@@ -278,7 +278,7 @@ impl AstNode for Statement {
     }
 }
 
-ast_node!(Let: K::Let);
+node!(Let);
 
 impl Let {
     pub fn variable(&self) -> Option<SyntaxToken> {
@@ -290,7 +290,7 @@ impl Let {
     }
 }
 
-ast_node!(If: K::If);
+node!(If);
 
 impl If {
     pub fn condition(&self) -> Option<Expression> {
@@ -306,7 +306,7 @@ impl If {
     }
 }
 
-ast_node!(ElseClause: K::ElseClause);
+node!(ElseClause);
 
 impl ElseClause {
     pub fn block(&self) -> Option<Block> {
@@ -318,7 +318,7 @@ impl ElseClause {
     }
 }
 
-ast_node!(Repeat: K::Repeat);
+node!(Repeat);
 
 impl Repeat {
     pub fn times(&self) -> Option<Expression> {
@@ -330,7 +330,7 @@ impl Repeat {
     }
 }
 
-ast_node!(Forever: K::Forever);
+node!(Forever);
 
 impl Forever {
     pub fn body(&self) -> Option<Block> {
@@ -338,7 +338,7 @@ impl Forever {
     }
 }
 
-ast_node!(While: K::While);
+node!(While);
 
 impl While {
     pub fn condition(&self) -> Option<Expression> {
@@ -350,7 +350,7 @@ impl While {
     }
 }
 
-ast_node!(Until: K::Until);
+node!(Until);
 
 impl Until {
     pub fn condition(&self) -> Option<Expression> {
@@ -362,7 +362,7 @@ impl Until {
     }
 }
 
-ast_node!(For: K::For);
+node!(For);
 
 impl For {
     pub fn variable(&self) -> Option<SyntaxToken> {
@@ -378,7 +378,7 @@ impl For {
     }
 }
 
-ast_node!(Return: K::Return);
+node!(Return);
 
 impl Return {
     pub fn expression(&self) -> Option<Expression> {
@@ -451,7 +451,7 @@ impl AstNode for Expression {
     }
 }
 
-ast_node!(ParenthesizedExpression: K::ParenthesizedExpression);
+node!(ParenthesizedExpression);
 
 impl ParenthesizedExpression {
     pub fn inner(&self) -> Option<Expression> {
@@ -459,7 +459,7 @@ impl ParenthesizedExpression {
     }
 }
 
-ast_node!(Variable: K::Variable);
+node!(Variable);
 
 impl Variable {
     pub fn identifier(&self) -> SyntaxToken {
@@ -467,7 +467,7 @@ impl Variable {
     }
 }
 
-ast_node!(FunctionCall: K::FunctionCall);
+node!(FunctionCall);
 
 impl FunctionCall {
     pub fn name(&self) -> SyntaxToken {
@@ -479,7 +479,7 @@ impl FunctionCall {
     }
 }
 
-ast_node!(Arguments: K::Arguments);
+node!(Arguments);
 
 impl Arguments {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -487,7 +487,7 @@ impl Arguments {
     }
 }
 
-ast_node!(BinaryOperation: K::BinaryOperation);
+node!(BinaryOperation);
 
 impl BinaryOperation {
     pub fn operator(&self) -> SyntaxToken {
@@ -515,7 +515,7 @@ impl BinaryOperation {
     }
 }
 
-ast_node!(NamedArgument: K::NamedArgument);
+node!(NamedArgument);
 
 impl NamedArgument {
     pub fn name(&self) -> SyntaxToken {
@@ -527,9 +527,9 @@ impl NamedArgument {
     }
 }
 
-ast_node!(Literal: K::Literal);
+node!(Literal);
 
-ast_node!(Lvalue: K::Lvalue);
+node!(Lvalue);
 
 impl Lvalue {
     pub fn inner(&self) -> Option<Expression> {
@@ -537,7 +537,7 @@ impl Lvalue {
     }
 }
 
-ast_node!(GenericTypeInstantiation: K::GenericTypeInstantiation);
+node!(GenericTypeInstantiation);
 
 impl GenericTypeInstantiation {
     pub fn generic(&self) -> Expression {
@@ -549,7 +549,7 @@ impl GenericTypeInstantiation {
     }
 }
 
-ast_node!(TypeParameters: K::TypeParameters);
+node!(TypeParameters);
 
 impl TypeParameters {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -557,7 +557,7 @@ impl TypeParameters {
     }
 }
 
-ast_node!(ListLiteral: K::ListLiteral);
+node!(ListLiteral);
 
 impl ListLiteral {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -569,7 +569,7 @@ impl ListLiteral {
     }
 }
 
-ast_node!(TypeAscription: K::TypeAscription);
+node!(TypeAscription);
 
 impl TypeAscription {
     pub fn operator(&self) -> SyntaxToken {
@@ -597,7 +597,7 @@ impl TypeAscription {
     }
 }
 
-ast_node!(MethodCall: K::MethodCall);
+node!(MethodCall);
 
 impl MethodCall {
     pub fn dot(&self) -> SyntaxToken {
