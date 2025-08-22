@@ -1,9 +1,6 @@
 use crate::{
     diagnostics::Diagnostics,
-    parser::{
-        SyntaxKind::{self, *},
-        SyntaxNode, SyntaxToken,
-    },
+    parser::{SyntaxNode, SyntaxToken, K},
 };
 use codemap::CodeMap;
 use rowan::NodeOrToken;
@@ -56,21 +53,21 @@ impl Formatter {
             match child {
                 NodeOrToken::Node(node) => self.node(&node),
                 NodeOrToken::Token(token) => {
-                    if indented && matches!(token.kind(), RPAREN | RBRACE | RBRACKET) {
+                    if indented && matches!(token.kind(), K::Rparen | K::Rbrace | K::Rbracket) {
                         self.indentation = self.indentation.saturating_sub(INDENTATION_SIZE);
                         indented = false;
-                    } else if node.kind() == METHOD_CALL && token.kind() == DOT {
+                    } else if node.kind() == K::MethodCall && token.kind() == K::Dot {
                         self.indentation += INDENTATION_SIZE;
                         indented = true;
                     }
                     self.token(
                         &token,
-                        matches!(node.kind(), ARGUMENTS | FUNCTION_PARAMETERS)
-                            && token.kind() == LPAREN
-                            || matches!(node.kind(), GENERICS | TYPE_PARAMETERS)
-                                && token.kind() == LBRACKET,
+                        matches!(node.kind(), K::Arguments | K::FunctionParameters)
+                            && token.kind() == K::Lparen
+                            || matches!(node.kind(), K::Generics | K::TypeParameters)
+                                && token.kind() == K::Lbracket,
                     );
-                    if matches!(token.kind(), LPAREN | LBRACE | LBRACKET) {
+                    if matches!(token.kind(), K::Lparen | K::Lbrace | K::Lbracket) {
                         self.indentation += INDENTATION_SIZE;
                         indented = true;
                     }
@@ -83,14 +80,14 @@ impl Formatter {
     }
 
     fn token(&mut self, token: &SyntaxToken, immediately: bool) {
-        if token.kind() == TRIVIA {
+        if token.kind() == K::Trivia {
             self.trivia(token.text());
         } else {
-            if matches!(token.kind(), COMMA | COLON) {
+            if matches!(token.kind(), K::Comma | K::Colon) {
                 self.remove_newlines();
             }
 
-            if matches!(token.kind(), RPAREN | RBRACKET) && self.output.ends_with(',') {
+            if matches!(token.kind(), K::Rparen | K::Rbracket) && self.output.ends_with(',') {
                 let _: Option<char> = self.output.pop();
             }
 
@@ -161,8 +158,8 @@ impl Formatter {
     }
 }
 
-fn token_wants_leading_space(kind: SyntaxKind, last: Option<u8>) -> bool {
-    !matches!(kind, RPAREN | RBRACKET | COLON | COMMA | DOT)
-        && (kind, last) != (RBRACE, Some(b'{'))
-        && (kind, last) != (IDENTIFIER, Some(b'.'))
+fn token_wants_leading_space(kind: K, last: Option<u8>) -> bool {
+    !matches!(kind, K::Rparen | K::Rbracket | K::Colon | K::Comma | K::Dot)
+        && (kind, last) != (K::Rbrace, Some(b'{'))
+        && (kind, last) != (K::Identifier, Some(b'.'))
 }

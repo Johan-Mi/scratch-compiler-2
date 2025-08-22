@@ -6,7 +6,6 @@
     unused_results
 )]
 #![warn(clippy::nursery, clippy::pedantic)]
-#![expect(clippy::enum_glob_use)]
 
 mod ast;
 mod builtins;

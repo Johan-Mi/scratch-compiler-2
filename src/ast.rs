@@ -1,7 +1,4 @@
-use crate::parser::{
-    SyntaxKind::{self, *},
-    SyntaxNode, SyntaxToken,
-};
+use crate::parser::{SyntaxNode, SyntaxToken, K};
 use rowan::{ast::AstNode, NodeOrToken};
 
 macro_rules! ast_node {
@@ -13,7 +10,7 @@ macro_rules! ast_node {
         impl AstNode for $Name {
             type Language = crate::parser::Lang;
 
-            fn can_cast(kind: SyntaxKind) -> bool {
+            fn can_cast(kind: K) -> bool {
                 kind == $kind
             }
 
@@ -32,7 +29,7 @@ macro_rules! ast_node {
     };
 }
 
-ast_node!(Document: DOCUMENT);
+ast_node!(Document: K::Document);
 
 impl Document {
     pub fn imports(&self) -> impl Iterator<Item = Import> {
@@ -56,19 +53,19 @@ impl Document {
     }
 }
 
-ast_node!(Import: IMPORT);
+ast_node!(Import: K::Import);
 
 impl Import {
     pub fn path(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, STRING)
+        rowan::ast::support::token(&self.syntax, K::String)
     }
 }
 
-ast_node!(Struct: STRUCT);
+ast_node!(Struct: K::Struct);
 
 impl Struct {
     pub fn name(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn fields(&self) -> impl Iterator<Item = Field> {
@@ -76,11 +73,11 @@ impl Struct {
     }
 }
 
-ast_node!(Field: FIELD_DEFINITION);
+ast_node!(Field: K::FieldDefinition);
 
 impl Field {
     pub fn name(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
 
     pub fn ty(&self) -> Option<Expression> {
@@ -88,11 +85,11 @@ impl Field {
     }
 }
 
-ast_node!(Sprite: SPRITE);
+ast_node!(Sprite: K::Sprite);
 
 impl Sprite {
     pub fn name(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn costume_lists(&self) -> impl Iterator<Item = CostumeList> {
@@ -108,7 +105,7 @@ impl Sprite {
     }
 }
 
-ast_node!(CostumeList: COSTUME_LIST);
+ast_node!(CostumeList: K::CostumeList);
 
 impl CostumeList {
     pub fn iter(&self) -> impl Iterator<Item = Costume> {
@@ -116,39 +113,41 @@ impl CostumeList {
     }
 }
 
-ast_node!(Costume: COSTUME);
+ast_node!(Costume: K::Costume);
 
 impl Costume {
     pub fn name(&self) -> Option<SyntaxToken> {
         self.syntax
             .children_with_tokens()
             .filter_map(NodeOrToken::into_token)
-            .take_while(|it| it.kind() != COLON)
-            .find(|it| it.kind() == STRING)
+            .take_while(|it| it.kind() != K::Colon)
+            .find(|it| it.kind() == K::String)
     }
 
     pub fn path(&self) -> Option<SyntaxToken> {
-        let colon = rowan::ast::support::token(&self.syntax, COLON)?;
+        let colon = rowan::ast::support::token(&self.syntax, K::Colon)?;
         self.syntax
             .children_with_tokens()
             .filter_map(NodeOrToken::into_token)
-            .find(|it| it.text_range().start() >= colon.text_range().end() && it.kind() == STRING)
+            .find(|it| {
+                it.text_range().start() >= colon.text_range().end() && it.kind() == K::String
+            })
     }
 }
 
-ast_node!(Function: FN);
+ast_node!(Function: K::Fn);
 
 impl Function {
     pub fn kw_inline(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, KW_INLINE)
+        rowan::ast::support::token(&self.syntax, K::KwInline)
     }
 
     pub fn name(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn tag(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, STRING)
+        rowan::ast::support::token(&self.syntax, K::String)
     }
 
     pub fn generics(&self) -> Option<Generics> {
@@ -168,18 +167,18 @@ impl Function {
     }
 }
 
-ast_node!(Generics: GENERICS);
+ast_node!(Generics: K::Generics);
 
 impl Generics {
     pub fn iter(&self) -> impl Iterator<Item = SyntaxToken> {
         self.syntax
             .children_with_tokens()
             .filter_map(NodeOrToken::into_token)
-            .filter(|it| it.kind() == IDENTIFIER)
+            .filter(|it| it.kind() == K::Identifier)
     }
 }
 
-ast_node!(FunctionParameters: FUNCTION_PARAMETERS);
+ast_node!(FunctionParameters: K::FunctionParameters);
 
 impl FunctionParameters {
     pub fn parameters(&self) -> impl Iterator<Item = Parameter> {
@@ -187,7 +186,7 @@ impl FunctionParameters {
     }
 }
 
-ast_node!(Parameter: PARAMETER);
+ast_node!(Parameter: K::Parameter);
 
 impl Parameter {
     pub fn external_name(&self) -> Option<ExternalParameterName> {
@@ -195,7 +194,7 @@ impl Parameter {
     }
 
     pub fn internal_name(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn ty(&self) -> Option<Expression> {
@@ -203,19 +202,19 @@ impl Parameter {
     }
 
     pub fn is_comptime(&self) -> bool {
-        rowan::ast::support::token(&self.syntax, KW_COMPTIME).is_some()
+        rowan::ast::support::token(&self.syntax, K::KwComptime).is_some()
     }
 }
 
-ast_node!(ExternalParameterName: EXTERNAL_PARAMETER_NAME);
+ast_node!(ExternalParameterName: K::ExternalParameterName);
 
 impl ExternalParameterName {
     pub fn identifier(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
 }
 
-ast_node!(Block: BLOCK);
+ast_node!(Block: K::Block);
 
 impl Block {
     pub fn statements(&self) -> impl Iterator<Item = Statement> {
@@ -238,7 +237,7 @@ pub enum Statement {
 impl AstNode for Statement {
     type Language = crate::parser::Lang;
 
-    fn can_cast(kind: SyntaxKind) -> bool {
+    fn can_cast(kind: K) -> bool {
         Let::can_cast(kind)
             || If::can_cast(kind)
             || Repeat::can_cast(kind)
@@ -252,14 +251,14 @@ impl AstNode for Statement {
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
-            LET => AstNode::cast(node).map(Self::Let),
-            IF => AstNode::cast(node).map(Self::If),
-            REPEAT => AstNode::cast(node).map(Self::Repeat),
-            FOREVER => AstNode::cast(node).map(Self::Forever),
-            WHILE => AstNode::cast(node).map(Self::While),
-            UNTIL => AstNode::cast(node).map(Self::Until),
-            FOR => AstNode::cast(node).map(Self::For),
-            RETURN => AstNode::cast(node).map(Self::Return),
+            K::Let => AstNode::cast(node).map(Self::Let),
+            K::If => AstNode::cast(node).map(Self::If),
+            K::Repeat => AstNode::cast(node).map(Self::Repeat),
+            K::Forever => AstNode::cast(node).map(Self::Forever),
+            K::While => AstNode::cast(node).map(Self::While),
+            K::Until => AstNode::cast(node).map(Self::Until),
+            K::For => AstNode::cast(node).map(Self::For),
+            K::Return => AstNode::cast(node).map(Self::Return),
             _ => Expression::cast(node).map(Self::Expr),
         }
     }
@@ -279,11 +278,11 @@ impl AstNode for Statement {
     }
 }
 
-ast_node!(Let: LET);
+ast_node!(Let: K::Let);
 
 impl Let {
     pub fn variable(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn value(&self) -> Option<Expression> {
@@ -291,7 +290,7 @@ impl Let {
     }
 }
 
-ast_node!(If: IF);
+ast_node!(If: K::If);
 
 impl If {
     pub fn condition(&self) -> Option<Expression> {
@@ -307,7 +306,7 @@ impl If {
     }
 }
 
-ast_node!(ElseClause: ELSE_CLAUSE);
+ast_node!(ElseClause: K::ElseClause);
 
 impl ElseClause {
     pub fn block(&self) -> Option<Block> {
@@ -319,7 +318,7 @@ impl ElseClause {
     }
 }
 
-ast_node!(Repeat: REPEAT);
+ast_node!(Repeat: K::Repeat);
 
 impl Repeat {
     pub fn times(&self) -> Option<Expression> {
@@ -331,7 +330,7 @@ impl Repeat {
     }
 }
 
-ast_node!(Forever: FOREVER);
+ast_node!(Forever: K::Forever);
 
 impl Forever {
     pub fn body(&self) -> Option<Block> {
@@ -339,7 +338,7 @@ impl Forever {
     }
 }
 
-ast_node!(While: WHILE);
+ast_node!(While: K::While);
 
 impl While {
     pub fn condition(&self) -> Option<Expression> {
@@ -351,7 +350,7 @@ impl While {
     }
 }
 
-ast_node!(Until: UNTIL);
+ast_node!(Until: K::Until);
 
 impl Until {
     pub fn condition(&self) -> Option<Expression> {
@@ -363,11 +362,11 @@ impl Until {
     }
 }
 
-ast_node!(For: FOR);
+ast_node!(For: K::For);
 
 impl For {
     pub fn variable(&self) -> Option<SyntaxToken> {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER)
+        rowan::ast::support::token(&self.syntax, K::Identifier)
     }
 
     pub fn times(&self) -> Option<Expression> {
@@ -379,7 +378,7 @@ impl For {
     }
 }
 
-ast_node!(Return: RETURN);
+ast_node!(Return: K::Return);
 
 impl Return {
     pub fn expression(&self) -> Option<Expression> {
@@ -404,7 +403,7 @@ pub enum Expression {
 impl AstNode for Expression {
     type Language = crate::parser::Lang;
 
-    fn can_cast(kind: SyntaxKind) -> bool {
+    fn can_cast(kind: K) -> bool {
         ParenthesizedExpression::can_cast(kind)
             || Variable::can_cast(kind)
             || FunctionCall::can_cast(kind)
@@ -420,17 +419,17 @@ impl AstNode for Expression {
 
     fn cast(node: SyntaxNode) -> Option<Self> {
         match node.kind() {
-            PARENTHESIZED_EXPRESSION => AstNode::cast(node).map(Self::Parenthesized),
-            VARIABLE => AstNode::cast(node).map(Self::Variable),
-            FUNCTION_CALL => AstNode::cast(node).map(Self::FunctionCall),
-            BINARY_EXPRESSION => AstNode::cast(node).map(Self::BinaryOperation),
-            NAMED_ARGUMENT => AstNode::cast(node).map(Self::NamedArgument),
-            LITERAL => AstNode::cast(node).map(Self::Literal),
-            LVALUE => AstNode::cast(node).map(Self::Lvalue),
-            GENERIC_TYPE_INSTANTIATION => AstNode::cast(node).map(Self::GenericTypeInstantiation),
-            LIST_LITERAL => AstNode::cast(node).map(Self::ListLiteral),
-            TYPE_ASCRIPTION => AstNode::cast(node).map(Self::TypeAscription),
-            METHOD_CALL => AstNode::cast(node).map(Self::MethodCall),
+            K::ParenthesizedExpression => AstNode::cast(node).map(Self::Parenthesized),
+            K::Variable => AstNode::cast(node).map(Self::Variable),
+            K::FunctionCall => AstNode::cast(node).map(Self::FunctionCall),
+            K::BinaryExpression => AstNode::cast(node).map(Self::BinaryOperation),
+            K::NamedArgument => AstNode::cast(node).map(Self::NamedArgument),
+            K::Literal => AstNode::cast(node).map(Self::Literal),
+            K::Lvalue => AstNode::cast(node).map(Self::Lvalue),
+            K::GenericTypeInstantiation => AstNode::cast(node).map(Self::GenericTypeInstantiation),
+            K::ListLiteral => AstNode::cast(node).map(Self::ListLiteral),
+            K::TypeAscription => AstNode::cast(node).map(Self::TypeAscription),
+            K::MethodCall => AstNode::cast(node).map(Self::MethodCall),
             _ => None,
         }
     }
@@ -452,7 +451,7 @@ impl AstNode for Expression {
     }
 }
 
-ast_node!(ParenthesizedExpression: PARENTHESIZED_EXPRESSION);
+ast_node!(ParenthesizedExpression: K::ParenthesizedExpression);
 
 impl ParenthesizedExpression {
     pub fn inner(&self) -> Option<Expression> {
@@ -460,19 +459,19 @@ impl ParenthesizedExpression {
     }
 }
 
-ast_node!(Variable: VARIABLE);
+ast_node!(Variable: K::Variable);
 
 impl Variable {
     pub fn identifier(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
 }
 
-ast_node!(FunctionCall: FUNCTION_CALL);
+ast_node!(FunctionCall: K::FunctionCall);
 
 impl FunctionCall {
     pub fn name(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
 
     pub fn args(&self) -> Arguments {
@@ -480,7 +479,7 @@ impl FunctionCall {
     }
 }
 
-ast_node!(Arguments: ARGUMENTS);
+ast_node!(Arguments: K::Arguments);
 
 impl Arguments {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -488,7 +487,7 @@ impl Arguments {
     }
 }
 
-ast_node!(BinaryOperation: BINARY_EXPRESSION);
+ast_node!(BinaryOperation: K::BinaryExpression);
 
 impl BinaryOperation {
     pub fn operator(&self) -> SyntaxToken {
@@ -516,11 +515,11 @@ impl BinaryOperation {
     }
 }
 
-ast_node!(NamedArgument: NAMED_ARGUMENT);
+ast_node!(NamedArgument: K::NamedArgument);
 
 impl NamedArgument {
     pub fn name(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, IDENTIFIER).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Identifier).unwrap()
     }
 
     pub fn value(&self) -> Option<Expression> {
@@ -528,9 +527,9 @@ impl NamedArgument {
     }
 }
 
-ast_node!(Literal: LITERAL);
+ast_node!(Literal: K::Literal);
 
-ast_node!(Lvalue: LVALUE);
+ast_node!(Lvalue: K::Lvalue);
 
 impl Lvalue {
     pub fn inner(&self) -> Option<Expression> {
@@ -538,7 +537,7 @@ impl Lvalue {
     }
 }
 
-ast_node!(GenericTypeInstantiation: GENERIC_TYPE_INSTANTIATION);
+ast_node!(GenericTypeInstantiation: K::GenericTypeInstantiation);
 
 impl GenericTypeInstantiation {
     pub fn generic(&self) -> Expression {
@@ -550,7 +549,7 @@ impl GenericTypeInstantiation {
     }
 }
 
-ast_node!(TypeParameters: TYPE_PARAMETERS);
+ast_node!(TypeParameters: K::TypeParameters);
 
 impl TypeParameters {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -558,7 +557,7 @@ impl TypeParameters {
     }
 }
 
-ast_node!(ListLiteral: LIST_LITERAL);
+ast_node!(ListLiteral: K::ListLiteral);
 
 impl ListLiteral {
     pub fn iter(&self) -> impl Iterator<Item = Expression> {
@@ -566,18 +565,18 @@ impl ListLiteral {
     }
 
     pub fn lbracket(&self) -> SyntaxToken {
-        rowan::ast::support::token(&self.syntax, LBRACKET).unwrap()
+        rowan::ast::support::token(&self.syntax, K::Lbracket).unwrap()
     }
 }
 
-ast_node!(TypeAscription: TYPE_ASCRIPTION);
+ast_node!(TypeAscription: K::TypeAscription);
 
 impl TypeAscription {
     pub fn operator(&self) -> SyntaxToken {
         self.syntax
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find(|token| token.kind() == KW_AS)
+            .find(|token| token.kind() == K::KwAs)
             .unwrap()
     }
 
@@ -598,14 +597,14 @@ impl TypeAscription {
     }
 }
 
-ast_node!(MethodCall: METHOD_CALL);
+ast_node!(MethodCall: K::MethodCall);
 
 impl MethodCall {
     pub fn dot(&self) -> SyntaxToken {
         self.syntax
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find(|token| token.kind() == DOT)
+            .find(|token| token.kind() == K::Dot)
             .unwrap()
     }
 

@@ -8,7 +8,7 @@ use crate::{
     diagnostics::{primary, span, Diagnostics},
     generator::Generator,
     name::Name,
-    parser::{parse_string_literal, SyntaxKind},
+    parser::{parse_string_literal, K},
     ty::{self, Ty},
 };
 use codemap::{File, Spanned};
@@ -597,7 +597,7 @@ fn lower_lvalue(
     };
     let inner = Expression::lower(&inner, file, diagnostics);
     if let ExpressionKind::Variable(Name::User(var)) = inner.kind {
-        if var.parent().is_some_and(|it| it.kind() == SyntaxKind::LET) {
+        if var.parent().is_some_and(|it| it.kind() == K::Let) {
             return ExpressionKind::Imm(Value::VariableRef(var));
         }
     }
@@ -656,10 +656,10 @@ fn lower_type_ascription(
 fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
     let token = lit.syntax().first_token().unwrap();
     match token.kind() {
-        crate::parser::SyntaxKind::DECIMAL_NUMBER => {
+        crate::parser::K::DecimalNumber => {
             ExpressionKind::Imm(Value::Num(token.text().parse().unwrap()))
         }
-        crate::parser::SyntaxKind::BINARY_NUMBER => {
+        crate::parser::K::BinaryNumber => {
             let text = token.text();
             let (is_negative, text) = match text.as_bytes() {
                 [b'+', b'0', b'b' | b'B', ..] => (false, &text[3..]),
@@ -671,7 +671,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 u64::from_str_radix(text, 2).unwrap() as f64 * if is_negative { -1.0 } else { 1.0 },
             ))
         }
-        crate::parser::SyntaxKind::OCTAL_NUMBER => {
+        crate::parser::K::OctalNumber => {
             let text = token.text();
             let (is_negative, text) = match text.as_bytes() {
                 [b'+', b'0', b'o' | b'O', ..] => (false, &text[3..]),
@@ -683,7 +683,7 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                 u64::from_str_radix(text, 8).unwrap() as f64 * if is_negative { -1.0 } else { 1.0 },
             ))
         }
-        crate::parser::SyntaxKind::HEXADECIMAL_NUMBER => {
+        crate::parser::K::HexadecimalNumber => {
             let text = token.text();
             let (is_negative, text) = match text.as_bytes() {
                 [b'+', b'0', b'x' | b'X', ..] => (false, &text[3..]),
@@ -696,12 +696,12 @@ fn lower_literal(lit: &ast::Literal) -> ExpressionKind {
                     * if is_negative { -1.0 } else { 1.0 },
             ))
         }
-        crate::parser::SyntaxKind::STRING => parse_string_literal(&token)
+        crate::parser::K::String => parse_string_literal(&token)
             .map_or(ExpressionKind::Error, |s| {
                 ExpressionKind::Imm(Value::String(s))
             }),
-        crate::parser::SyntaxKind::KW_FALSE => ExpressionKind::Imm(Value::Bool(false)),
-        crate::parser::SyntaxKind::KW_TRUE => ExpressionKind::Imm(Value::Bool(true)),
+        crate::parser::K::KwFalse => ExpressionKind::Imm(Value::Bool(false)),
+        crate::parser::K::KwTrue => ExpressionKind::Imm(Value::Bool(true)),
         _ => unreachable!(),
     }
 }

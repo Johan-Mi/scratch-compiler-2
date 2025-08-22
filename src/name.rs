@@ -1,6 +1,6 @@
 use crate::{
     ast,
-    parser::{SyntaxKind::*, SyntaxNode, SyntaxToken},
+    parser::{SyntaxNode, SyntaxToken, K},
 };
 use rowan::{ast::AstNode, TextSize};
 
@@ -55,20 +55,20 @@ fn all_in_exact_scope_at(
     position: TextSize,
 ) -> Box<dyn Iterator<Item = SyntaxToken>> {
     match scope.kind() {
-        DOCUMENT => {
+        K::Document => {
             let document = ast::Document::cast(scope).unwrap();
             let structs = document.structs().filter_map(|it| it.name());
             let sprites = document.sprites().filter_map(|sprite| sprite.name());
             let lets = document.lets().filter_map(|it| it.variable());
             Box::new(structs.chain(sprites).chain(lets))
         }
-        SPRITE => Box::new(
+        K::Sprite => Box::new(
             ast::Sprite::cast(scope)
                 .unwrap()
                 .lets()
                 .filter_map(|it| it.variable()),
         ),
-        FN => {
+        K::Fn => {
             let function = ast::Function::cast(scope).unwrap();
             let generics = function.generics().into_iter().flat_map(|it| it.iter());
             let parameters = function
@@ -78,7 +78,7 @@ fn all_in_exact_scope_at(
                 .filter_map(|parameter| parameter.internal_name());
             Box::new(generics.chain(parameters))
         }
-        BLOCK => Box::new(
+        K::Block => Box::new(
             ast::Block::cast(scope)
                 .unwrap()
                 .statements()
@@ -94,7 +94,7 @@ fn all_in_exact_scope_at(
                 .into_iter()
                 .rev(),
         ),
-        FOR => {
+        K::For => {
             let for_ = ast::For::cast(scope).unwrap();
             Box::new(
                 for_.variable()

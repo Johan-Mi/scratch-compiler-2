@@ -224,17 +224,17 @@ pub enum ExpressionKind {
 pub type Argument = (Option<String>, Expression);
 
 pub fn desugar_function_call_name(token: &SyntaxToken) -> &str {
-    use crate::parser::SyntaxKind::*;
+    use crate::parser::K;
     match token.kind() {
-        PLUS => "add",
-        MINUS => "sub",
-        STAR => "mul",
-        SLASH => "div",
-        PERCENT => "mod",
-        LT => "lt",
-        EQ_EQ => "eq",
-        GT => "gt",
-        EQ => "set",
+        K::Plus => "add",
+        K::Minus => "sub",
+        K::Star => "mul",
+        K::Slash => "div",
+        K::Percent => "mod",
+        K::Lt => "lt",
+        K::EqEq => "eq",
+        K::Gt => "gt",
+        K::Eq => "set",
         _ => token.text(),
     }
 }

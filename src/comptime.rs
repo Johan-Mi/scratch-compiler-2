@@ -4,7 +4,7 @@ use crate::{
         VisitorPostorderMut,
     },
     name::Name,
-    parser::{SyntaxKind, SyntaxToken},
+    parser::{SyntaxToken, K},
     ty::{self, Ty},
 };
 use std::fmt;
@@ -70,10 +70,10 @@ pub fn evaluate(expr: &mut Expression, tcx: &ty::Context) {
                     value.clone()
                 } else {
                     match token.parent().map(|it| it.kind()) {
-                        Some(SyntaxKind::SPRITE) => Value::Sprite {
+                        Some(K::Sprite) => Value::Sprite {
                             name: token.to_string(),
                         },
-                        Some(SyntaxKind::GENERICS) => Value::Ty(Ty::Generic(token.clone())),
+                        Some(K::Generics) => Value::Ty(Ty::Generic(token.clone())),
                         _ => return,
                     }
                 },
