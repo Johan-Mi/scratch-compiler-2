@@ -3,7 +3,13 @@ name = "scratch-compiler-2"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lints]
+rust.unsafe_code = "deny"
+rust.unused_results = "deny"
+clippy.allow_attributes = "deny"
+clippy.let_underscore_untyped = "deny"
+clippy.nursery = { level = "warn", priority = -1 }
+clippy.pedantic = { level = "warn", priority = -1 }
 
 [dependencies]
 codemap = "0.1.3"
