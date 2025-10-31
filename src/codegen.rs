@@ -131,7 +131,7 @@ fn compile_sprite(
         is_linear: HashSet::new(),
     };
 
-    for (index, function) in crate::stdx::extract_if(functions, |function| {
+    for (index, function) in functions.extract_if(.., |_, function| {
         function.owning_sprite.as_deref() == Some(name)
     }) {
         compile_function(function, index, &mut cx);

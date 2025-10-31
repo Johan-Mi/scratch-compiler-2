@@ -19,7 +19,6 @@ mod name;
 mod parser;
 mod recursive_inlining;
 mod semantics;
-mod stdx;
 mod syntax_errors;
 mod ty;
 
