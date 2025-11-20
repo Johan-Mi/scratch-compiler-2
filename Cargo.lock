@@ -230,7 +230,7 @@ checksum = "4950d85bc52415f8432144c97c4791bd0c4f7954de32a7270ee9cccd3c22b12b"
 [[package]]
 name = "sb3-builder"
 version = "0.1.0"
-source = "git+https://github.com/Johan-Mi/sb3-builder#9e3353a95bd0c2c1623b8dcd384d5ffee99695d5"
+source = "git+https://github.com/Johan-Mi/sb3-builder#fef75b5190df444c32b70a91a61ca0eb6470d567"
 dependencies = [
  "flate2",
  "md5",

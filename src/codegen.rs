@@ -490,12 +490,14 @@ fn compile_intrinsic(
             Some(S(cx.sprite.length_of_list(list)))
         }
         "contains" => {
-            let mir::Value::List(list) = args[0] else {
-                unreachable!()
-            };
-            let list = cx.compile_real_list(list);
             let item = compile_value(args.pop().unwrap(), cx);
-            Some(B(cx.sprite.list_contains_item(list, item.s())))
+            Some(B(if let mir::Value::List(list) = args[0] {
+                let list = cx.compile_real_list(list);
+                cx.sprite.list_contains_item(list, item.s())
+            } else {
+                let haystack = compile_value(args.pop().unwrap(), cx);
+                cx.sprite.contains(haystack.s(), item.s())
+            }))
         }
         _ => {
             let args = args.into_iter().map(|arg| compile_value(arg, cx)).collect();
