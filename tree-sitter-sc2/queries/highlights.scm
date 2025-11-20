@@ -60,6 +60,8 @@
   "}"
 ] @punctuation.bracket
 
+(identifier) @variable
+
 (function_definition
   "fn" . (identifier) @function)
 (function_call
@@ -91,5 +93,3 @@
   (identifier) @type
   (#match? @type "^[A-Z]")
 )
-
-(identifier) @variable
