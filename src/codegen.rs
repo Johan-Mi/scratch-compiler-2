@@ -223,8 +223,7 @@ impl CompiledFunctionRef {
                 .is_none());
         }
 
-        let (block, insertion_point) =
-            sprite.add_custom_block(function.name.to_string(), parameters);
+        let (block, insertion_point) = sprite.add_custom_block(function.name.clone(), parameters);
 
         let return_variable = function.returns_something.then(|| {
             sprite.add_variable(Variable {
